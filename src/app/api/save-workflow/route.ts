@@ -1,38 +1,61 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(request: Request) {
   try {
-    // Validate request content type
-    const contentType = request.headers.get('content-type')
-    if (!contentType?.includes('application/json')) {
-      return NextResponse.json(
-        { success: false, message: 'Content type must be application/json' },
-        { status: 400 }
-      )
-    }
-
     const workflow = await request.json()
-    
-    // Validate workflow data
-    if (!workflow.name || !workflow.nodes || !workflow.edges) {
-      return NextResponse.json(
-        { success: false, message: 'Missing required workflow data' },
-        { status: 400 }
-      )
+    const { nodes, edges, name, id } = workflow
+
+    // If updating existing workflow (when id is provided)
+    if (id) {
+      const { data, error } = await supabase
+        .from('workflows')
+        .update({
+          name,
+          nodes,
+          edges,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return NextResponse.json({
+        success: true,
+        workflowId: data.id,
+        message: 'Workflow updated successfully'
+      })
     }
 
-    console.log('Received workflow:', workflow) // Debug log
-    
-    // TODO: Add your database logic here
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Workflow saved successfully',
-      workflowId: 'mock-id-' + Date.now(),
-      workflow 
+    // Creating new workflow (when no id is provided)
+    const { data, error } = await supabase
+      .from('workflows')
+      .insert({
+        name,
+        nodes,
+        edges,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true,
+      workflowId: data.id,
+      message: 'Workflow saved successfully'
     })
   } catch (error) {
-    console.error('Server error:', error)
+    console.error('Error saving workflow:', error)
     return NextResponse.json(
       { 
         success: false, 

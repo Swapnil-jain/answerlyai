@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import 'reactflow/dist/style.css'
+import React, { useState, useCallback, useEffect } from 'react'
 import ReactFlow, {
   addEdge,
   MiniMap,
@@ -15,11 +16,13 @@ import ReactFlow, {
   DefaultEdge,
   ViewportProps,
 } from 'reactflow'
-import 'reactflow/dist/style.css'
+import { useRouter } from 'next/navigation'
+import { Save, MessageSquare } from 'lucide-react'
 
 import StartNode from './nodes/StartNode'
 import DecisionNode from './nodes/DecisionNode'
 import ActionNode from './nodes/ActionNode'
+import ScenarioNode from './nodes/ScenarioNode'
 import Sidebar from './Sidebar'
 import TestingPanel from './TestingPanel'
 import { Button } from '@/components/ui/button'
@@ -29,6 +32,7 @@ const nodeTypes = {
   start: StartNode,
   decision: DecisionNode,
   action: ActionNode,
+  scenario: ScenarioNode,
 }
 
 const initialNodes: Node[] = [
@@ -47,16 +51,105 @@ const defaultViewport: Partial<ViewportProps> = {
   zoom: 0.5  // Adjust this value to control initial zoom level (1 is 100%, 0.5 is 50%)
 }
 
+interface WorkflowEditorProps {
+  workflowId?: string
+}
+
 // Create a new component for the flow content
-function Flow() {
+function Flow({ workflowId }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [workflowName, setWorkflowName] = useState('My Workflow')
   const reactFlowInstance = useReactFlow()
   const [isSaving, setIsSaving] = useState(false)
-  const [isTestingAPI, setIsTestingAPI] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges])
+  const saveWorkflow = async () => {
+    if (isSaving) return
+    
+    try {
+      validateWorkflow()
+
+      // Always create a new workflow when saving
+      setIsSaving(true)
+      const workflow = {
+        // Remove the id to force creation of a new workflow
+        name: workflowName,
+        nodes: nodes,
+        edges: edges,
+        updatedAt: new Date().toISOString()
+      }
+
+      const saveResponse = await fetch('/api/save-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workflow),
+      })
+
+      const saveData = await saveResponse.json()
+
+      if (saveData.success) {
+        // Always update the URL with the new workflow ID
+        router.replace(`/workflow/${saveData.workflowId}`)
+        alert('Workflow saved successfully!')
+      } else {
+        throw new Error(saveData.message)
+      }
+    } catch (error) {
+      console.error('Error saving workflow:', error)
+      alert(error instanceof Error ? error.message : 'Failed to save workflow')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Load existing workflow
+  useEffect(() => {
+    const loadWorkflow = async () => {
+      if (!workflowId) return
+
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/load-workflow?id=${workflowId}`)
+        const data = await response.json()
+
+        if (data.success && data.workflow) {
+          setNodes(data.workflow.nodes || [])
+          setEdges(data.workflow.edges || [])
+          // When loading an existing workflow, append " (Copy)" to the name
+          setWorkflowName(`${data.workflow.name} (Copy)`)
+        } else {
+          console.error('Failed to load workflow:', data)
+        }
+      } catch (error) {
+        console.error('Error loading workflow:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadWorkflow()
+  }, [workflowId, setNodes, setEdges])
+
+  const onConnect = useCallback((params) => {
+    // Validate scenario connections
+    if (params.sourceHandle === 'scenario-out') {
+      // Only allow connections to decision nodes' scenario handles
+      if (!params.targetHandle?.startsWith('scenario-in')) {
+        return
+      }
+    }
+
+    // Prevent connections to scenario nodes' output
+    if (params.targetHandle === 'scenario-out') {
+      return
+    }
+
+    setEdges((eds) => addEdge(params, eds))
+  }, [setEdges])
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
@@ -121,70 +214,6 @@ function Flow() {
     return true
   }
 
-  const saveWorkflow = async () => {
-    if (isSaving) return
-
-    try {
-      setIsSaving(true)
-      validateWorkflow()
-
-      const workflow = {
-        name: workflowName,
-        nodes: nodes,
-        edges: edges,
-      }
-
-      console.log('Sending workflow:', workflow) // Debug log
-
-      const response = await fetch(`${window.location.origin}/api/save-workflow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(workflow),
-      })
-
-      const data = await response.json()
-      console.log('Response:', data) // Debug log
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`)
-      }
-
-      if (data.success) {
-        alert(`Workflow saved successfully! ID: ${data.workflowId}`)
-      } else {
-        throw new Error(data.message || 'Unknown error occurred')
-      }
-    } catch (error) {
-      console.error('Error saving workflow:', error)
-      alert('Failed to save workflow: ' + (error instanceof Error ? error.message : 'Unknown error'))
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const testAPIConnection = async () => {
-    try {
-      setIsTestingAPI(true)
-      const response = await fetch(`${window.location.origin}/api/save-workflow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ test: true }),
-      })
-      const data = await response.json()
-      console.log('API Test Response:', data)
-      alert('API connection test completed. Check console for details.')
-    } catch (error) {
-      console.error('API Test Error:', error)
-      alert('API test failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
-    } finally {
-      setIsTestingAPI(false)
-    }
-  }
-
   const onNodeLabelChange = useCallback((nodeId: string, newLabel: string) => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -210,63 +239,97 @@ function Flow() {
   }, [reactFlowInstance]);
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
-      <Header />
-      <Sidebar />
-      <div className="flex-grow">
-        <div className="h-[calc(100vh-104px)]">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            nodesDraggable={true}
-            defaultViewport={defaultViewport}
-            fitView
-          >
-            <Controls />
-            <MiniMap />
-            <Background variant="dots" gap={12} size={1} />
-          </ReactFlow>
+    <div className="flex flex-col h-screen">
+      <Header className="z-50" />
+      <div className="flex flex-1 h-[calc(100vh-64px)] relative">
+        <div className="absolute inset-y-0 left-0 w-64 bg-white border-r z-30">
+          <Sidebar className="h-full" />
         </div>
-        <div className="flex justify-between items-center p-2 bg-gray-100">
-          <input
-            type="text"
-            value={workflowName}
-            onChange={(e) => setWorkflowName(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-          <div className="flex gap-2">
-            <Button 
-              onClick={testAPIConnection}
-              disabled={isTestingAPI}
-              variant="outline"
-            >
-              {isTestingAPI ? 'Testing...' : 'Test API'}
-            </Button>
-            <Button 
-              onClick={saveWorkflow} 
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save Workflow'}
-            </Button>
-          </div>
+        <div className="flex-grow flex flex-col ml-64">
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-gray-500">Loading workflow...</div>
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 relative">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  onDrop={onDrop}
+                  onDragOver={onDragOver}
+                  nodeTypes={nodeTypes}
+                  nodesDraggable={true}
+                  defaultViewport={defaultViewport}
+                  fitView
+                >
+                  <Controls />
+                  <MiniMap />
+                  <Background variant="dots" gap={12} size={1} />
+                </ReactFlow>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-white border-t">
+                <input
+                  type="text"
+                  value={workflowName}
+                  onChange={(e) => setWorkflowName(e.target.value)}
+                  className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter workflow name..."
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={saveWorkflow} 
+                    disabled={isSaving}
+                    className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/chat/${workflowId}`)}
+                    disabled={!workflowId}
+                    className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    See Live Chatbot
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
+        <TestingPanel 
+          nodes={nodes} 
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+        />
       </div>
-      <TestingPanel nodes={nodes} edges={edges} />
     </div>
   )
 }
 
-// Main component that provides the ReactFlow context
-export default function WorkflowEditor() {
+// Create a wrapper component to handle initialization
+function WorkflowEditorWrapper({ workflowId }: WorkflowEditorProps) {
+  const [isClientSide, setIsClientSide] = useState(false)
+
+  useEffect(() => {
+    setIsClientSide(true)
+  }, [])
+
+  if (!isClientSide) {
+    return <div className="h-screen flex items-center justify-center">Loading...</div>
+  }
+
   return (
     <ReactFlowProvider>
-      <Flow />
+      <Flow workflowId={workflowId} />
     </ReactFlowProvider>
   )
 }
+
+// Export the wrapper instead of the direct component
+export default WorkflowEditorWrapper

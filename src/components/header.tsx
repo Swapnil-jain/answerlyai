@@ -22,7 +22,7 @@ export default function Header() {
       isScrolled ? 'bg-white/80 backdrop-blur-sm shadow-sm' : 'bg-white'
     }`}>
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-blue-600">SmartBotify</Link>
+        <Link href="/" className="text-2xl font-bold text-blue-600">AnswerlyAI</Link>
         <nav className="flex items-center space-x-8">
           <button
             onClick={() => scrollToSection('how-it-works')}
@@ -44,6 +44,9 @@ export default function Header() {
           </button>
           <Link href="/builder">
             <Button variant="ghost">Workflow Editor</Button>
+          </Link>
+          <Link href="/faq">
+            <Button variant="ghost">FAQ Upload</Button>
           </Link>
           <Button className="bg-blue-500 hover:bg-blue-600 text-white ml-4">
             Pre-launch special: 70% off

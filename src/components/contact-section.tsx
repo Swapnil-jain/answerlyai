@@ -10,16 +10,16 @@ import {
 
 const faqs = [
   {
-    question: 'How does SmartBotify work?',
-    answer: 'SmartBotify uses advanced AI to understand and respond to customer queries. You can easily integrate it into your website and customize its responses.',
+    question: 'How does AnswerlyAI work?',
+    answer: 'AnswerlyAI uses advanced AI to understand and respond to customer queries. You can easily integrate it into your website and customize its responses.',
   },
   {
-    question: 'Is SmartBotify suitable for my industry?',
-    answer: 'Yes! SmartBotify is designed to be versatile and can be customized for various industries including\ne-commerce, healthcare, finance, and more.',
+    question: 'Is AnswerlyAI suitable for my industry?',
+    answer: 'Yes! AnswerlyAI is designed to be versatile and can be customized for various industries including\ne-commerce, healthcare, finance, and more.',
   },
   {
-    question: 'Can I try SmartBotify before purchasing?',
-    answer: 'We offer a free trial period so you can experience the benefits of SmartBotify firsthand before making a commitment.',
+    question: 'Can I try AnswerlyAI before purchasing?',
+    answer: 'We offer a free trial period so you can experience the benefits of AnswerlyAI firsthand before making a commitment.',
   },
 ]
 

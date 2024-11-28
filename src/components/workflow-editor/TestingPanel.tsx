@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 interface TestingPanelProps {
   nodes: Node[]
   edges: Edge[]
+  onNodesChange: (changes: any) => void
+  onEdgesChange: (changes: any) => void
 }
 
 interface SimulationStep {
@@ -15,7 +17,12 @@ interface SimulationStep {
   result?: string
 }
 
-export default function TestingPanel({ nodes, edges }: TestingPanelProps) {
+export default function TestingPanel({ 
+  nodes, 
+  edges,
+  onNodesChange,
+  onEdgesChange 
+}: TestingPanelProps) {
   const [currentStep, setCurrentStep] = useState<number>(0)
   const [simulationSteps, setSimulationSteps] = useState<SimulationStep[]>([])
   const [isSimulating, setIsSimulating] = useState(false)

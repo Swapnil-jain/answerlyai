@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <h3 className="text-lg font-semibold mb-2">SmartBotify</h3>
+            <h3 className="text-lg font-semibold mb-2">AnswerlyAI</h3>
             <p className="text-sm text-gray-500">AI-powered customer support solutions</p>
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-4">
-          <p className="text-sm text-gray-500 text-center">&copy; 2023 SmartBotify. All rights reserved.</p>
+          <p className="text-sm text-gray-500 text-center">&copy; 2024 AnswerlyAI. All rights reserved.</p>
         </div>
       </div>
     </footer>

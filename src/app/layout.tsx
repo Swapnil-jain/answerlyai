@@ -1,11 +1,12 @@
-import '@/app/globals.css'
+import './globals.css'
+import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
-  title: 'SmartBotify - AI-Assisted Customer Support Bot Builder',
-  description: 'Create, customize, and integrate intelligent chatbots into your website effortlessly. Automate queries, save time, and enhance customer satisfaction.',
+export const metadata: Metadata = {
+  title: 'AnswerlyAI',
+  description: 'AI chatbot widget helping you convert visitors into paying users',
 }
 
 export default function RootLayout({
@@ -15,7 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <div className="min-h-screen flex flex-col">
+          {children}
+        </div>
+      </body>
     </html>
   )
 }

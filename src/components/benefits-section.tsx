@@ -23,7 +23,7 @@ export default function BenefitsSection() {
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
       <div className="container mx-auto px-4 md:px-6">
-        <h2 className="text-3xl font-bold text-center mb-12">Why Choose SmartBotify?</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">Why Choose AnswerlyAI?</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {benefits.map((benefit, index) => (
             <Card key={index}>
@@ -40,7 +40,7 @@ export default function BenefitsSection() {
         <div className="mt-12 text-center">
           <h3 className="text-2xl font-semibold mb-4">What Our Customers Say</h3>
           <blockquote className="italic text-gray-600">
-            "SmartBotify has transformed our customer support. We've seen a 40% reduction in response times and our team can now focus on complex issues."
+            "AnswerlyAI has transformed our customer support. We've seen a 40% reduction in response times and our team can now focus on complex issues."
           </blockquote>
           <p className="mt-2 font-semibold">- Jane Doe, CEO of TechCorp</p>
         </div>

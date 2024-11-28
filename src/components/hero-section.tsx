@@ -22,7 +22,7 @@ export default function HeroSection() {
         <div className="mt-16">
           <Image
             src="/placeholder.svg?height=600&width=1000"
-            alt="SmartBotify Dashboard"
+            alt="AnswerlyAI Dashboard"
             width={1000}
             height={600}
             className="rounded-xl shadow-2xl border border-gray-200"

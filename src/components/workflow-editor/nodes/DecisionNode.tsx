@@ -32,6 +32,33 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
           position={Position.Top}
           className="w-3 h-3 !bg-blue-500"
           isConnectable={isConnectable}
+          isValidConnection={(connection) => {
+            return connection.sourceHandle !== 'scenario-out'
+          }}
+        />
+        
+        {/* Left side handle */}
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="scenario-in-left"
+          className="w-3 h-3 !bg-blue-500"
+          isConnectable={isConnectable}
+          isValidConnection={(connection) => {
+            return connection.sourceHandle === 'scenario-out'
+          }}
+        />
+
+        {/* Right side handle */}
+        <Handle
+          type="target"
+          position={Position.Right}
+          id="scenario-in-right"
+          className="w-3 h-3 !bg-blue-500"
+          isConnectable={isConnectable}
+          isValidConnection={(connection) => {
+            return connection.sourceHandle === 'scenario-out'
+          }}
         />
         
         {/* Node label */}
