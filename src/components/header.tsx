@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSmoothScroll } from '@/hooks/use-smooth-scroll'
+import { useSupabase } from '@/lib/supabase/provider'
+import { LogOut, LogIn } from 'lucide-react'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const { scrollToSection } = useSmoothScroll()
+  const { supabase, session } = useSupabase()
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +21,15 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
 
   return (
     <header className={`w-full py-4 px-6 fixed top-0 z-50 transition-all duration-200 ${
@@ -48,6 +62,26 @@ export default function Header() {
           <Link href="/faq">
             <Button variant="ghost">FAQ Upload</Button>
           </Link>
+          {session ? (
+            <Button 
+              onClick={handleLogout}
+              variant="ghost"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button 
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Button>
+            </Link>
+          )}
           <Button className="bg-blue-500 hover:bg-blue-600 text-white ml-4">
             Pre-launch special: 70% off
           </Button>

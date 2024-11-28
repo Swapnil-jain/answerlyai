@@ -16,11 +16,11 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   }
 
   const handleNewWorkflow = () => {
-    router.push('/workflow/new')
+    router.push('/builder')
   }
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full ${className} pt-20`}>
       <div className="flex-none p-4 border-b bg-white">
         <Button 
           onClick={handleNewWorkflow}

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import PlaceholderImage from './ui/placeholder-image'
 
 export default function HeroSection() {
   return (
@@ -20,13 +20,7 @@ export default function HeroSection() {
           </Button>
         </div>
         <div className="mt-16">
-          <Image
-            src="/placeholder.svg?height=600&width=1000"
-            alt="AnswerlyAI Dashboard"
-            width={1000}
-            height={600}
-            className="rounded-xl shadow-2xl border border-gray-200"
-          />
+        <PlaceholderImage width={1000} height={600} />
         </div>
       </div>
     </section>

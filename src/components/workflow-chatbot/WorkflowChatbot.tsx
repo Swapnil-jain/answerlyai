@@ -34,18 +34,18 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     const loadWorkflow = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/load-workflow?id=${workflowId}`)
-        const data = await response.json()
+        const workflows = JSON.parse(localStorage.getItem('workflows') || '[]')
+        const workflow = workflows.find((w: SavedWorkflow) => w.id === workflowId)
 
-        if (data.success && data.workflow) {
-          setWorkflow(data.workflow)
+        if (workflow) {
+          setWorkflow(workflow)
           setMessages([{ 
             type: 'bot', 
             content: "Hi 👋, I am Cora - Your very own chat assistant! How may I help you today?",
             source: 'llm'
           }])
         } else {
-          console.error('Failed to load workflow:', data)
+          console.error('Failed to load workflow')
           setMessages([{ 
             type: 'bot', 
             content: "Sorry, I couldn't load the workflow. Please try again later.",
@@ -108,6 +108,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
                    4. When reaching an action node, execute it and ask if there's anything else
                    5. If user asks what you can do, explain based on the workflow structure and available scenarios
                    6. For any request outside this workflow, politely explain you can only help with what's defined in the workflow
+                   7. Avoid mentioning the workflow editor or workflow ID or that you are defined using a workflow.
+                   8. Do not hallucinate.
+                   9. Avoid any other scenario specified outside of the workflow. Mention in brief that you can only help with the scenarios defined in the workflow.
                    
                    Current conversation history:
                    ${messages.map(m => `${m.type}: ${m.content}`).join('\n')}`,
@@ -173,7 +176,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           <a href="/how-it-works" className="text-sm text-gray-600 hover:text-gray-900">How it works</a>
           <a href="/waitlist" className="text-sm text-gray-600 hover:text-gray-900">Waitlist</a>
           <a href="/pre-launch" className="text-sm text-gray-600 hover:text-gray-900">Pre-launch offer</a>
-          <a href="/workflow" className="text-sm text-gray-600 hover:text-gray-900">Workflow</a>
+          <a href="/builder" className="text-sm text-gray-600 hover:text-gray-900">Workflow</a>
         </div>
       </div>
 
@@ -181,7 +184,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         <div className="flex justify-between items-center py-4 px-6">
           <h1 className="text-xl font-semibold">Chat Assistant</h1>
           <Button
-            onClick={() => router.push(`/workflow/${workflowId}`)}
+            onClick={() => router.push(`/builder/${workflowId}`)}
             variant="outline"
             className="flex items-center gap-2 text-sm"
           >

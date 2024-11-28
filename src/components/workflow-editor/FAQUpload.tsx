@@ -3,23 +3,21 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Loader2, Upload, Save, Trash2 } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Plus, Loader2, Save, Trash2 } from 'lucide-react'
+import { useSupabase } from '@/lib/supabase/provider'
 
 interface FAQ {
   id?: string
   question: string
   answer: string
+  user_id?: string
 }
 
 export default function FAQUpload() {
+  const { supabase } = useSupabase()
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const supabase = createClientComponentClient({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY
-  })
 
   // Fetch existing FAQs on component mount
   useEffect(() => {
@@ -28,9 +26,13 @@ export default function FAQUpload() {
 
   const fetchFAQs = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
       const { data, error } = await supabase
         .from('faqs')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true })
 
       if (error) throw error
@@ -50,19 +52,27 @@ export default function FAQUpload() {
       reader.onload = async (e) => {
         const text = e.target?.result as string
         const rows = text.split('\n')
-        const parsedFaqs = rows.slice(1).map(row => {
-          const [question, answer] = row.split(',')
-          return { question, answer }
-        })
         
         try {
           setIsSaving(true)
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Not authenticated')
+
+          const parsedFaqs = rows.slice(1).map(row => {
+            const [question, answer] = row.split(',')
+            return { 
+              question, 
+              answer,
+              user_id: user.id
+            }
+          })
+
           const { error } = await supabase
             .from('faqs')
             .insert(parsedFaqs)
 
           if (error) throw error
-          await fetchFAQs()
+          fetchFAQs()
         } catch (error) {
           console.error('Error saving FAQs:', error)
           alert('Failed to save FAQs')
@@ -75,66 +85,48 @@ export default function FAQUpload() {
   }
 
   const addNewFAQ = () => {
-    setFaqs([...faqs, { question: '', answer: '' }])
+    setFaqs([...faqs, { id: crypto.randomUUID(), question: '', answer: '' }])
   }
 
-  const deleteFAQ = async (index: number) => {
-    const faqToDelete = faqs[index]
-    if (faqToDelete.id) {
-      try {
-        const { error } = await supabase
-          .from('faqs')
-          .delete()
-          .eq('id', faqToDelete.id)
+  const deleteFAQ = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('faqs')
+        .delete()
+        .eq('id', id)
 
-        if (error) throw error
-      } catch (error) {
-        console.error('Error deleting FAQ:', error)
-        alert('Failed to delete FAQ')
-        return
-      }
+      if (error) throw error
+      fetchFAQs()
+    } catch (error) {
+      console.error('Error deleting FAQ:', error)
+      alert('Failed to delete FAQ')
     }
-    const newFaqs = faqs.filter((_, i) => i !== index)
-    setFaqs(newFaqs)
   }
 
   const saveFAQs = async () => {
     try {
       setIsSaving(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
       
-      // Filter out empty FAQs
-      const validFaqs = faqs.filter(faq => 
-        faq.question.trim() !== '' && faq.answer.trim() !== ''
-      )
+      // Filter out empty FAQs and add user_id
+      const validFaqs = faqs
+        .filter(faq => faq.question.trim() !== '' && faq.answer.trim() !== '')
+        .map(faq => ({
+          ...faq,
+          user_id: user.id
+        }))
 
-      // Separate new and existing FAQs
-      const newFaqs = validFaqs.filter(faq => !faq.id).map(({ question, answer }) => ({
-        question,
-        answer
-      }))
-      const existingFaqs = validFaqs.filter(faq => faq.id)
+      // Upsert FAQs
+      const { error } = await supabase
+        .from('faqs')
+        .upsert(validFaqs, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        })
 
-      // Insert new FAQs
-      if (newFaqs.length > 0) {
-        const { error: insertError } = await supabase
-          .from('faqs')
-          .insert(newFaqs)
-        if (insertError) throw insertError
-      }
-
-      // Update existing FAQs one by one
-      for (const faq of existingFaqs) {
-        const { error: updateError } = await supabase
-          .from('faqs')
-          .update({
-            question: faq.question,
-            answer: faq.answer
-          })
-          .eq('id', faq.id)
-        if (updateError) throw updateError
-      }
-
-      await fetchFAQs()
+      if (error) throw error
+      fetchFAQs()
       alert('FAQs saved successfully!')
     } catch (error) {
       console.error('Error saving FAQs:', error)
@@ -153,7 +145,7 @@ export default function FAQUpload() {
   }
 
   return (
-    <div className="flex-1 max-w-6xl mx-auto p-8">
+    <div className="flex-1 max-w-6xl mx-auto p-8 pt-20">
       <div className="space-y-8">
         {/* Description Section */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -241,7 +233,7 @@ export default function FAQUpload() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteFAQ(index)}
+                        onClick={() => deleteFAQ(faq.id || '')}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="w-4 h-4" />

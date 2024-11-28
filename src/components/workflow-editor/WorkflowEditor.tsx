@@ -18,6 +18,8 @@ import ReactFlow, {
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
 import { Save, MessageSquare } from 'lucide-react'
+import { useSupabase } from '@/lib/supabase/provider'
+import AuthGuard from '@/components/auth/AuthGuard'
 
 import StartNode from './nodes/StartNode'
 import DecisionNode from './nodes/DecisionNode'
@@ -55,6 +57,16 @@ interface WorkflowEditorProps {
   workflowId?: string
 }
 
+interface SavedWorkflow {
+  id: string
+  name: string
+  nodes: Node[]
+  edges: Edge[]
+  updatedAt: string
+}
+
+const MAX_WORKFLOWS = 5;
+
 // Create a new component for the flow content
 function Flow({ workflowId }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -64,40 +76,100 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { supabase } = useSupabase()
 
   const saveWorkflow = async () => {
     if (isSaving) return
     
     try {
       validateWorkflow()
-
-      // Always create a new workflow when saving
       setIsSaving(true)
-      const workflow = {
-        // Remove the id to force creation of a new workflow
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Check for existing workflow with same name
+      const { data: existingWorkflow } = await supabase
+        .from('workflows')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .eq('name', workflowName)
+        .single()
+
+      if (existingWorkflow) {
+        const shouldOverwrite = confirm(
+          `A workflow named "${workflowName}" already exists. \n\nWould you like to overwrite it?`
+        )
+
+        if (!shouldOverwrite) {
+          alert('Please choose a different name for your workflow')
+          return
+        }
+
+        // Update existing workflow
+        const { data, error } = await supabase
+          .from('workflows')
+          .update({
+            nodes: nodes,
+            edges: edges,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingWorkflow.id)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Update URL to existing workflow ID
+        router.push(`/builder/${existingWorkflow.id}`)
+        alert('Workflow updated successfully!')
+        return
+      }
+
+      // Check total number of workflows
+      const { count, error: countError } = await supabase
+        .from('workflows')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+
+      if (countError) throw countError
+
+      if (count && count >= MAX_WORKFLOWS) {
+        const shouldDelete = confirm(
+          `You've reached the maximum limit of ${MAX_WORKFLOWS} workflows. \n\n` +
+          `Would you like to see your workflows to delete some?`
+        )
+
+        if (shouldDelete) {
+          // You could either redirect to a workflow management page
+          // or just let them use the sidebar to delete workflows
+          alert('Please delete an existing workflow from the sidebar before creating a new one.')
+        }
+        return
+      }
+
+      // Create new workflow if under the limit
+      const newWorkflow = {
         name: workflowName,
         nodes: nodes,
         edges: edges,
-        updatedAt: new Date().toISOString()
+        user_id: user.id,
+        updated_at: new Date().toISOString()
       }
 
-      const saveResponse = await fetch('/api/save-workflow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(workflow),
-      })
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('workflows')
+        .insert([newWorkflow])
+        .select()
+        .single()
 
-      const saveData = await saveResponse.json()
+      if (error) throw error
 
-      if (saveData.success) {
-        // Always update the URL with the new workflow ID
-        router.replace(`/workflow/${saveData.workflowId}`)
-        alert('Workflow saved successfully!')
-      } else {
-        throw new Error(saveData.message)
-      }
+      // Update URL to the new workflow ID
+      router.push(`/builder/${data.id}`)
+      alert('Workflow saved successfully!')
+
     } catch (error) {
       console.error('Error saving workflow:', error)
       alert(error instanceof Error ? error.message : 'Failed to save workflow')
@@ -113,19 +185,23 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/load-workflow?id=${workflowId}`)
-        const data = await response.json()
+        const { data: workflow, error } = await supabase
+          .from('workflows')
+          .select('*')
+          .eq('id', workflowId)
+          .single()
 
-        if (data.success && data.workflow) {
-          setNodes(data.workflow.nodes || [])
-          setEdges(data.workflow.edges || [])
-          // When loading an existing workflow, append " (Copy)" to the name
-          setWorkflowName(`${data.workflow.name} (Copy)`)
-        } else {
-          console.error('Failed to load workflow:', data)
-        }
+        if (error) throw error
+
+        setNodes(workflow.nodes || initialNodes)
+        setEdges(workflow.edges || [])
+        setWorkflowName(workflow.name)
       } catch (error) {
         console.error('Error loading workflow:', error)
+        // Set default state on error
+        setNodes(initialNodes)
+        setEdges([])
+        setWorkflowName('My Workflow')
       } finally {
         setIsLoading(false)
       }
@@ -314,20 +390,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
 // Create a wrapper component to handle initialization
 function WorkflowEditorWrapper({ workflowId }: WorkflowEditorProps) {
-  const [isClientSide, setIsClientSide] = useState(false)
-
-  useEffect(() => {
-    setIsClientSide(true)
-  }, [])
-
-  if (!isClientSide) {
-    return <div className="h-screen flex items-center justify-center">Loading...</div>
-  }
-
   return (
-    <ReactFlowProvider>
-      <Flow workflowId={workflowId} />
-    </ReactFlowProvider>
+    <AuthGuard>
+      <ReactFlowProvider>
+        <Flow workflowId={workflowId} />
+      </ReactFlowProvider>
+    </AuthGuard>
   )
 }
 
