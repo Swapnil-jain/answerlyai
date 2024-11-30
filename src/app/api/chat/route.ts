@@ -5,6 +5,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 })
 
+//This is the API route for the chatbot which is accessible from workflow editor.
 export async function POST(request: Request) {
   try {
     const { message, context, history } = await request.json()

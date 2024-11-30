@@ -18,18 +18,18 @@ export default function ScenarioNode({ data, id }: ScenarioNodeProps) {
 
   const handleBlur = () => {
     setIsEditing(false)
-    data.label = label // Update the node's data
+    data.label = label || 'Scenario'
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       setIsEditing(false)
-      data.label = label
+      data.label = label || 'Scenario'
     }
   }
 
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-yellow-50 border-2 border-yellow-500">
+    <div className="px-4 py-2 shadow-md rounded-md bg-yellow-50 border-2 border-yellow-500 min-w-[150px] min-h-[40px]">
       <div className="flex flex-col">
         <div className="text-xs font-bold text-yellow-700 mb-1">Scenario</div>
         {isEditing ? (
@@ -39,6 +39,7 @@ export default function ScenarioNode({ data, id }: ScenarioNodeProps) {
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="text-sm bg-yellow-50 border border-yellow-300 rounded p-1"
+            placeholder="Enter scenario..."
             autoFocus
           />
         ) : (
@@ -46,7 +47,7 @@ export default function ScenarioNode({ data, id }: ScenarioNodeProps) {
             onDoubleClick={handleDoubleClick}
             className="text-sm text-gray-700 break-words"
           >
-            {label}
+            {label || 'Scenario'}
           </div>
         )}
       </div>
@@ -56,7 +57,7 @@ export default function ScenarioNode({ data, id }: ScenarioNodeProps) {
         id="scenario-out"
         style={{ background: '#FFB84C' }}
         isValidConnection={(connection) => {
-          return connection.targetHandle?.includes('scenario-in')
+          return connection.targetHandle?.includes('scenario-in') ?? false
         }}
       />
     </div>

@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import React from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, MessageSquare } from 'lucide-react' // Import icons
+import { Trash2, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSupabase } from '@/lib/supabase/provider'
+import { workflowCache } from '@/lib/cache/workflowCache'
+import { logger } from '@/lib/utils/logger'
 
 interface SavedWorkflow {
   id: string
@@ -10,12 +13,13 @@ interface SavedWorkflow {
   updated_at: string
 }
 
-export default function SavedWorkflows() {
+const SavedWorkflows = React.memo(function SavedWorkflows() {
   const { supabase } = useSupabase()
   const [workflows, setWorkflows] = useState<SavedWorkflow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const router = useRouter()
+  const currentWorkflowId = useRef<string | null>(null)
 
   const loadWorkflows = async () => {
     try {
@@ -25,18 +29,79 @@ export default function SavedWorkflows() {
         return
       }
 
+      // Try to get from cache first
+      try {
+        const cachedWorkflows = workflowCache.getWorkflowList()
+        if (cachedWorkflows) {
+          logger.log('info', 'cache', 'Using cached workflow list')
+          setWorkflows(cachedWorkflows)
+          setIsLoading(false)
+          
+          // Validate cache against database in background
+          validateCache(user.id, cachedWorkflows)
+          return
+        }
+      } catch (cacheError) {
+        logger.log('warn', 'cache', 'Failed to read cache, falling back to database')
+      }
+
+      // Load from database
+      await loadFromDatabase(user.id)
+    } catch (error) {
+      logger.log('error', 'database', 'Failed to load workflows: ' + error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Separate function to load from database
+  const loadFromDatabase = async (userId: string) => {
+    logger.log('info', 'database', 'Fetching workflow list from database')
+    const { data, error } = await supabase
+      .from('workflows')
+      .select('id, name, updated_at')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+
+    if (data) {
+      logger.log('info', 'database', `Retrieved ${data.length} workflows from database`)
+      setWorkflows(data)
+      // Try to update cache, but don't fail if cache is unavailable
+      try {
+        workflowCache.setWorkflowList(data)
+      } catch (cacheError) {
+        logger.log('warn', 'cache', 'Failed to update cache')
+      }
+    }
+  }
+
+  // Validate cache against database in background
+  const validateCache = async (userId: string, cachedData: SavedWorkflow[]) => {
+    try {
       const { data, error } = await supabase
         .from('workflows')
         .select('id, name, updated_at')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
       if (error) throw error
-      setWorkflows(data || [])
+
+      // Check if cache is stale
+      const isStale = JSON.stringify(data) !== JSON.stringify(cachedData)
+      
+      if (isStale) {
+        logger.log('info', 'cache', 'Cache is stale, updating from database')
+        setWorkflows(data)
+        try {
+          workflowCache.setWorkflowList(data)
+        } catch (cacheError) {
+          logger.log('warn', 'cache', 'Failed to update stale cache')
+        }
+      }
     } catch (error) {
-      console.error('Failed to load workflows:', error)
-    } finally {
-      setIsLoading(false)
+      logger.log('warn', 'cache', 'Cache validation failed: ' + error)
     }
   }
 
@@ -45,27 +110,14 @@ export default function SavedWorkflows() {
     loadWorkflows()
   }, [])
 
-  // Set up real-time subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('workflows-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'workflows'
-        },
-        () => {
-          loadWorkflows()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
+  const handleWorkflowClick = (workflowId: string) => {
+    // Prevent re-navigation to the same workflow
+    if (currentWorkflowId.current === workflowId) {
+      return
     }
-  }, [])
+    currentWorkflowId.current = workflowId
+    router.push(`/builder/${workflowId}`)
+  }
 
   const handleDelete = async (workflowId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -78,10 +130,21 @@ export default function SavedWorkflows() {
           .eq('id', workflowId)
 
         if (error) throw error
-        loadWorkflows() // Refresh the list
+        
+        // Update local state first
+        setWorkflows(current => current.filter(w => w.id !== workflowId))
+        
+        // Try to update cache, but don't fail if cache is unavailable
+        try {
+          workflowCache.removeWorkflow(workflowId)
+        } catch (cacheError) {
+          logger.log('warn', 'cache', 'Failed to update cache after deletion')
+        }
       } catch (error) {
-        console.error('Failed to delete workflow:', error)
+        logger.log('error', 'database', 'Failed to delete workflow: ' + error)
         alert('Failed to delete workflow')
+        // Reload list to ensure consistency
+        loadWorkflows()
       } finally {
         setIsDeleting(null)
       }
@@ -91,10 +154,7 @@ export default function SavedWorkflows() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'No date'
-      }
+      if (isNaN(date.getTime())) return 'No date'
       return date.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -117,7 +177,7 @@ export default function SavedWorkflows() {
           {workflows.map((workflow) => (
             <div
               key={workflow.id}
-              onClick={() => router.push(`/builder/${workflow.id}`)}
+              onClick={() => handleWorkflowClick(workflow.id)}
               className="p-2 text-sm rounded-md hover:bg-gray-100 cursor-pointer flex items-center justify-between group"
             >
               <div className="truncate flex-1">
@@ -158,4 +218,6 @@ export default function SavedWorkflows() {
       )}
     </div>
   )
-} 
+})
+
+export default SavedWorkflows 

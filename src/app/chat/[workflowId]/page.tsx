@@ -1,5 +1,6 @@
 'use client'
 
+//chatbot page accessible from workfloweditor.
 import { use } from 'react'
 import WorkflowChatbot from '@/components/workflow-chatbot/WorkflowChatbot'
 import Header from '@/components/header'

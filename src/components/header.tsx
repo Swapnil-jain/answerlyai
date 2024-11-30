@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSmoothScroll } from '@/hooks/use-smooth-scroll'
 import { useSupabase } from '@/lib/supabase/provider'
-import { LogOut, LogIn } from 'lucide-react'
+import { LogOut, LogIn, LayoutDashboard } from 'lucide-react'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -56,21 +56,29 @@ export default function Header() {
           >
             Pre-launch offer
           </button>
-          <Link href="/builder">
-            <Button variant="ghost">Workflow Editor</Button>
-          </Link>
-          <Link href="/faq">
-            <Button variant="ghost">FAQ Upload</Button>
-          </Link>
           {session ? (
-            <Button 
-              onClick={handleLogout}
-              variant="ghost"
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            <>
+              <Link href="/dashboard">
+                <Button 
+                  variant="ghost"
+                  className="flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/builder">
+                <Button variant="ghost">Workflow Editor</Button>
+              </Link>
+              <Button 
+                onClick={handleLogout}
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </>
           ) : (
             <Link href="/login">
               <Button 

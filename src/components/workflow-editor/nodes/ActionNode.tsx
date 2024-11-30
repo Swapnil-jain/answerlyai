@@ -16,14 +16,14 @@ export default function ActionNode({ id, data, isConnectable }: NodeProps) {
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
         setIsEditing(false)
-        data.label = label
+        data.label = label || 'Action'
       }
     },
     [data, label]
   )
 
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-red-500">
+    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-red-500 min-w-[150px] min-h-[40px] flex items-center justify-center">
       <Handle
         type="target"
         position={Position.Top}
@@ -37,17 +37,18 @@ export default function ActionNode({ id, data, isConnectable }: NodeProps) {
           onKeyDown={onKeyDown}
           onBlur={() => {
             setIsEditing(false)
-            data.label = label
+            data.label = label || 'Action'
           }}
           className="font-bold text-red-500 bg-transparent border-none outline-none text-center w-full"
           autoFocus
+          placeholder="Enter action..."
         />
       ) : (
         <div
-          className="font-bold text-red-500"
+          className="font-bold text-red-500 w-full text-center"
           onDoubleClick={() => setIsEditing(true)}
         >
-          {data.label}
+          {label || 'Action'}
         </div>
       )}
       <Handle

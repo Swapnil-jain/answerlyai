@@ -16,7 +16,7 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
         setIsEditing(false)
-        data.label = label
+        data.label = label || 'Decision'
       }
     },
     [data, label]
@@ -25,8 +25,8 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
   return (
     <div className="relative">
       {/* Main node content */}
-      <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-blue-500">
-        {/* Input handle at the top */}
+      <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-blue-500 min-w-[150px] min-h-[40px]">
+        {/* Input handles */}
         <Handle
           type="target"
           position={Position.Top}
@@ -70,24 +70,24 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
             onKeyDown={onKeyDown}
             onBlur={() => {
               setIsEditing(false)
-              data.label = label
+              data.label = label || 'Decision'
             }}
             className="font-bold text-blue-500 bg-transparent border-none outline-none text-center w-full"
             autoFocus
+            placeholder="Enter decision..."
           />
         ) : (
           <div
             className="font-bold text-blue-500 min-w-[150px] min-h-[40px] flex items-center justify-center"
             onDoubleClick={() => setIsEditing(true)}
           >
-            {data.label}
+            {label || 'Decision'}
           </div>
         )}
       </div>
 
-      {/* Yes/No connection points with better visual indicators */}
+      {/* Yes/No connection points */}
       <div className="mt-4 flex justify-center items-center gap-12">
-        {/* Yes branch */}
         <div className="flex flex-col items-center">
           <div className="bg-green-100 rounded-md px-3 py-1 text-sm text-green-700 font-medium mb-1">
             Yes
@@ -102,7 +102,6 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
           />
         </div>
 
-        {/* No branch */}
         <div className="flex flex-col items-center">
           <div className="bg-red-100 rounded-md px-3 py-1 text-sm text-red-700 font-medium mb-1">
             No

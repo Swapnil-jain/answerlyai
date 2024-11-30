@@ -1,7 +1,7 @@
 'use client'
 
 import 'reactflow/dist/style.css'
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import ReactFlow, {
   addEdge,
   MiniMap,
@@ -17,7 +17,7 @@ import ReactFlow, {
   ViewportProps,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
-import { Save, MessageSquare } from 'lucide-react'
+import { Save, MessageSquare, Code, Maximize2 } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
 import AuthGuard from '@/components/auth/AuthGuard'
 
@@ -26,16 +26,34 @@ import DecisionNode from './nodes/DecisionNode'
 import ActionNode from './nodes/ActionNode'
 import ScenarioNode from './nodes/ScenarioNode'
 import Sidebar from './Sidebar'
-import TestingPanel from './TestingPanel'
+import SavedWorkflows from './SavedWorkflows'
 import { Button } from '@/components/ui/button'
 import Header from '@/components/header'
+import { workflowCache } from '@/lib/cache/workflowCache'
 
-const nodeTypes = {
-  start: StartNode,
-  decision: DecisionNode,
-  action: ActionNode,
-  scenario: ScenarioNode,
+// Add this CSS to ensure nodes maintain minimum dimensions
+const nodeDefaultStyle = {
+  minWidth: '150px',
+  minHeight: '50px',
+  padding: '10px',
+  backgroundColor: 'white',
+  border: '1px solid #ccc',
+  borderRadius: '5px',
 }
+
+// Define node components with memo
+const MemoizedStartNode = React.memo(StartNode)
+const MemoizedDecisionNode = React.memo(DecisionNode)
+const MemoizedActionNode = React.memo(ActionNode)
+const MemoizedScenarioNode = React.memo(ScenarioNode)
+
+// Define nodeTypes with useMemo
+const createNodeTypes = () => ({
+  start: MemoizedStartNode,
+  decision: MemoizedDecisionNode,
+  action: MemoizedActionNode,
+  scenario: MemoizedScenarioNode,
+})
 
 const initialNodes: Node[] = [
   {
@@ -77,6 +95,9 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { supabase } = useSupabase()
+
+  // Memoize nodeTypes
+  const nodeTypes = useMemo(() => createNodeTypes(), [])
 
   const saveWorkflow = async () => {
     if (isSaving) return
@@ -170,6 +191,22 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       router.push(`/builder/${data.id}`)
       alert('Workflow saved successfully!')
 
+      // After successful save, update cache
+      if (data) {
+        workflowCache.setWorkflow(data)
+        
+        // Update the list cache
+        const listCache = workflowCache.getWorkflowList()
+        if (listCache) {
+          const updatedList = listCache.map(w => 
+            w.id === data.id 
+              ? { id: data.id, name: data.name, updated_at: data.updated_at }
+              : w
+          )
+          workflowCache.setWorkflowList(updatedList)
+        }
+      }
+
     } catch (error) {
       console.error('Error saving workflow:', error)
       alert(error instanceof Error ? error.message : 'Failed to save workflow')
@@ -185,6 +222,18 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       try {
         setIsLoading(true)
+        
+        // Try to get from cache first
+        const cachedWorkflow = workflowCache.getWorkflow(workflowId)
+        if (cachedWorkflow) {
+          setNodes(cachedWorkflow.nodes || initialNodes)
+          setEdges(cachedWorkflow.edges || [])
+          setWorkflowName(cachedWorkflow.name)
+          setIsLoading(false)
+          return
+        }
+
+        // Load from database if not in cache
         const { data: workflow, error } = await supabase
           .from('workflows')
           .select('*')
@@ -193,12 +242,13 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) throw error
 
+        // Update state and cache
         setNodes(workflow.nodes || initialNodes)
         setEdges(workflow.edges || [])
         setWorkflowName(workflow.name)
+        workflowCache.setWorkflow(workflow)
       } catch (error) {
         console.error('Error loading workflow:', error)
-        // Set default state on error
         setNodes(initialNodes)
         setEdges([])
         setWorkflowName('My Workflow')
@@ -240,6 +290,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         return
       }
 
+      // Prevent adding Start nodes
+      if (type === 'start') {
+        alert('Only one Start node is allowed per workflow')
+        return
+      }
+
       // Get the current viewport position
       const { x: viewportX, y: viewportY, zoom } = reactFlowInstance.getViewport()
       
@@ -267,9 +323,36 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       throw new Error('Workflow name is required')
     }
 
-    // Check if there are any nodes
-    if (nodes.length <= 1) { // Only start node
-      throw new Error('Workflow must have at least one node besides Start')
+    // Check for minimum required nodes
+    const startNodes = nodes.filter(node => node.type === 'start')
+    const decisionNodes = nodes.filter(node => node.type === 'decision')
+    const actionNodes = nodes.filter(node => node.type === 'action')
+
+    if (startNodes.length === 0) {
+      throw new Error('Workflow must have a Start node')
+    }
+    if (decisionNodes.length === 0) {
+      throw new Error('Workflow must have at least one Decision node')
+    }
+    if (actionNodes.length < 2) {
+      throw new Error('Workflow must have at least two Action nodes')
+    }
+
+    // Check if all nodes (except Start) have custom text
+    const emptyNodes = nodes.filter(node => {
+      // Skip validation for Start node
+      if (node.type === 'start') return false
+      
+      const label = node.data?.label?.trim() || ''
+      // Check if label is empty or just the default text
+      return !label || 
+             (node.type === 'action' && label === 'Action') ||
+             (node.type === 'decision' && label === 'Decision') ||
+             (node.type === 'scenario' && label === 'Scenario')
+    })
+
+    if (emptyNodes.length > 0) {
+      throw new Error('All nodes (except Start) must have custom text content')
     }
 
     // Check if all nodes are connected
@@ -279,12 +362,17 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       connectedNodeIds.add(edge.target)
     })
     
-    const disconnectedNodes = nodes.filter(node => 
-      node.type !== 'start' && !connectedNodeIds.has(node.id)
-    )
+    const disconnectedNodes = nodes.filter(node => !connectedNodeIds.has(node.id))
     
     if (disconnectedNodes.length > 0) {
-      throw new Error('All nodes must be connected')
+      throw new Error('All nodes must be connected to the workflow')
+    }
+
+    // Check if start node is connected
+    const startNodeId = startNodes[0].id
+    const isStartConnected = edges.some(edge => edge.source === startNodeId)
+    if (!isStartConnected) {
+      throw new Error('Start node must be connected to the workflow')
     }
 
     return true
@@ -314,14 +402,41 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     }, 100);
   }, [reactFlowInstance]);
 
+  // Add this function to prevent Start node deletion
+  const onNodesDelete = useCallback((nodesToDelete: Node[]) => {
+    const hasStartNode = nodesToDelete.some(node => node.type === 'start')
+    if (hasStartNode) {
+      alert('The Start node cannot be deleted')
+      return false
+    }
+    return true
+  }, [])
+
+  // Add this to filter out Start node deletion
+  const handleNodesChange = useCallback((changes) => {
+    // Filter out any attempts to remove the Start node
+    const safeChanges = changes.filter(change => {
+      if (change.type === 'remove') {
+        const nodeToDelete = nodes.find(node => node.id === change.id)
+        if (nodeToDelete?.type === 'start') {
+          return false
+        }
+      }
+      return true
+    })
+    
+    onNodesChange(safeChanges)
+  }, [nodes, onNodesChange])
+
   return (
     <div className="flex flex-col h-screen">
       <Header className="z-50" />
       <div className="flex flex-1 h-[calc(100vh-64px)] relative">
-        <div className="absolute inset-y-0 left-0 w-64 bg-white border-r z-30">
-          <Sidebar className="h-full" />
+        <div className="absolute inset-y-0 left-0 w-64 bg-white border-r z-30 flex flex-col">
+          <Sidebar className="flex-1" workflowId={workflowId} />
+          <SavedWorkflows />
         </div>
-        <div className="flex-grow flex flex-col ml-64">
+        <div className="flex-grow flex flex-col ml-64 relative">
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-gray-500">Loading workflow...</div>
@@ -332,7 +447,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                 <ReactFlow
                   nodes={nodes}
                   edges={edges}
-                  onNodesChange={onNodesChange}
+                  onNodesChange={handleNodesChange}
                   onEdgesChange={onEdgesChange}
                   onConnect={onConnect}
                   onDrop={onDrop}
@@ -345,6 +460,13 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   <Controls />
                   <MiniMap />
                   <Background variant="dots" gap={12} size={1} />
+                  <Button
+                    className="absolute top-4 right-4 bg-white"
+                    onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}
+                    size="sm"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
                 </ReactFlow>
               </div>
               <div className="flex justify-between items-center p-4 bg-white border-t">
@@ -372,17 +494,19 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     <MessageSquare className="h-4 w-4" />
                     See Live Chatbot
                   </Button>
+                  <Button
+                    onClick={() => router.push(`/widget/${workflowId}`)}
+                    disabled={!workflowId}
+                    className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
+                  >
+                    <Code className="h-4 w-4" />
+                    Get Widget Code
+                  </Button>
                 </div>
               </div>
             </>
           )}
         </div>
-        <TestingPanel 
-          nodes={nodes} 
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-        />
       </div>
     </div>
   )

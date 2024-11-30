@@ -5,40 +5,70 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Loader2, Save, Trash2 } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
+import { useRouter } from 'next/navigation'
+import { workflowCache } from '@/lib/cache/workflowCache'
+import { logger } from '@/lib/utils/logger'
 
 interface FAQ {
   id?: string
   question: string
   answer: string
   user_id?: string
+  workflow_id?: string
+  created_at?: string
+  updated_at?: string
 }
 
-export default function FAQUpload() {
+interface FAQUploadProps {
+  workflowId: string;
+}
+
+export default function FAQUpload({ workflowId }: FAQUploadProps) {
   const { supabase } = useSupabase()
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const router = useRouter()
 
-  // Fetch existing FAQs on component mount
+  // Move the initial fetch to useEffect instead of calling directly
   useEffect(() => {
-    fetchFAQs()
-  }, [])
+    if (workflowId) {
+      fetchFAQs()
+    }
+  }, [workflowId]) // Add workflowId as dependency
 
   const fetchFAQs = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      // Try to get from cache first
+      const cachedFAQs = workflowCache.getFAQs(workflowId)
+      if (cachedFAQs) {
+        setFaqs(cachedFAQs)
+        setIsLoading(false)
+        return
+      }
+
+      // Load from database if not in cache
+      logger.log('info', 'database', `Fetching FAQs for workflow ${workflowId}`)
       const { data, error } = await supabase
         .from('faqs')
         .select('*')
         .eq('user_id', user.id)
+        .eq('workflow_id', workflowId)
         .order('created_at', { ascending: true })
 
       if (error) throw error
-      setFaqs(data || [])
+
+      // Update state and cache
+      if (data) {
+        logger.log('info', 'database', `Retrieved ${data.length} FAQs from database`)
+        setFaqs(data)
+        workflowCache.setFAQs(workflowId, data)
+      }
     } catch (error) {
-      console.error('Error fetching FAQs:', error)
+      logger.log('error', 'database', 'Failed to load FAQs: ' + error)
       alert('Failed to load FAQs')
     } finally {
       setIsLoading(false)
@@ -63,7 +93,8 @@ export default function FAQUpload() {
             return { 
               question, 
               answer,
-              user_id: user.id
+              user_id: user.id,
+              workflow_id: workflowId
             }
           })
 
@@ -85,20 +116,38 @@ export default function FAQUpload() {
   }
 
   const addNewFAQ = () => {
-    setFaqs([...faqs, { id: crypto.randomUUID(), question: '', answer: '' }])
+    const now = new Date().toISOString()
+    setFaqs([...faqs, { 
+      id: crypto.randomUUID(), 
+      question: '', 
+      answer: '',
+      workflow_id: workflowId,
+      created_at: now,
+      updated_at: now
+    }])
   }
 
   const deleteFAQ = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('faqs')
-        .delete()
-        .eq('id', id)
+      // If the FAQ has an ID in the database, delete it from there
+      if (id && faqs.find(faq => faq.id === id)?.created_at) {
+        logger.log('info', 'database', `Deleting FAQ ${id}`)
+        const { error } = await supabase
+          .from('faqs')
+          .delete()
+          .eq('id', id)
 
-      if (error) throw error
-      fetchFAQs()
+        if (error) throw error
+
+        // Update cache after successful deletion
+        const updatedFaqs = faqs.filter(faq => faq.id !== id)
+        workflowCache.setFAQs(workflowId, updatedFaqs)
+      }
+      
+      // Remove from local state
+      setFaqs(currentFaqs => currentFaqs.filter(faq => faq.id !== id))
     } catch (error) {
-      console.error('Error deleting FAQ:', error)
+      logger.log('error', 'database', 'Failed to delete FAQ: ' + error)
       alert('Failed to delete FAQ')
     }
   }
@@ -109,15 +158,17 @@ export default function FAQUpload() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
       
-      // Filter out empty FAQs and add user_id
       const validFaqs = faqs
         .filter(faq => faq.question.trim() !== '' && faq.answer.trim() !== '')
         .map(faq => ({
           ...faq,
-          user_id: user.id
+          user_id: user.id,
+          workflow_id: workflowId,
+          created_at: faq.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }))
 
-      // Upsert FAQs
+      logger.log('info', 'database', `Saving ${validFaqs.length} FAQs to database`)
       const { error } = await supabase
         .from('faqs')
         .upsert(validFaqs, { 
@@ -126,10 +177,15 @@ export default function FAQUpload() {
         })
 
       if (error) throw error
-      fetchFAQs()
+
+      // Update cache after successful save
+      workflowCache.setFAQs(workflowId, validFaqs)
+      logger.log('info', 'database', 'FAQs saved successfully')
+      
+      fetchFAQs() // Refresh the list
       alert('FAQs saved successfully!')
     } catch (error) {
-      console.error('Error saving FAQs:', error)
+      logger.log('error', 'database', 'Failed to save FAQs: ' + error)
       alert('Failed to save FAQs')
     } finally {
       setIsSaving(false)
@@ -149,10 +205,18 @@ export default function FAQUpload() {
       <div className="space-y-8">
         {/* Description Section */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">FAQ Management</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">FAQ Management for Workflow</h2>
+            <Button
+              onClick={() => router.push(`/builder/${workflowId}`)}
+              className="flex items-center gap-2"
+            >
+              « Back to Workflow Editor
+            </Button>
+          </div>
           <p className="text-gray-600 mb-4">
             Add FAQs to your chatbot either by uploading a CSV file or manually entering them below. 
-            These FAQs will be used to train your chatbot to answer common questions.
+            These FAQs will be used to enhance your chatbot's responses with custom knowledge.
           </p>
           
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -203,16 +267,19 @@ export default function FAQUpload() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {faqs.map((faq, index) => (
-                  <tr key={faq.id || index}>
+                {faqs.map((faq) => (
+                  <tr key={faq.id}>
                     <td className="px-6 py-4">
                       <Input
                         className="w-full"
                         value={faq.question}
                         onChange={(e) => {
                           const newFaqs = [...faqs]
-                          newFaqs[index].question = e.target.value
-                          setFaqs(newFaqs)
+                          const index = newFaqs.findIndex(f => f.id === faq.id)
+                          if (index !== -1) {
+                            newFaqs[index].question = e.target.value
+                            setFaqs(newFaqs)
+                          }
                         }}
                         placeholder="Enter question..."
                       />
@@ -223,8 +290,11 @@ export default function FAQUpload() {
                         value={faq.answer}
                         onChange={(e) => {
                           const newFaqs = [...faqs]
-                          newFaqs[index].answer = e.target.value
-                          setFaqs(newFaqs)
+                          const index = newFaqs.findIndex(f => f.id === faq.id)
+                          if (index !== -1) {
+                            newFaqs[index].answer = e.target.value
+                            setFaqs(newFaqs)
+                          }
                         }}
                         placeholder="Enter answer..."
                       />

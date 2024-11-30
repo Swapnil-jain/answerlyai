@@ -1,5 +1,6 @@
 'use client'
 
+//workflow editor page for existing workflows.
 import { use } from 'react'
 import WorkflowEditor from '@/components/workflow-editor/WorkflowEditor'
 

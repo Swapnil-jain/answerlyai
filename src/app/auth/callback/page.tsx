@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/lib/supabase/provider'
 import { Loader2 } from 'lucide-react'
 
+//loading page.
 export default function AuthCallbackPage() {
   const { supabase } = useSupabase()
   const router = useRouter()
