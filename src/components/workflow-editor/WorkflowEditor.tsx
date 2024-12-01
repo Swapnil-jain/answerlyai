@@ -17,9 +17,18 @@ import ReactFlow, {
   ViewportProps,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
-import { Save, MessageSquare, Code, Maximize2 } from 'lucide-react'
+import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, Sparkles } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
 import AuthGuard from '@/components/auth/AuthGuard'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 
 import StartNode from './nodes/StartNode'
 import DecisionNode from './nodes/DecisionNode'
@@ -28,8 +37,15 @@ import ScenarioNode from './nodes/ScenarioNode'
 import Sidebar from './Sidebar'
 import SavedWorkflows from './SavedWorkflows'
 import { Button } from '@/components/ui/button'
-import Header from '@/components/header'
 import { workflowCache } from '@/lib/cache/workflowCache'
+import { ensureUserTier } from '@/lib/utils/subscription'
+import { TIER_LIMITS } from '@/lib/constants/tiers'
+import { eventEmitter } from '@/lib/utils/events'
+
+// Move this to the top, after imports and before any other code
+const generateUniqueId = (nodeType: string) => {
+  return `${nodeType}_${Math.random().toString(36).substr(2, 9)}`
+}
 
 // Add this CSS to ensure nodes maintain minimum dimensions
 const nodeDefaultStyle = {
@@ -57,7 +73,7 @@ const createNodeTypes = () => ({
 
 const initialNodes: Node[] = [
   {
-    id: 'start',
+    id: generateUniqueId('start'),
     type: 'start',
     data: { label: 'Start' },
     position: { x: 400, y: 200 },
@@ -85,6 +101,57 @@ interface SavedWorkflow {
 
 const MAX_WORKFLOWS = 5;
 
+// Add this near the top of the file with other imports
+const proOptions = { hideAttribution: true }
+
+// Add this helper function to check if a node is connected
+const isNodeConnected = (nodeId: string, edges: Edge[]) => {
+  return edges.some(edge => 
+    edge.source === nodeId || edge.target === nodeId
+  );
+}
+
+// Add this helper function to check node connections
+const getNodeConnections = (nodeId: string, edges: Edge[]) => {
+  const outgoing = edges.filter(edge => edge.source === nodeId)
+  const incoming = edges.filter(edge => edge.target === nodeId)
+  return { outgoing, incoming }
+}
+
+// Add this helper function to check if a path leads to action nodes
+const validateDecisionPath = (
+  nodeId: string, 
+  edges: Edge[], 
+  nodes: Node[], 
+  visited: Set<string> = new Set()
+): boolean => {
+  // Prevent infinite loops
+  if (visited.has(nodeId)) return false;
+  visited.add(nodeId);
+
+  // Get outgoing connections
+  const outgoing = edges.filter(edge => edge.source === nodeId);
+  
+  // If no outgoing connections, path is invalid
+  if (outgoing.length === 0) return false;
+
+  // Check each outgoing connection
+  return outgoing.every(connection => {
+    const targetNode = nodes.find(node => node.id === connection.target);
+    if (!targetNode) return false;
+
+    // If it's an action node, path is valid
+    if (targetNode.type === 'action') return true;
+
+    // If it's a decision node, recursively check its paths
+    if (targetNode.type === 'decision') {
+      return validateDecisionPath(targetNode.id, edges, nodes, visited);
+    }
+
+    return false;
+  });
+};
+
 // Create a new component for the flow content
 function Flow({ workflowId }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -95,9 +162,26 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { supabase } = useSupabase()
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string }>({
+    title: '',
+    description: ''
+  })
+  const [workflowToOverwrite, setWorkflowToOverwrite] = useState<string | null>(null)
 
   // Memoize nodeTypes
   const nodeTypes = useMemo(() => createNodeTypes(), [])
+
+  // Add this state to track if we should navigate after alert closes
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+
+  // Add this state to track the current workflow's data
+  const [currentWorkflow, setCurrentWorkflow] = useState<{
+    id: string;
+    name: string;
+    nodes: Node[];
+    edges: Edge[];
+  } | null>(null)
 
   const saveWorkflow = async () => {
     if (isSaving) return
@@ -107,109 +191,140 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       setIsSaving(true)
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      if (!user) throw new Error('Please sign in to save your workflow')
 
-      // Check for existing workflow with same name
-      const { data: existingWorkflow } = await supabase
-        .from('workflows')
-        .select('id, name')
+      // Ensure user has a tier entry
+      await ensureUserTier(supabase, user.id)
+
+      // Get user's tier and current workflow count
+      const { data: tierData, error: tierError } = await supabase
+        .from('user_tiers')
+        .select('pricing_tier, workflow_count')
         .eq('user_id', user.id)
-        .eq('name', workflowName)
         .single()
 
-      if (existingWorkflow) {
-        const shouldOverwrite = confirm(
-          `A workflow named "${workflowName}" already exists. \n\nWould you like to overwrite it?`
-        )
+      if (tierError) throw tierError
 
-        if (!shouldOverwrite) {
-          alert('Please choose a different name for your workflow')
-          return
+      const currentTier = tierData?.pricing_tier || 'hobbyist'
+      const currentCount = tierData?.workflow_count || 0
+      const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
+
+      // Check if user has reached their limit (only for new workflows)
+      if (!workflowId && currentCount >= tierLimit) {
+        throw new Error(
+          `You've reached the maximum limit of ${tierLimit} ${
+            tierLimit === 1 ? 'workflow' : 'workflows'
+          } for your ${currentTier} tier. Please upgrade to create more workflows.`
+        )
+      }
+
+      // If we have a workflowId, this is an existing workflow
+      if (workflowId) {
+        // First check if this name already exists for a different workflow
+        const { data: existingWorkflow } = await supabase
+          .from('workflows')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('name', workflowName)
+          .neq('id', workflowId) // Important: exclude current workflow
+          .single()
+
+        if (existingWorkflow) {
+          throw new Error(`A workflow with the name "${workflowName}" already exists. Please choose a different name.`)
         }
 
         // Update existing workflow
         const { data, error } = await supabase
           .from('workflows')
           .update({
+            name: workflowName,
             nodes: nodes,
             edges: edges,
             updated_at: new Date().toISOString()
           })
-          .eq('id', existingWorkflow.id)
+          .eq('id', workflowId)
           .select()
           .single()
 
         if (error) throw error
 
-        // Update URL to existing workflow ID
-        router.push(`/builder/${existingWorkflow.id}`)
-        alert('Workflow updated successfully!')
-        return
-      }
-
-      // Check total number of workflows
-      const { count, error: countError } = await supabase
-        .from('workflows')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-
-      if (countError) throw countError
-
-      if (count && count >= MAX_WORKFLOWS) {
-        const shouldDelete = confirm(
-          `You've reached the maximum limit of ${MAX_WORKFLOWS} workflows. \n\n` +
-          `Would you like to see your workflows to delete some?`
-        )
-
-        if (shouldDelete) {
-          // You could either redirect to a workflow management page
-          // or just let them use the sidebar to delete workflows
-          alert('Please delete an existing workflow from the sidebar before creating a new one.')
+        // Update cache
+        if (data) {
+          workflowCache.setWorkflow(data)
+          
+          // Update the list cache
+          const listCache = workflowCache.getWorkflowList()
+          if (listCache) {
+            const updatedList = listCache.map(w => 
+              w.id === data.id 
+                ? { 
+                    id: data.id, 
+                    name: data.name, 
+                    updated_at: data.updated_at 
+                  }
+                : w
+            )
+            workflowCache.setWorkflowList(updatedList)
+          }
         }
-        return
-      }
 
-      // Create new workflow if under the limit
-      const newWorkflow = {
-        name: workflowName,
-        nodes: nodes,
-        edges: edges,
-        user_id: user.id,
-        updated_at: new Date().toISOString()
-      }
+        showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
+      } else {
+        // This is a new workflow
+        // Check if a workflow with this name already exists
+        const { data: existingWorkflow } = await supabase
+          .from('workflows')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .eq('name', workflowName)
+          .single()
 
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('workflows')
-        .insert([newWorkflow])
-        .select()
-        .single()
+        if (existingWorkflow) {
+          throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
+        }
 
-      if (error) throw error
+        // Create new workflow
+        const workflowData = {
+          name: workflowName,
+          nodes: nodes,
+          edges: edges,
+          user_id: user.id,
+          updated_at: new Date().toISOString()
+        }
 
-      // Update URL to the new workflow ID
-      router.push(`/builder/${data.id}`)
-      alert('Workflow saved successfully!')
+        const { data, error } = await supabase
+          .from('workflows')
+          .insert([workflowData])
+          .select()
+          .single()
 
-      // After successful save, update cache
-      if (data) {
-        workflowCache.setWorkflow(data)
-        
-        // Update the list cache
-        const listCache = workflowCache.getWorkflowList()
-        if (listCache) {
-          const updatedList = listCache.map(w => 
-            w.id === data.id 
-              ? { id: data.id, name: data.name, updated_at: data.updated_at }
-              : w
-          )
-          workflowCache.setWorkflowList(updatedList)
+        if (error) throw error
+
+        // Update cache first
+        if (data) {
+          workflowCache.setWorkflow(data)
+          
+          // Update the list cache
+          const listCache = workflowCache.getWorkflowList()
+          if (listCache) {
+            const updatedList = [...listCache, { 
+              id: data.id, 
+              name: data.name, 
+              updated_at: data.updated_at 
+            }]
+            workflowCache.setWorkflowList(updatedList)
+          }
+
+          // Set pending navigation and show alert
+          setPendingNavigation(`/builder/${data.id}`)
+          showAlert('Success! 🎉', 'Your workflow has been created successfully.')
         }
       }
-
     } catch (error) {
-      console.error('Error saving workflow:', error)
-      alert(error instanceof Error ? error.message : 'Failed to save workflow')
+      showAlert(
+        'Error Saving Workflow',
+        error instanceof Error ? error.message : 'Failed to save workflow. Please try again.'
+      )
     } finally {
       setIsSaving(false)
     }
@@ -285,66 +400,105 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault()
+
       const type = event.dataTransfer.getData('application/reactflow')
-      if (typeof type === 'undefined' || !type) {
-        return
-      }
+      if (!type) return
 
-      // Prevent adding Start nodes
-      if (type === 'start') {
-        alert('Only one Start node is allowed per workflow')
-        return
-      }
-
-      // Get the current viewport position
-      const { x: viewportX, y: viewportY, zoom } = reactFlowInstance.getViewport()
-      
-      // Calculate the position relative to the viewport
+      // Get the position of the drop relative to the workflow pane
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
+        x: event.clientX - 240, // Adjust for sidebar width
         y: event.clientY,
       })
 
       const newNode: Node = {
-        id: `${type}-${nodes.length + 1}`,
+        id: generateUniqueId(type),  // Use unique ID generator
         type,
         position,
-        data: { label: `${type.charAt(0).toUpperCase() + type.slice(1)}` },
+        data: { label: type.charAt(0).toUpperCase() + type.slice(1) },
       }
 
       setNodes((nds) => nds.concat(newNode))
     },
-    [nodes, setNodes, reactFlowInstance]
+    [reactFlowInstance, setNodes]
   )
 
   const validateWorkflow = () => {
     // Check if workflow has a name
     if (!workflowName.trim()) {
-      throw new Error('Workflow name is required')
+      throw new Error('Please give your workflow a name before saving')
     }
 
-    // Check for minimum required nodes
+    // Check if start node exists
     const startNodes = nodes.filter(node => node.type === 'start')
-    const decisionNodes = nodes.filter(node => node.type === 'decision')
-    const actionNodes = nodes.filter(node => node.type === 'action')
-
     if (startNodes.length === 0) {
-      throw new Error('Workflow must have a Start node')
+      throw new Error('Your workflow needs a Start node - drag one from the sidebar to get started')
     }
-    if (decisionNodes.length === 0) {
-      throw new Error('Workflow must have at least one Decision node')
+
+    // Check for disconnected nodes (except Start node)
+    const disconnectedNodes = nodes.filter(node => {
+      if (node.type === 'start') return false
+      return !isNodeConnected(node.id, edges)
+    })
+
+    if (disconnectedNodes.length > 0) {
+      const nodeTypes = disconnectedNodes.map(node => node.type).join(', ')
+      throw new Error(
+        `Please connect all nodes before saving. Disconnected nodes: ${nodeTypes}`
+      )
     }
-    if (actionNodes.length < 2) {
-      throw new Error('Workflow must have at least two Action nodes')
+
+    // Only check Start node connection if there are other nodes
+    const nonStartNodes = nodes.filter(node => node.type !== 'start')
+    if (nonStartNodes.length > 0) {
+      const startNode = nodes.find(node => node.type === 'start')
+      if (startNode && !isNodeConnected(startNode.id, edges)) {
+        throw new Error('The Start node must be connected when other nodes are present')
+      }
+    }
+
+    // Validate decision nodes
+    const decisionNodes = nodes.filter(node => node.type === 'decision')
+    for (const decisionNode of decisionNodes) {
+      const { outgoing, incoming } = getNodeConnections(decisionNode.id, edges)
+      
+      // Check if decision node has incoming connections
+      if (incoming.length === 0) {
+        throw new Error(`Decision node "${decisionNode.data.label}" must have an incoming connection`)
+      }
+
+      // Check if decision node has exactly two outgoing connections (Yes/No)
+      if (outgoing.length !== 2) {
+        throw new Error(
+          `Decision node "${decisionNode.data.label}" must have exactly two outgoing connections (Yes and No)`
+        )
+      }
+
+      // Check if both paths eventually lead to action nodes
+      const isValidPath = outgoing.every(connection => {
+        const targetNode = nodes.find(node => node.id === connection.target)
+        if (!targetNode) return false
+
+        if (targetNode.type === 'action') return true
+
+        if (targetNode.type === 'decision') {
+          return validateDecisionPath(targetNode.id, edges, nodes, new Set([decisionNode.id]))
+        }
+
+        return false
+      })
+
+      if (!isValidPath) {
+        throw new Error(
+          `Decision node "${decisionNode.data.label}" must have paths that ultimately lead to Action nodes`
+        )
+      }
     }
 
     // Check if all nodes (except Start) have custom text
     const emptyNodes = nodes.filter(node => {
-      // Skip validation for Start node
       if (node.type === 'start') return false
       
       const label = node.data?.label?.trim() || ''
-      // Check if label is empty or just the default text
       return !label || 
              (node.type === 'action' && label === 'Action') ||
              (node.type === 'decision' && label === 'Decision') ||
@@ -352,30 +506,15 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     })
 
     if (emptyNodes.length > 0) {
-      throw new Error('All nodes (except Start) must have custom text content')
-    }
-
-    // Check if all nodes are connected
-    const connectedNodeIds = new Set()
-    edges.forEach(edge => {
-      connectedNodeIds.add(edge.source)
-      connectedNodeIds.add(edge.target)
-    })
-    
-    const disconnectedNodes = nodes.filter(node => !connectedNodeIds.has(node.id))
-    
-    if (disconnectedNodes.length > 0) {
-      throw new Error('All nodes must be connected to the workflow')
-    }
-
-    // Check if start node is connected
-    const startNodeId = startNodes[0].id
-    const isStartConnected = edges.some(edge => edge.source === startNodeId)
-    if (!isStartConnected) {
-      throw new Error('Start node must be connected to the workflow')
+      throw new Error('Please add custom text to all your nodes before saving')
     }
 
     return true
+  }
+
+  const showAlert = (title: string, description: string) => {
+    setAlertMessage({ title, description })
+    setAlertOpen(true)
   }
 
   const onNodeLabelChange = useCallback((nodeId: string, newLabel: string) => {
@@ -406,7 +545,10 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const onNodesDelete = useCallback((nodesToDelete: Node[]) => {
     const hasStartNode = nodesToDelete.some(node => node.type === 'start')
     if (hasStartNode) {
-      alert('The Start node cannot be deleted')
+      showAlert(
+        'Cannot Delete Start Node',
+        'The Start node is required and cannot be deleted'
+      )
       return false
     }
     return true
@@ -428,13 +570,161 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     onNodesChange(safeChanges)
   }, [nodes, onNodesChange])
 
+  // Add loading state for new workflow creation
+  const [isCreating, setIsCreating] = useState(false)
+
+  const addNewWorkflow = async () => {
+    try {
+      setIsCreating(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Please sign in to create a workflow')
+
+      // Get user's tier and current workflow count
+      const { data: tierData, error: tierError } = await supabase
+        .from('user_tiers')
+        .select('pricing_tier, workflow_count')
+        .eq('user_id', user.id)
+        .single()
+
+      if (tierError) throw tierError
+
+      const currentTier = tierData?.pricing_tier || 'hobbyist'
+      const currentCount = tierData?.workflow_count || 0
+      const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
+
+      // Check if user has reached their limit
+      if (currentCount >= tierLimit) {
+        showAlert(
+          'Workflow Limit Reached',
+          `You've reached the maximum limit of ${tierLimit} ${
+            tierLimit === 1 ? 'workflow' : 'workflows'
+          } for your ${currentTier} tier. Please upgrade to create more workflows.`
+        )
+        return
+      }
+
+      // If within limits, create new workflow with unique ID for start node
+      setNodes([
+        {
+          id: generateUniqueId('start'),
+          type: 'start',
+          position: { x: 0, y: 0 },
+          data: { label: 'Start' }
+        }
+      ])
+      setEdges([])
+      setWorkflowName('New Workflow')
+      router.push('/builder')
+    } catch (error) {
+      showAlert(
+        'Error Creating Workflow',
+        error instanceof Error ? error.message : 'Failed to create new workflow'
+      )
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  // Update the AlertDialog to handle navigation
+  const handleAlertClose = () => {
+    setAlertOpen(false)
+    if (pendingNavigation) {
+      router.push(pendingNavigation)
+      setPendingNavigation(null)
+    }
+  }
+
+  const handleWorkflowSelect = useCallback(async (selectedWorkflowId: string) => {
+    try {
+      setIsLoading(true)
+      
+      // Try to get from cache first
+      const cachedWorkflow = workflowCache.getWorkflow(selectedWorkflowId)
+      if (cachedWorkflow) {
+        setNodes(cachedWorkflow.nodes || initialNodes)
+        setEdges(cachedWorkflow.edges || [])
+        setWorkflowName(cachedWorkflow.name)
+        setCurrentWorkflow({
+          id: selectedWorkflowId,
+          name: cachedWorkflow.name,
+          nodes: cachedWorkflow.nodes || initialNodes,
+          edges: cachedWorkflow.edges || []
+        })
+        window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
+        setIsLoading(false)
+        return
+      }
+
+      // Load from database if not in cache
+      const { data: workflow, error } = await supabase
+        .from('workflows')
+        .select('*')
+        .eq('id', selectedWorkflowId)
+        .single()
+
+      if (error) throw error
+
+      // Update state and cache
+      setNodes(workflow.nodes || initialNodes)
+      setEdges(workflow.edges || [])
+      setWorkflowName(workflow.name)
+      setCurrentWorkflow({
+        id: selectedWorkflowId,
+        name: workflow.name,
+        nodes: workflow.nodes || initialNodes,
+        edges: workflow.edges || []
+      })
+      workflowCache.setWorkflow(workflow)
+      window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
+    } catch (error) {
+      console.error('Error loading workflow:', error)
+      setNodes(initialNodes)
+      setEdges([])
+      setWorkflowName('My Workflow')
+      setCurrentWorkflow(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [supabase, setNodes, setEdges, initialNodes])
+
+  // Add these functions
+  const handleChatbotClick = () => {
+    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
+    if (!currentWorkflowId) {
+      console.error('No workflow ID found in URL')
+      return
+    }
+    router.push(`/chat/${currentWorkflowId}`)
+  }
+
+  const handleWidgetClick = () => {
+    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
+    if (!currentWorkflowId) {
+      console.error('No workflow ID found in URL')
+      return
+    }
+    router.push(`/widget/${currentWorkflowId}`)
+  }
+
   return (
     <div className="flex flex-col h-screen">
-      <Header className="z-50" />
+      {/* Add loading overlay */}
+      {(isLoading || isCreating) && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
       <div className="flex flex-1 h-[calc(100vh-64px)] relative">
         <div className="absolute inset-y-0 left-0 w-64 bg-white border-r z-30 flex flex-col">
-          <Sidebar className="flex-1" workflowId={workflowId} />
-          <SavedWorkflows />
+          <Sidebar
+            className="w-64 border-r bg-white"
+            onNewWorkflow={addNewWorkflow}
+            workflowId={workflowId}
+            isCreating={isCreating}
+            onSaveWorkflow={saveWorkflow}
+          />
+          <SavedWorkflows onWorkflowSelect={handleWorkflowSelect} />
         </div>
         <div className="flex-grow flex flex-col ml-64 relative">
           {isLoading ? (
@@ -443,6 +733,47 @@ function Flow({ workflowId }: WorkflowEditorProps) {
             </div>
           ) : (
             <>
+              <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Button>
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  Home
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await supabase.auth.signOut()
+                    router.push('/')
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}
+                  className="flex items-center gap-2"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
+
               <div className="flex-1 relative">
                 <ReactFlow
                   nodes={nodes}
@@ -455,28 +786,25 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   nodeTypes={nodeTypes}
                   nodesDraggable={true}
                   defaultViewport={defaultViewport}
+                  proOptions={proOptions}
                   fitView
                 >
                   <Controls />
                   <MiniMap />
                   <Background variant="dots" gap={12} size={1} />
-                  <Button
-                    className="absolute top-4 right-4 bg-white"
-                    onClick={() => reactFlowInstance.fitView({ padding: 0.2 })}
-                    size="sm"
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
                 </ReactFlow>
               </div>
               <div className="flex justify-between items-center p-4 bg-white border-t">
-                <input
-                  type="text"
-                  value={workflowName}
-                  onChange={(e) => setWorkflowName(e.target.value)}
-                  className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter workflow name..."
-                />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-500">Current Workflow</span>
+                  <input
+                    type="text"
+                    value={workflowName}
+                    onChange={(e) => setWorkflowName(e.target.value)}
+                    className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-800"
+                    placeholder="Enter workflow name..."
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button 
                     onClick={saveWorkflow} 
@@ -487,7 +815,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     {isSaving ? 'Saving...' : 'Save'}
                   </Button>
                   <Button
-                    onClick={() => router.push(`/chat/${workflowId}`)}
+                    onClick={handleChatbotClick}
                     disabled={!workflowId}
                     className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
                   >
@@ -495,7 +823,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     See Live Chatbot
                   </Button>
                   <Button
-                    onClick={() => router.push(`/widget/${workflowId}`)}
+                    onClick={handleWidgetClick}
                     disabled={!workflowId}
                     className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
                   >
@@ -508,6 +836,21 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           )}
         </div>
       </div>
+      <AlertDialog open={alertOpen} onOpenChange={handleAlertClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleAlertClose}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

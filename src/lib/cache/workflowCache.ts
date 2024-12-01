@@ -7,6 +7,7 @@ interface CachedWorkflow {
   edges: any[]
   updated_at: string
   user_id: string
+  context: string
 }
 
 interface WorkflowListItem {
@@ -30,12 +31,22 @@ interface FAQ {
   updated_at: string
 }
 
+interface DashboardStats {
+  activeChatbots: number
+  totalChats: number
+  averageResponseTime: number
+  responseRate: number
+  timestamp: number
+}
+
 const CACHE_PREFIX = 'workflow_'
 const LIST_CACHE_KEY = 'workflow_list'
 const METADATA_KEY = 'workflow_metadata_'
 const CACHE_DURATION = 1000 * 60 * 30 // 30 minutes
 const MAX_CACHE_SIZE = 4 * 1024 * 1024 // 4MB limit (leaving room for other localStorage usage)
 const FAQ_CACHE_PREFIX = 'faq_'
+const DASHBOARD_CACHE_KEY = 'dashboard_stats'
+const DASHBOARD_CACHE_DURATION = 1000 * 60 * 5 // 5 minutes for dashboard stats
 
 export const workflowCache = {
   // Get the current cache size
@@ -173,22 +184,18 @@ export const workflowCache = {
     try {
       const cached = localStorage.getItem(LIST_CACHE_KEY)
       if (!cached) {
-        logger.log('info', 'cache', 'Cache miss for workflow list')
         return null
       }
 
       const metadata = workflowCache.getMetadata('list')
       if (!metadata || Date.now() - metadata.timestamp > CACHE_DURATION) {
-        logger.log('info', 'cache', 'Cache expired for workflow list')
         localStorage.removeItem(LIST_CACHE_KEY)
         localStorage.removeItem(`${METADATA_KEY}list`)
         return null
       }
 
-      logger.log('info', 'cache', 'Cache hit for workflow list')
       return JSON.parse(cached).data
     } catch {
-      logger.log('error', 'cache', 'Error reading workflow list from cache')
       return null
     }
   },
@@ -309,6 +316,79 @@ export const workflowCache = {
       logger.log('info', 'cache', `Removed FAQs for workflow ${workflowId} from cache`)
     } catch (error) {
       logger.log('error', 'cache', `Failed to remove FAQs for workflow ${workflowId} from cache`)
+    }
+  },
+
+  // Get dashboard stats from cache
+  getDashboardStats: (): DashboardStats | null => {
+    try {
+      const cached = localStorage.getItem(DASHBOARD_CACHE_KEY)
+      if (!cached) {
+        logger.log('info', 'cache', 'Cache miss for dashboard stats')
+        return null
+      }
+
+      const data = JSON.parse(cached)
+      
+      // Check if cache is expired (using shorter duration for dashboard)
+      if (Date.now() - data.timestamp > DASHBOARD_CACHE_DURATION) {
+        logger.log('info', 'cache', 'Cache expired for dashboard stats')
+        localStorage.removeItem(DASHBOARD_CACHE_KEY)
+        return null
+      }
+
+      logger.log('info', 'cache', 'Cache hit for dashboard stats')
+      return data
+    } catch {
+      logger.log('error', 'cache', 'Error reading dashboard stats from cache')
+      return null
+    }
+  },
+
+  // Set dashboard stats in cache
+  setDashboardStats: (stats: Omit<DashboardStats, 'timestamp'>) => {
+    try {
+      const data = {
+        ...stats,
+        timestamp: Date.now()
+      }
+
+      const size = JSON.stringify(data).length
+      
+      if (!workflowCache.cleanupCache(size)) {
+        logger.log('warn', 'cache', 'Insufficient storage space for dashboard stats')
+        return
+      }
+
+      localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data))
+      workflowCache.setMetadata('dashboard', size)
+      logger.log('info', 'cache', `Cached dashboard stats (${size} bytes)`)
+    } catch (error) {
+      logger.log('error', 'cache', 'Failed to cache dashboard stats')
+    }
+  },
+
+  // Get context for a workflow
+  getWorkflowContext: (workflowId: string): string | null => {
+    try {
+      const workflow = workflowCache.getWorkflow(workflowId)
+      return workflow?.context || null
+    } catch (error) {
+      console.error('Error getting workflow context from cache:', error)
+      return null
+    }
+  },
+
+  // Update context for a workflow
+  updateWorkflowContext: (workflowId: string, context: string) => {
+    try {
+      const workflow = workflowCache.getWorkflow(workflowId)
+      if (workflow) {
+        workflow.context = context
+        workflowCache.setWorkflow(workflow)
+      }
+    } catch (error) {
+      console.error('Error updating workflow context in cache:', error)
     }
   }
 } 

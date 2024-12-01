@@ -1,51 +1,110 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Code, Globe, MessageSquare, Palette, BarChart } from 'lucide-react'
-
-const features = [
-  {
-    title: 'Easy Integration',
-    description: 'Add to your website with a single JavaScript snippet.',
-    icon: Code,
-  },
-  {
-    title: 'Multilingual Support',
-    description: 'Engage customers in their preferred language.',
-    icon: Globe,
-  },
-  {
-    title: 'AI-Powered Conversations',
-    description: 'Smart responses powered by advanced AI models.',
-    icon: MessageSquare,
-  },
-  {
-    title: 'Customizable Look and Feel',
-    description: 'Tailor colors, themes, and messages to your brand.',
-    icon: Palette,
-  },
-  {
-    title: 'Real-Time Analytics',
-    description: 'Track queries, interactions, and unresolved tickets.',
-    icon: BarChart,
-  },
-]
+import { Code2, MousePointer2, BarChart3, Sparkles, Globe, LogIn, Zap } from 'lucide-react'
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
-      <div className="container mx-auto px-4 md:px-6">
-        <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <feature.icon className="w-10 h-10 text-blue-500 mb-2" />
-                <CardTitle>{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{feature.description}</CardDescription>
-              </CardContent>
-            </Card>
-          ))}
+    <section id="features" className="w-full py-24 bg-gradient-to-b from-white to-gray-50">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-600">Only. Relevant. Features.</span>
+          </div>
+          <h2 className="text-4xl font-bold mb-6">Why Choose AnswerlyAI?</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Building chatbots shouldn't be rocket science. We've simplified everything
+            while keeping all the power you need.
+          </p>
+          <div className="bg-gray-50 p-6 rounded-2xl max-w-3xl mx-auto">
+            <p className="text-lg text-gray-700 italic">
+              "Over 90% of users never touch 70% of features in typical tools—we’re different: AnswerlyAI offers only the most relevant, simple-to-use features you actually need."
+            </p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* No Code Required */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+              <Code2 className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Zero Code Required</h3>
+            <p className="text-gray-600">
+              Focus on what matters - your customers. No coding knowledge needed.
+              We handle all the technical complexities behind the scenes.
+            </p>
+          </div>
+
+          {/* Multiple Setup Options */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+              <MousePointer2 className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Your Way, Your Choice</h3>
+            <p className="text-gray-600">
+              Type it out, import your website content, or create visual flowcharts.
+              Choose the method that works best for you. We support all approaches.
+            </p>
+          </div>
+
+          {/* Real-time Analytics */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+              <BarChart3 className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Real-Time Analytics</h3>
+            <p className="text-gray-600">
+              Watch your chatbot perform in real-time. Track user interactions,
+              satisfaction rates, and identify areas for improvement instantly.
+            </p>
+          </div>
+
+          {/* Simple UI */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
+              <Sparkles className="w-6 h-6 text-yellow-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Intuitive Interface</h3>
+            <p className="text-gray-600">
+              A clean, simple interface that just makes sense. No overwhelming menus
+              or confusing options. Everything you need, right where you expect it.
+            </p>
+          </div>
+
+          {/* Easy Integration */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+              <Globe className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">One-Line Integration</h3>
+            <p className="text-gray-600">
+              Add your chatbot to any website with a single line of code.
+              Copy, paste, and you're ready to go. It's that simple.
+            </p>
+          </div>
+
+          {/* Quick Start */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
+              <LogIn className="w-6 h-6 text-indigo-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Instant Access</h3>
+            <p className="text-gray-600">
+              Sign up with Google and start building immediately. No credit card required.
+              Try all features free and upgrade only when you're ready.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
+            <Zap className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-600">Get Started in Minutes</span>
+          </div>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Join dozens of businesses already using AnswerlyAI to transform their
+            customer support experience.
+          </p>
         </div>
       </div>
     </section>

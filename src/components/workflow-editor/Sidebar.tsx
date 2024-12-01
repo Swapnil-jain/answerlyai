@@ -1,15 +1,24 @@
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle, MessageSquare } from 'lucide-react'
+import { PlusCircle, MessageSquare, Settings, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { useSupabase } from '@/lib/supabase/provider'
+import { workflowCache } from '@/lib/cache/workflowCache'
+import WebsiteCrawler from './WebsiteCrawler'
 
 interface SidebarProps {
   className?: string
   workflowId: string
+  onNewWorkflow: () => void
+  isCreating?: boolean
+  onSaveWorkflow?: () => Promise<void>
 }
 
-export default function Sidebar({ className = '', workflowId }: SidebarProps) {
+export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow }: SidebarProps) {
   const router = useRouter()
-  
+  const { supabase } = useSupabase()
+
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType)
     event.dataTransfer.effectAllowed = 'move'
@@ -24,29 +33,90 @@ export default function Sidebar({ className = '', workflowId }: SidebarProps) {
       console.error('No workflow ID available')
       return
     }
-    router.push(`/faq/${workflowId}`)
+    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
+    if (!currentWorkflowId) {
+      console.error('No workflow ID found in URL')
+      return
+    }
+    window.location.href = `/faq/${currentWorkflowId}`
+  }
+
+  const handleContextClick = () => {
+    if (!workflowId) {
+      console.error('No workflow ID available')
+      return
+    }
+    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
+    if (!currentWorkflowId) {
+      console.error('No workflow ID found in URL')
+      return
+    }
+    window.location.href = `/context/${currentWorkflowId}`
   }
 
   return (
-    <div className={`flex flex-col h-full ${className} pt-20`}>
+    <div className={`flex flex-col h-full ${className}`}>
+      <div className="flex-none p-4 border-b bg-white">
+        <div className="flex flex-col items-center space-y-2">
+          <span 
+            className="text-2xl font-bold text-blue-600 cursor-pointer hover:text-blue-700"
+            onClick={() => router.push('/')}
+          >
+            AnswerlyAI
+          </span>
+          <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+            <Sparkles className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-medium text-blue-600">Only What You Need.</span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex-none p-4 border-b bg-white space-y-2">
         <Button 
-          onClick={handleNewWorkflow}
+          onClick={onNewWorkflow}
           className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white"
           size="sm"
+          disabled={isCreating}
         >
-          <PlusCircle className="h-4 w-4" />
-          New Workflow
+          {isCreating ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <PlusCircle className="h-4 w-4" />
+              New Workflow
+            </>
+          )}
         </Button>
-        <Button 
+        <Button
           onClick={handleFAQClick}
-          className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white"
+          variant="ghost"
           size="sm"
+          className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white"
           disabled={!workflowId}
+          title={!workflowId ? "Save your workflow first to manage FAQs" : ""}
         >
           <MessageSquare className="h-4 w-4" />
-          Manage FAQs
+          {!workflowId ? "Save First to Manage FAQs" : "Manage FAQs"}
         </Button>
+        <Button 
+          onClick={handleContextClick}
+          className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
+          size="sm"
+          disabled={!workflowId}
+          title={!workflowId ? "Save your workflow first to set context" : ""}
+        >
+          <Settings className="h-4 w-4" />
+          {!workflowId ? "Save First to Set Context" : "Chatbot Context"}
+        </Button>
+        <WebsiteCrawler 
+          workflowId={workflowId} 
+          disabled={!workflowId}
+          title={!workflowId ? "Save your workflow first to import content" : ""}
+          onSaveWorkflow={onSaveWorkflow}
+        />
       </div>
       
       <div className="flex-1 overflow-y-auto">

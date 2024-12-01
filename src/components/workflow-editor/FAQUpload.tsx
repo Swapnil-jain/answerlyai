@@ -8,6 +8,15 @@ import { useSupabase } from '@/lib/supabase/provider'
 import { useRouter } from 'next/navigation'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { logger } from '@/lib/utils/logger'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 
 interface FAQ {
   id?: string
@@ -21,14 +30,35 @@ interface FAQ {
 
 interface FAQUploadProps {
   workflowId: string;
+  onSaveWorkflow?: () => Promise<void>
 }
 
-export default function FAQUpload({ workflowId }: FAQUploadProps) {
+// Add this custom styled input component
+const FileInput = ({ onChange }: { onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+  <div className="relative">
+    <input
+      type="file"
+      accept=".csv"
+      onChange={onChange}
+      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+    />
+    <div className="bg-cyan-500 hover:bg-cyan-600 text-white rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2">
+      <Plus className="w-4 h-4" />
+      Choose CSV File
+    </div>
+  </div>
+)
+
+export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps) {
   const { supabase } = useSupabase()
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const router = useRouter()
+  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string } | null>(null)
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showUnsavedAlert, setShowUnsavedAlert] = useState(false)
 
   // Move the initial fetch to useEffect instead of calling directly
   useEffect(() => {
@@ -69,7 +99,11 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
       }
     } catch (error) {
       logger.log('error', 'database', 'Failed to load FAQs: ' + error)
-      alert('Failed to load FAQs')
+      setAlertMessage({
+        title: 'Error Loading FAQs',
+        description: 'Failed to load FAQs. Please try again.'
+      })
+      setAlertOpen(true)
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +140,11 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
           fetchFAQs()
         } catch (error) {
           console.error('Error saving FAQs:', error)
-          alert('Failed to save FAQs')
+          setAlertMessage({
+            title: 'Error Uploading FAQs',
+            description: 'Failed to upload FAQs. Please check your file format and try again.'
+          })
+          setAlertOpen(true)
         } finally {
           setIsSaving(false)
         }
@@ -148,7 +186,21 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
       setFaqs(currentFaqs => currentFaqs.filter(faq => faq.id !== id))
     } catch (error) {
       logger.log('error', 'database', 'Failed to delete FAQ: ' + error)
-      alert('Failed to delete FAQ')
+      setAlertMessage({
+        title: 'Error Deleting FAQ',
+        description: 'Failed to delete FAQ. Please try again.'
+      })
+      setAlertOpen(true)
+    }
+  }
+
+  const handleFAQChange = (id: string, field: 'question' | 'answer', value: string) => {
+    const newFaqs = [...faqs]
+    const index = newFaqs.findIndex(f => f.id === id)
+    if (index !== -1) {
+      newFaqs[index][field] = value
+      setFaqs(newFaqs)
+      setHasUnsavedChanges(true)
     }
   }
 
@@ -183,12 +235,34 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
       logger.log('info', 'database', 'FAQs saved successfully')
       
       fetchFAQs() // Refresh the list
-      alert('FAQs saved successfully!')
+      setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
+      setAlertMessage({
+        title: 'FAQs Saved',
+        description: 'Your FAQs have been saved successfully!'
+      })
+      setAlertOpen(true)
+
+      // After successful FAQ save
+      if (onSaveWorkflow) {
+        await onSaveWorkflow()
+      }
     } catch (error) {
       logger.log('error', 'database', 'Failed to save FAQs: ' + error)
-      alert('Failed to save FAQs')
+      setAlertMessage({
+        title: 'Error Saving FAQs',
+        description: 'Failed to save FAQs. Please try again.'
+      })
+      setAlertOpen(true)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedAlert(true)
+    } else {
+      router.push(`/builder/${workflowId}`)
     }
   }
 
@@ -208,7 +282,7 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">FAQ Management for Workflow</h2>
             <Button
-              onClick={() => router.push(`/builder/${workflowId}`)}
+              onClick={handleBackClick}
               className="flex items-center gap-2"
             >
               « Back to Workflow Editor
@@ -234,22 +308,17 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Manage FAQs</h2>
             <div className="flex gap-3">
-              <Input 
-                type="file" 
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="w-[200px]"
-              />
+              <FileInput onChange={handleFileUpload} />
               <Button
                 onClick={addNewFAQ}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white"
               >
                 <Plus className="w-4 h-4" /> Add FAQ
               </Button>
               <Button
                 onClick={saveFAQs}
                 disabled={isSaving}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white"
               >
                 <Save className="w-4 h-4" />
                 {isSaving ? 'Saving...' : 'Save All'}
@@ -273,14 +342,7 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
                       <Input
                         className="w-full"
                         value={faq.question}
-                        onChange={(e) => {
-                          const newFaqs = [...faqs]
-                          const index = newFaqs.findIndex(f => f.id === faq.id)
-                          if (index !== -1) {
-                            newFaqs[index].question = e.target.value
-                            setFaqs(newFaqs)
-                          }
-                        }}
+                        onChange={(e) => handleFAQChange(faq.id, 'question', e.target.value)}
                         placeholder="Enter question..."
                       />
                     </td>
@@ -288,14 +350,7 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
                       <Input
                         className="w-full"
                         value={faq.answer}
-                        onChange={(e) => {
-                          const newFaqs = [...faqs]
-                          const index = newFaqs.findIndex(f => f.id === faq.id)
-                          if (index !== -1) {
-                            newFaqs[index].answer = e.target.value
-                            setFaqs(newFaqs)
-                          }
-                        }}
+                        onChange={(e) => handleFAQChange(faq.id, 'answer', e.target.value)}
                         placeholder="Enter answer..."
                       />
                     </td>
@@ -316,6 +371,51 @@ export default function FAQUpload({ workflowId }: FAQUploadProps) {
           </div>
         </div>
       </div>
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertOpen(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved FAQs. Would you like to save your changes before leaving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUnsavedAlert(false)
+                router.push(`/builder/${workflowId}`)
+              }}
+            >
+              Discard Changes
+            </Button>
+            <Button
+              onClick={async () => {
+                await saveFAQs()
+                router.push(`/builder/${workflowId}`)
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Save & Exit
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 

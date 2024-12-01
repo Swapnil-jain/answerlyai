@@ -31,7 +31,6 @@ export async function POST(
     const headersList = await headers();
     const origin = headersList.get('origin') || '*';
     
-    // Await params before accessing workflowId
     const resolvedParams = await context.params;
     const workflowId = resolvedParams?.workflowId;
 
@@ -40,157 +39,179 @@ export async function POST(
     }
 
     const { message, history = [] } = await request.json();
-    console.log('Processing chat request:', { message, workflowId });
 
-    // Verify workflow exists first
-    const { data: workflowExists, error: checkError } = await supabase
-      .from('workflows')
-      .select('id')
-      .eq('id', workflowId);
-
-    if (checkError || !workflowExists?.length) {
-      console.error('Workflow does not exist:', workflowId);
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          message: `Workflow with ID ${workflowId} not found. Please create a workflow first.`,
-        }),
-        {
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-          },
-        }
-      );
-    }
-
-    // Fetch full workflow data
+    // Get workflow data from Supabase
     const { data: workflow, error: workflowError } = await supabase
       .from('workflows')
       .select('*')
       .eq('id', workflowId)
       .single();
 
-    if (workflowError) {
-      console.error('Workflow fetch error:', workflowError);
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          message: 'Workflow not found. Please check the workflow ID.',
-        }),
-        {
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-          },
-        }
-      );
-    }
+    if (workflowError) throw workflowError
 
-    // Fetch FAQs for this workflow's user
-    const { data: faqs, error: faqError } = await supabase
+    // Get FAQs for this workflow
+    const { data: faqData, error: faqError } = await supabase
       .from('faqs')
       .select('*')
-      .eq('user_id', workflow.user_id);
+      .eq('workflow_id', workflowId)
 
-    if (faqError) {
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          message: 'Error fetching FAQs',
-        }),
-        {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-          },
-        }
-      );
-    }
+    if (faqError) throw faqError
 
-    // Extract scenario contexts from the workflow
-    const scenarioContexts: ScenarioContext[] = workflow.nodes
-      .filter((node: Node) => node.type === 'scenario')
-      .map((scenario: Node) => {
-        const connectedDecision = workflow.edges.find(
-          (edge: Edge) => edge.source === scenario.id
-        )?.target;
+    // Improved scenario and decision mapping
+    const decisionFlows = workflow.nodes
+      ?.filter((node: any) => node.type === "start")
+      .map((startNode: any) => {
+        // Get all immediate decision nodes connected to start
+        const connectedDecisions = workflow.edges
+          ?.filter((edge: any) => edge.source === startNode.id)
+          .map((edge: any) => {
+            const decisionNode = workflow.nodes?.find(
+              (node: any) => node.id === edge.target && node.type === "decision"
+            )
+            if (!decisionNode) return null
 
-        const decisionNode = workflow.nodes.find(
-          (node: Node) => node.id === connectedDecision
-        );
+            // Get scenarios connected to this decision
+            const scenarios = workflow.edges
+              ?.filter((e: any) => e.target === decisionNode.id)
+              .map((e: any) => {
+                const scenarioNode = workflow.nodes?.find(
+                  (n: any) => n.id === e.source && n.type === "scenario"
+                )
+                return scenarioNode?.data.label
+              })
+              .filter(Boolean)
 
-        return {
-          scenario: scenario.data.label,
-          decision: decisionNode?.data.label,
-        };
-      });
+            // Get actions based on yes/no paths
+            const yesAction = workflow.edges
+              ?.find((e: any) => e.source === decisionNode.id && e.sourceHandle === "yes")
+            const noAction = workflow.edges
+              ?.find((e: any) => e.source === decisionNode.id && e.sourceHandle === "no")
 
-    // Create the system prompt
-    const systemPrompt = `You are Cora, a customer service assistant. You are configured with the following information:  
+            const yesActionNode = workflow.nodes?.find(
+              (n: any) => n.id === yesAction?.target && n.type === "action"
+            )
+            const noActionNode = workflow.nodes?.find(
+              (n: any) => n.id === noAction?.target && n.type === "action"
+            )
 
-    ### Workflow Structure:  
-    ${JSON.stringify(workflow, null, 2)}  
+            return {
+              decision: decisionNode.data.label,
+              scenarios: scenarios,
+              actions: {
+                yes: yesActionNode?.data.label,
+                no: noActionNode?.data.label
+              }
+            }
+          })
+          .filter(Boolean)
 
-    ### FAQs:  
-    ${JSON.stringify(faqs, null, 2)}  
+        return connectedDecisions
+      })
+      .flat()
 
-    ### Scenario Contexts:  
-    ${scenarioContexts
-      ?.map(
-        (ctx) =>
-          `When: ${ctx.scenario}
-      Then ask: ${ctx.decision}`
-      )
-      .join('\n')}  
-
-    ### Rules for Interaction:  
-    1. First check if the user's question matches any FAQ and respond with the FAQ answer if found
-    2. If no FAQ matches, follow the workflow structure to guide the conversation
-    3. For decision nodes, ask the user the question to determine the path
-    4. For action nodes, execute the described action and ask if there's anything else needed
-    5. Keep responses concise, friendly, and professional
-    6. Use appropriate spacing and formatting in responses
-    7. If a request is outside the workflow or FAQs, politely explain the limitations
-
-    ### Current Conversation History:  
-    ${history.map((msg: { role: string; content: string }) => 
-      `${msg.role}: ${msg.content}`
-    ).join('\n')}`;
-
-    // Get response from Groq
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: systemPrompt,
+          content: `You are Cora, a customer service assistant. You are configured with the following information:  
+
+          ### Custom Context:
+          ${workflow.context || ''}
+
+          ### Decision Flows:
+          ${decisionFlows.map((flow: any) => `
+          Decision: "${flow.decision}"
+          Related Scenarios: ${flow.scenarios.map((s: string) => `"${s}"`).join(', ')}
+          Actions:
+            - If Yes: ${flow.actions.yes || 'No action specified'}
+            - If No: ${flow.actions.no || 'No action specified'}
+          `).join('\n')}
+
+          ### FAQs:  
+          ${faqData?.map((faq: any) => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n')}
+
+          ### Primary Rules:
+          1. **FAQ Handling**:
+             - First, check if the user's question matches any FAQ
+             - If there's a match, respond with the FAQ's answer
+
+          2. **Workflow Execution**:
+             - If no FAQ matches, follow the workflow structure explicitly
+             - Navigate nodes and edges as defined in the workflow
+
+          3. **Decision Nodes**:
+             - For decision nodes, always prompt the user with a yes/no question to progress
+
+          4. **Action Nodes**:
+             - When reaching an action node:
+               - Execute the described action
+               - Follow up by asking, "Is there anything else I can help with?"
+
+          5. **Explaining Capabilities**:
+             - If asked "What can you do?", summarize abilities in a friendly, concise manner
+             - Focus on key areas based on workflow structure and FAQs
+             - Example: "Hi! I'm here to help with: 1. [Service Area] 2. [Service Area]"
+
+          ### Enhanced User Interaction Rules:
+          6. **Clarity and Format**:
+             - Use appropriate spacing and line breaks
+             - Avoid long paragraphs
+             - Use bullet points instead of numbers in responses
+             - Ask clarifying questions for ambiguous inputs
+
+          7. **Context Awareness**:
+             - Maintain conversation continuity
+             - Reference previous messages when appropriate
+
+          8. **Error Handling**:
+             - For invalid inputs, gently prompt for rephrasing
+             - Example: "I didn't quite understand that. Could you try rephrasing?"
+
+          9. **Fallback Behavior**:
+             - If no workflow path or FAQ matches:
+               - Apologize and offer to connect with human support
+               - Example: "I'm sorry, I can't assist with that. Would you like me to connect you with a human agent?"
+
+          ### Behavioral Guidelines:
+          10. **Politeness and Empathy**:
+              - Maintain politeness and patience
+              - Show empathy during user frustration
+              - Example: "I understand this can be frustrating. Let me help you with that."
+
+          11. **Response Quality**:
+              - Keep responses concise and professional
+              - Use friendly tone without unnecessary embellishments
+              - Avoid redundancy in responses
+
+          12. **Data Privacy**:
+              - Never ask for sensitive personal information unless workflow-critical
+
+          13. **Problem Resolution**:
+              - If unable to solve a problem:
+                - Apologize and offer human agent connection
+                - Example: "I'm sorry, but I'm unable to assist with that. I'll connect you with a human agent who can help you further."
+
+          Remember to:
+          - Stay within the defined workflow structure
+          - Use the custom context for accurate information
+          - Maintain a helpful and professional tone
+          - Always follow up to ensure user satisfaction`
         },
-        {
-          role: 'user',
-          content: message,
-        },
+        ...history,
+        { role: 'user', content: message }
       ],
       model: 'mixtral-8x7b-32768',
       temperature: 0.5,
       max_tokens: 1024,
-    });
-
-    const response = completion.choices[0]?.message?.content || 
-      "I apologize, but I couldn't generate a response. Please try again.";
+      top_p: 1,
+      stream: false,
+    })
 
     return new NextResponse(
       JSON.stringify({
         success: true,
-        response
+        response: completion.choices[0]?.message?.content || 'No response generated',
+        source: 'llm'
       }), 
       {
         headers: {
@@ -200,7 +221,7 @@ export async function POST(
           'Access-Control-Allow-Headers': 'Content-Type',
         },
       }
-    );
+    )
 
   } catch (error) {
     console.error('Chat API Error:', error);

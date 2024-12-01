@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Facebook, Twitter, Linkedin, Instagram } from 'lucide-react'
+import {Twitter, Linkedin, Instagram } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -15,22 +15,20 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="#features" className="text-sm text-gray-500 hover:text-blue-600">Features</Link></li>
               <li><Link href="#pricing" className="text-sm text-gray-500 hover:text-blue-600">Pricing</Link></li>
-              <li><Link href="#" className="text-sm text-gray-500 hover:text-blue-600">About Us</Link></li>
+              <li><Link href="/builder" className="text-sm text-gray-500 hover:text-blue-600">Try Now</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Legal</h3>
             <ul className="space-y-2">
-              <li><Link href="#" className="text-sm text-gray-500 hover:text-blue-600">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-sm text-gray-500 hover:text-blue-600">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="text-sm text-gray-500 hover:text-blue-600">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-sm text-gray-500 hover:text-blue-600">Terms of Service</Link></li>
+              <li><Link href="/refund" className="text-sm text-gray-500 hover:text-blue-600">Refund Policy</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Connect</h3>
             <div className="flex space-x-4">
-              <Link href="#" className="text-gray-500 hover:text-blue-600">
-                <Facebook className="w-5 h-5" />
-              </Link>
               <Link href="#" className="text-gray-500 hover:text-blue-600">
                 <Twitter className="w-5 h-5" />
               </Link>
@@ -40,6 +38,11 @@ export default function Footer() {
               <Link href="#" className="text-gray-500 hover:text-blue-600">
                 <Instagram className="w-5 h-5" />
               </Link>
+            </div>
+            <div className="mt-4">
+              <a href="mailto:answerlyai.cloud@gmail.com" className="text-sm text-gray-500 hover:text-blue-600">
+              answerlyai.cloud@gmail.com
+              </a>
             </div>
           </div>
         </div>
