@@ -1,7 +1,7 @@
 'use client'
 
 import 'reactflow/dist/style.css'
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import ReactFlow, {
   addEdge,
   MiniMap,
@@ -57,19 +57,19 @@ const nodeDefaultStyle = {
   borderRadius: '5px',
 }
 
-// Define node components with memo
+// Move these outside the component
 const MemoizedStartNode = React.memo(StartNode)
 const MemoizedDecisionNode = React.memo(DecisionNode)
 const MemoizedActionNode = React.memo(ActionNode)
 const MemoizedScenarioNode = React.memo(ScenarioNode)
 
-// Define nodeTypes with useMemo
-const createNodeTypes = () => ({
+// Create nodeTypes outside the component
+const nodeTypes = {
   start: MemoizedStartNode,
   decision: MemoizedDecisionNode,
   action: MemoizedActionNode,
   scenario: MemoizedScenarioNode,
-})
+}
 
 const initialNodes: Node[] = [
   {
@@ -163,14 +163,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const router = useRouter()
   const { supabase } = useSupabase()
   const [alertOpen, setAlertOpen] = useState(false)
-  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string }>({
+  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string; type: 'success' | 'navigation' }>({
     title: '',
-    description: ''
+    description: '',
+    type: 'success'
   })
   const [workflowToOverwrite, setWorkflowToOverwrite] = useState<string | null>(null)
-
-  // Memoize nodeTypes
-  const nodeTypes = useMemo(() => createNodeTypes(), [])
 
   // Add this state to track if we should navigate after alert closes
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
@@ -183,8 +181,72 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     edges: Edge[];
   } | null>(null)
 
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(workflowId)
+
+  // Update currentWorkflowId when workflowId prop changes
+  useEffect(() => {
+    setCurrentWorkflowId(workflowId)
+  }, [workflowId])
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Add a ref to track initial load
+  const isInitialLoad = useRef(true)
+
+  // Add a ref to track if this is a fresh page load
+  const isFreshLoad = useRef(true)
+
+  // Add refs to store initial values
+  const initialNodesRef = useRef<Node[]>([])
+  const initialEdgesRef = useRef<Edge[]>([])
+  const initialNameRef = useRef('')
+
+  // Add a ref to track mounted state
+  const isMounted = useRef(false)
+
+  // Update the effect to track changes
+  useEffect(() => {
+    // Skip if not mounted yet or loading
+    if (!isMounted.current || isLoading) {
+      return
+    }
+
+    // Compare current values with initial values
+    const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(initialNodesRef.current)
+    const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(initialEdgesRef.current)
+    const hasNameChange = workflowName !== initialNameRef.current
+
+    setHasUnsavedChanges(hasNodeChanges || hasEdgeChanges || hasNameChange)
+  }, [nodes, edges, workflowName, isLoading])
+
+  // Add effect to handle mounting and initial state
+  useEffect(() => {
+    isMounted.current = true
+    
+    // Set initial values on mount or when workflow changes
+    if (workflowId) {
+      handleWorkflowSelect(workflowId)
+    }
+
+    return () => {
+      isMounted.current = false
+    }
+  }, [workflowId])
+
+  // Add an effect to handle page refresh
+  useEffect(() => {
+    if (workflowId && isFreshLoad.current) {
+      handleWorkflowSelect(workflowId)
+    }
+  }, [workflowId])
+
+  const showAlert = (title: string, description: string, type: 'success' | 'navigation' = 'success') => {
+    setAlertMessage({ title, description, type })
+    setAlertOpen(true)
+  }
+
   const saveWorkflow = async () => {
-    if (isSaving) return
+    if (isSaving) return false
     
     try {
       validateWorkflow()
@@ -209,31 +271,13 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       const currentCount = tierData?.workflow_count || 0
       const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
 
-      // Check if user has reached their limit (only for new workflows)
-      if (!workflowId && currentCount >= tierLimit) {
-        throw new Error(
-          `You've reached the maximum limit of ${tierLimit} ${
-            tierLimit === 1 ? 'workflow' : 'workflows'
-          } for your ${currentTier} tier. Please upgrade to create more workflows.`
-        )
-      }
+      // Add debug logs
+      console.log('Save workflow:', { workflowId, currentWorkflowId, isNewWorkflow: !workflowId })
 
-      // If we have a workflowId, this is an existing workflow
-      if (workflowId) {
-        // First check if this name already exists for a different workflow
-        const { data: existingWorkflow } = await supabase
-          .from('workflows')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('name', workflowName)
-          .neq('id', workflowId) // Important: exclude current workflow
-          .single()
+      // If we have a workflowId or currentWorkflowId, this is an existing workflow
+      if (currentWorkflowId) {
+        console.log('Updating existing workflow:', currentWorkflowId)
 
-        if (existingWorkflow) {
-          throw new Error(`A workflow with the name "${workflowName}" already exists. Please choose a different name.`)
-        }
-
-        // Update existing workflow
         const { data, error } = await supabase
           .from('workflows')
           .update({
@@ -242,7 +286,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
             edges: edges,
             updated_at: new Date().toISOString()
           })
-          .eq('id', workflowId)
+          .eq('id', currentWorkflowId)
           .select()
           .single()
 
@@ -269,9 +313,22 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         }
 
         showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
+        setHasUnsavedChanges(false)
+        return true
       } else {
         // This is a new workflow
-        // Check if a workflow with this name already exists
+        console.log('Creating new workflow')
+
+        // Check tier limit
+        if (currentCount >= tierLimit) {
+          throw new Error(
+            `You've reached the maximum limit of ${tierLimit} ${
+              tierLimit === 1 ? 'workflow' : 'workflows'
+            } for your ${currentTier} tier. Please upgrade to create more workflows.`
+          )
+        }
+
+        // Check for name conflicts
         const { data: existingWorkflow } = await supabase
           .from('workflows')
           .select('id, name')
@@ -300,11 +357,10 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) throw error
 
-        // Update cache first
+        // Rest of new workflow creation code...
         if (data) {
           workflowCache.setWorkflow(data)
           
-          // Update the list cache
           const listCache = workflowCache.getWorkflowList()
           if (listCache) {
             const updatedList = [...listCache, { 
@@ -315,16 +371,18 @@ function Flow({ workflowId }: WorkflowEditorProps) {
             workflowCache.setWorkflowList(updatedList)
           }
 
-          // Set pending navigation and show alert
           setPendingNavigation(`/builder/${data.id}`)
           showAlert('Success! 🎉', 'Your workflow has been created successfully.')
+          setHasUnsavedChanges(false)
         }
+        return true
       }
     } catch (error) {
       showAlert(
         'Error Saving Workflow',
         error instanceof Error ? error.message : 'Failed to save workflow. Please try again.'
       )
+      return false
     } finally {
       setIsSaving(false)
     }
@@ -512,11 +570,6 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     return true
   }
 
-  const showAlert = (title: string, description: string) => {
-    setAlertMessage({ title, description })
-    setAlertOpen(true)
-  }
-
   const onNodeLabelChange = useCallback((nodeId: string, newLabel: string) => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -635,75 +688,233 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   }
 
   const handleWorkflowSelect = useCallback(async (selectedWorkflowId: string) => {
-    try {
-      setIsLoading(true)
-      
-      // Try to get from cache first
-      const cachedWorkflow = workflowCache.getWorkflow(selectedWorkflowId)
-      if (cachedWorkflow) {
-        setNodes(cachedWorkflow.nodes || initialNodes)
-        setEdges(cachedWorkflow.edges || [])
-        setWorkflowName(cachedWorkflow.name)
+    const handleSelection = async () => {
+      try {
+        setIsLoading(true)
+        setCurrentWorkflowId(selectedWorkflowId)
+        
+        // Try to get from cache first
+        const cachedWorkflow = workflowCache.getWorkflow(selectedWorkflowId)
+        if (cachedWorkflow) {
+          const newNodes = cachedWorkflow.nodes || initialNodes
+          const newEdges = cachedWorkflow.edges || []
+          
+          // Set initial values first
+          initialNodesRef.current = newNodes
+          initialEdgesRef.current = newEdges
+          initialNameRef.current = cachedWorkflow.name
+          
+          // Then update state
+          setNodes(newNodes)
+          setEdges(newEdges)
+          setWorkflowName(cachedWorkflow.name)
+          setHasUnsavedChanges(false)
+
+          setCurrentWorkflow({
+            id: selectedWorkflowId,
+            name: cachedWorkflow.name,
+            nodes: newNodes,
+            edges: newEdges
+          })
+          window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
+          return
+        }
+
+        // Load from database if not in cache
+        const { data: workflow, error } = await supabase
+          .from('workflows')
+          .select('*')
+          .eq('id', selectedWorkflowId)
+          .single()
+
+        if (error) throw error
+
+        const newNodes = workflow.nodes || initialNodes
+        const newEdges = workflow.edges || []
+        
+        // Set initial values first
+        initialNodesRef.current = newNodes
+        initialEdgesRef.current = newEdges
+        initialNameRef.current = workflow.name
+        
+        // Then update state
+        setNodes(newNodes)
+        setEdges(newEdges)
+        setWorkflowName(workflow.name)
+        setHasUnsavedChanges(false)
+
         setCurrentWorkflow({
           id: selectedWorkflowId,
-          name: cachedWorkflow.name,
-          nodes: cachedWorkflow.nodes || initialNodes,
-          edges: cachedWorkflow.edges || []
+          name: workflow.name,
+          nodes: newNodes,
+          edges: newEdges
         })
+        workflowCache.setWorkflow(workflow)
         window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
+
+      } catch (error) {
+        console.error('Error loading workflow:', error)
+        // Reset everything in error case
+        initialNodesRef.current = initialNodes
+        initialEdgesRef.current = []
+        initialNameRef.current = 'My Workflow'
+        
+        setNodes(initialNodes)
+        setEdges([])
+        setWorkflowName('My Workflow')
+        setCurrentWorkflow(null)
+        setCurrentWorkflowId(undefined)
+        setHasUnsavedChanges(false)
+      } finally {
         setIsLoading(false)
-        return
       }
-
-      // Load from database if not in cache
-      const { data: workflow, error } = await supabase
-        .from('workflows')
-        .select('*')
-        .eq('id', selectedWorkflowId)
-        .single()
-
-      if (error) throw error
-
-      // Update state and cache
-      setNodes(workflow.nodes || initialNodes)
-      setEdges(workflow.edges || [])
-      setWorkflowName(workflow.name)
-      setCurrentWorkflow({
-        id: selectedWorkflowId,
-        name: workflow.name,
-        nodes: workflow.nodes || initialNodes,
-        edges: workflow.edges || []
-      })
-      workflowCache.setWorkflow(workflow)
-      window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
-    } catch (error) {
-      console.error('Error loading workflow:', error)
-      setNodes(initialNodes)
-      setEdges([])
-      setWorkflowName('My Workflow')
-      setCurrentWorkflow(null)
-    } finally {
-      setIsLoading(false)
     }
-  }, [supabase, setNodes, setEdges, initialNodes])
 
-  // Add these functions
+    if (hasUnsavedChanges) {
+      showAlert(
+        'Unsaved Changes',
+        'Would you like to save your changes before switching workflows?',
+        'navigation'
+      )
+      setPendingNavigation(`/builder/${selectedWorkflowId}`)
+    } else {
+      await handleSelection()
+    }
+  }, [supabase, setNodes, setEdges, initialNodes, hasUnsavedChanges])
+
+  // Add these functions to handle navigation with unsaved changes
+  const handleNavigationWithCheck = async (path: string) => {
+    // Add a debug log to see the state
+    console.log('Navigation check:', { hasUnsavedChanges, path })
+    
+    if (hasUnsavedChanges) {
+      showAlert(
+        'Unsaved Changes',
+        'Would you like to save your changes before leaving?',
+        'navigation'
+      )
+      setPendingNavigation(path)
+    } else {
+      router.push(path)
+    }
+  }
+
+  const handleAlertAction = async () => {
+    if (hasUnsavedChanges && pendingNavigation) {
+      try {
+        const saveSuccessful = await saveWorkflow()
+        if (saveSuccessful) {
+          if (pendingNavigation === '/builder') {
+            // This is a new workflow creation
+            addNewWorkflow()
+          } else if (pendingNavigation.startsWith('/builder/')) {
+            // This is a workflow selection
+            const selectedWorkflowId = pendingNavigation.split('/builder/')[1]
+            await handleWorkflowSelect(selectedWorkflowId)
+          } else {
+            // This is a regular navigation
+            if (pendingNavigation === '/' && alertMessage?.description?.includes('logging out')) {
+              await supabase.auth.signOut()
+            }
+            router.push(pendingNavigation)
+          }
+          setPendingNavigation(null)
+          setAlertOpen(false)
+        } else {
+          showAlert('Error', 'Failed to save changes. Please try again.')
+        }
+      } catch (error) {
+        console.error('Error saving workflow:', error)
+        showAlert('Error', 'Failed to save changes before leaving')
+      }
+    } else if (pendingNavigation) {
+      if (pendingNavigation === '/builder') {
+        // This is a new workflow creation without unsaved changes
+        addNewWorkflow()
+      } else if (pendingNavigation.startsWith('/builder/')) {
+        // This is a workflow selection without unsaved changes
+        const selectedWorkflowId = pendingNavigation.split('/builder/')[1]
+        await handleWorkflowSelect(selectedWorkflowId)
+      } else {
+        // This is a regular navigation without unsaved changes
+        if (pendingNavigation === '/' && alertMessage?.description?.includes('logging out')) {
+          await supabase.auth.signOut()
+        }
+        router.push(pendingNavigation)
+      }
+      setPendingNavigation(null)
+      setAlertOpen(false)
+    }
+  }
+
+  // Update the chatbot and widget click handlers
   const handleChatbotClick = () => {
-    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
     if (!currentWorkflowId) {
-      console.error('No workflow ID found in URL')
+      console.error('No workflow ID found')
       return
     }
-    router.push(`/chat/${currentWorkflowId}`)
+    handleNavigationWithCheck(`/chat/${currentWorkflowId}`)
   }
 
   const handleWidgetClick = () => {
-    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
     if (!currentWorkflowId) {
-      console.error('No workflow ID found in URL')
+      console.error('No workflow ID found')
       return
     }
-    router.push(`/widget/${currentWorkflowId}`)
+    handleNavigationWithCheck(`/widget/${currentWorkflowId}`)
+  }
+
+  // Add this at the component level
+  useEffect(() => {
+    // Handle browser navigation/close
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Add these handlers
+  const handleFAQClick = () => {
+    if (!currentWorkflowId) return
+    handleNavigationWithCheck(`/faq/${currentWorkflowId}`)
+  }
+
+  const handleContextClick = () => {
+    if (!currentWorkflowId) return
+    handleNavigationWithCheck(`/context/${currentWorkflowId}`)
+  }
+
+  const handleNewWorkflowClick = () => {
+    if (hasUnsavedChanges) {
+      showAlert(
+        'Unsaved Changes',
+        'Would you like to save your changes before creating a new workflow?',
+        'navigation'
+      )
+      setPendingNavigation('/builder')
+    } else {
+      addNewWorkflow()
+    }
+  }
+
+  // Add this handler for saved workflow selection
+  const handleSavedWorkflowClick = (selectedWorkflowId: string) => {
+    if (hasUnsavedChanges) {
+      showAlert(
+        'Unsaved Changes',
+        'Would you like to save your changes before switching workflows?',
+        'navigation'
+      )
+      setPendingNavigation(`/builder/${selectedWorkflowId}`)
+    } else {
+      handleWorkflowSelect(selectedWorkflowId)
+    }
   }
 
   return (
@@ -719,12 +930,16 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         <div className="absolute inset-y-0 left-0 w-64 bg-white border-r z-30 flex flex-col">
           <Sidebar
             className="w-64 border-r bg-white"
-            onNewWorkflow={addNewWorkflow}
-            workflowId={workflowId}
+            onNewWorkflow={handleNewWorkflowClick}
+            workflowId={currentWorkflowId}
             isCreating={isCreating}
             onSaveWorkflow={saveWorkflow}
+            onChatbotClick={handleChatbotClick}
+            onWidgetClick={handleWidgetClick}
+            onFAQClick={handleFAQClick}
+            onContextClick={handleContextClick}
           />
-          <SavedWorkflows onWorkflowSelect={handleWorkflowSelect} />
+          <SavedWorkflows onWorkflowSelect={handleSavedWorkflowClick} />
         </div>
         <div className="flex-grow flex flex-col ml-64 relative">
           {isLoading ? (
@@ -735,7 +950,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
             <>
               <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
                 <Button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => handleNavigationWithCheck('/dashboard')}
                   variant="ghost"
                   size="sm"
                   className="flex items-center gap-2"
@@ -744,7 +959,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   Dashboard
                 </Button>
                 <Button
-                  onClick={() => router.push('/')}
+                  onClick={() => handleNavigationWithCheck('/')}
                   variant="ghost"
                   size="sm"
                   className="flex items-center gap-2"
@@ -754,8 +969,17 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                 </Button>
                 <Button
                   onClick={async () => {
-                    await supabase.auth.signOut()
-                    router.push('/')
+                    if (hasUnsavedChanges) {
+                      showAlert(
+                        'Unsaved Changes',
+                        'Would you like to save your changes before logging out?',
+                        'navigation'
+                      )
+                      setPendingNavigation('/')
+                    } else {
+                      await supabase.auth.signOut()
+                      router.push('/')
+                    }
                   }}
                   variant="ghost"
                   size="sm"
@@ -816,7 +1040,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   </Button>
                   <Button
                     onClick={handleChatbotClick}
-                    disabled={!workflowId}
+                    disabled={!currentWorkflowId}
                     className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -824,7 +1048,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   </Button>
                   <Button
                     onClick={handleWidgetClick}
-                    disabled={!workflowId}
+                    disabled={!currentWorkflowId}
                     className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
                   >
                     <Code className="h-4 w-4" />
@@ -836,18 +1060,52 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           )}
         </div>
       </div>
-      <AlertDialog open={alertOpen} onOpenChange={handleAlertClose}>
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{alertMessage.title}</AlertDialogTitle>
+            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              {alertMessage.description}
+              {alertMessage?.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={handleAlertClose}>
-              OK
-            </AlertDialogAction>
+            {alertMessage?.type === 'navigation' ? (
+              // Show navigation options only for navigation alerts
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (pendingNavigation) {
+                      router.push(pendingNavigation)
+                    }
+                    setPendingNavigation(null)
+                    setAlertOpen(false)
+                  }}
+                >
+                  Don't Save
+                </Button>
+                <Button
+                  onClick={handleAlertAction}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  Save & Continue
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPendingNavigation(null)
+                    setAlertOpen(false)
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              // Show single OK button for success/error alerts
+              <AlertDialogAction onClick={() => setAlertOpen(false)}>
+                OK
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

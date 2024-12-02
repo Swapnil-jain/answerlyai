@@ -35,6 +35,16 @@ function DashboardContent() {
 
   const fetchDashboardStats = useCallback(async () => {
     try {
+      // Try to get from cache first
+      const cachedStats = workflowCache.getDashboardStats()
+      if (cachedStats) {
+        setStats(cachedStats)
+        setIsLoading(false)
+        // Optionally validate cache in background
+        validateStatsInBackground()
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -95,7 +105,7 @@ function DashboardContent() {
       setStats(newStats)
       setError(null)
 
-      // Cache the stats
+      // Cache the new stats
       try {
         workflowCache.setDashboardStats(newStats)
       } catch (cacheError) {
@@ -110,6 +120,78 @@ function DashboardContent() {
       setIsLoading(false)
     }
   }, [supabase])
+
+  // Add background validation function
+  const validateStatsInBackground = async () => {
+    try {
+      // Fetch fresh data from database
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Ensure user has a tier entry
+      await ensureUserTier(supabase, user.id)
+
+      // Get user's pricing tier
+      const { data: tierData, error: tierError } = await supabase
+        .from('user_tiers')
+        .select('pricing_tier, workflow_count')
+        .eq('user_id', user.id)
+        .single()
+
+      if (tierError) throw tierError
+
+      const currentTier = tierData?.pricing_tier || 'hobbyist'
+      const workflowLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
+
+      // Get chat statistics
+      let chatStats = []
+      let avgResponseTime = 0
+      let responseRate = 0
+
+      try {
+        const { data: chatData, error: chatError } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+
+        if (!chatError && chatData) {
+          chatStats = chatData
+          // Calculate average response time
+          avgResponseTime = chatData.reduce((acc, session) => 
+            acc + (session.average_response_time || 0), 0) / (chatData.length || 1)
+
+          // Calculate response rate
+          const totalResponses = chatData.reduce((acc, session) => 
+            acc + (session.successful_responses || 0), 0)
+          const totalMessages = chatData.reduce((acc, session) => 
+            acc + (session.total_messages || 0), 0)
+          responseRate = totalMessages > 0 
+            ? (totalResponses / totalMessages) * 100 
+            : 0
+        }
+      } catch (error) {
+        console.warn('Chat statistics not available:', error)
+      }
+
+      const newStats = {
+        activeChatbots: tierData.workflow_count || 0,
+        totalChats: chatStats.length,
+        averageResponseTime: Number(avgResponseTime.toFixed(2)),
+        responseRate: Number(responseRate.toFixed(1)),
+        pricingTier: currentTier,
+        workflowLimit: workflowLimit
+      }
+
+      // Compare with current stats and update if different
+      const currentStats = stats
+      if (JSON.stringify(currentStats) !== JSON.stringify(newStats)) {
+        setStats(newStats)
+        workflowCache.setDashboardStats(newStats)
+      }
+    } catch (error) {
+      console.warn('Background validation failed:', error)
+    }
+  }
 
   useEffect(() => {
     fetchDashboardStats()

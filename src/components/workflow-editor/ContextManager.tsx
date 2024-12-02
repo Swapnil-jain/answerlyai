@@ -29,7 +29,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string } | null>(null)
+  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string; type: 'success' | 'error' | 'confirm' } | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       }
     } catch (error) {
       console.error('Error loading context:', error)
-      showAlert('Error', 'Failed to load context')
+      showAlert('Error', 'Failed to load context', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -86,7 +86,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
       workflowCache.updateWorkflowContext(workflowId, context)
       setHasUnsavedChanges(false)
-      showAlert('Success', 'Context saved successfully')
+      showAlert('Success', 'Context saved successfully', 'success')
 
       // Save workflow after context is saved
       if (onSaveWorkflow) {
@@ -94,7 +94,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       }
     } catch (error) {
       console.error('Error saving context:', error)
-      showAlert('Error', 'Failed to save context')
+      showAlert('Error', 'Failed to save context', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -107,15 +107,29 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
   const handleBack = () => {
     if (hasUnsavedChanges) {
-      showAlert('Unsaved Changes', 'Would you like to save your changes before leaving?')
+      showAlert('Unsaved Changes', 'Would you like to save your changes before leaving?', 'confirm')
       return
     }
     router.push(`/builder/${workflowId}`)
   }
 
-  const showAlert = (title: string, description: string) => {
-    setAlertMessage({ title, description })
+  const showAlert = (title: string, description: string, type: 'success' | 'error' | 'confirm') => {
+    setAlertMessage({ title, description, type })
     setAlertOpen(true)
+  }
+
+  const handleAlertClose = () => {
+    const type = alertMessage?.type
+    setAlertOpen(false)
+
+    if (type === 'confirm') {
+      // Only handle navigation for confirmation dialogs
+      if (hasUnsavedChanges) {
+        saveContext().then(() => {
+          router.push(`/builder/${workflowId}`)
+        })
+      }
+    }
   }
 
   if (isLoading) {
@@ -176,9 +190,37 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setAlertOpen(false)}>
-              OK
-            </AlertDialogAction>
+            {alertMessage?.type === 'confirm' ? (
+              // Show multiple buttons for confirmation dialog
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAlertOpen(false)
+                    router.push(`/builder/${workflowId}`)
+                  }}
+                >
+                  Don't Save
+                </Button>
+                <Button
+                  onClick={handleAlertClose}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  Save & Exit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setAlertOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              // Show single OK button for success/error alerts
+              <AlertDialogAction onClick={() => setAlertOpen(false)}>
+                OK
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

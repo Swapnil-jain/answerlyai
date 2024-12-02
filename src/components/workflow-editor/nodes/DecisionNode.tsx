@@ -1,20 +1,22 @@
 import { useState, useCallback } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
+import { NodeResizer } from 'reactflow'
 
-export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
+export default function DecisionNode({ id, data, isConnectable, selected }: NodeProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [label, setLabel] = useState(data.label)
 
   const onLabelChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
       setLabel(event.target.value)
     },
     []
   )
 
   const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') {
+    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault()
         setIsEditing(false)
         data.label = label || 'Decision'
       }
@@ -24,8 +26,14 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
 
   return (
     <div className="relative">
-      {/* Main node content */}
-      <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-blue-500 min-w-[150px] min-h-[40px]">
+      <NodeResizer 
+        minWidth={150}
+        minHeight={50}
+        isVisible={selected}
+        lineClassName="border-blue-500"
+        handleClassName="h-3 w-3 bg-blue-500"
+      />
+      <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-blue-500 w-full h-full min-w-[150px] min-h-[50px]">
         {/* Input handles */}
         <Handle
           type="target"
@@ -63,8 +71,7 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
         
         {/* Node label */}
         {isEditing ? (
-          <input
-            type="text"
+          <textarea
             value={label}
             onChange={onLabelChange}
             onKeyDown={onKeyDown}
@@ -72,13 +79,14 @@ export default function DecisionNode({ id, data, isConnectable }: NodeProps) {
               setIsEditing(false)
               data.label = label || 'Decision'
             }}
-            className="font-bold text-blue-500 bg-transparent border-none outline-none text-center w-full"
+            className="font-bold text-blue-500 bg-transparent border-none outline-none text-center w-full resize-none"
             autoFocus
             placeholder="Enter decision..."
+            style={{ minHeight: '60px' }}
           />
         ) : (
           <div
-            className="font-bold text-blue-500 min-w-[150px] min-h-[40px] flex items-center justify-center"
+            className="font-bold text-blue-500 w-full h-full flex items-center justify-center whitespace-pre-wrap break-words text-center"
             onDoubleClick={() => setIsEditing(true)}
           >
             {label || 'Decision'}

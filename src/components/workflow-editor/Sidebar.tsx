@@ -9,13 +9,17 @@ import WebsiteCrawler from './WebsiteCrawler'
 
 interface SidebarProps {
   className?: string
-  workflowId: string
+  workflowId?: string
   onNewWorkflow: () => void
   isCreating?: boolean
-  onSaveWorkflow?: () => Promise<void>
+  onSaveWorkflow?: () => Promise<boolean>
+  onChatbotClick: () => void
+  onWidgetClick: () => void
+  onFAQClick: () => void
+  onContextClick: () => void
 }
 
-export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow }: SidebarProps) {
+export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow, onChatbotClick, onWidgetClick, onFAQClick, onContextClick }: SidebarProps) {
   const router = useRouter()
   const { supabase } = useSupabase()
 
@@ -33,12 +37,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
       console.error('No workflow ID available')
       return
     }
-    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
-    if (!currentWorkflowId) {
-      console.error('No workflow ID found in URL')
-      return
-    }
-    window.location.href = `/faq/${currentWorkflowId}`
+    router.push(`/faq/${workflowId}`)
   }
 
   const handleContextClick = () => {
@@ -46,12 +45,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
       console.error('No workflow ID available')
       return
     }
-    const currentWorkflowId = window.location.pathname.split('/builder/')[1]
-    if (!currentWorkflowId) {
-      console.error('No workflow ID found in URL')
-      return
-    }
-    window.location.href = `/context/${currentWorkflowId}`
+    router.push(`/context/${workflowId}`)
   }
 
   return (
@@ -91,7 +85,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
           )}
         </Button>
         <Button
-          onClick={handleFAQClick}
+          onClick={onFAQClick}
           variant="ghost"
           size="sm"
           className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white"
@@ -102,7 +96,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
           {!workflowId ? "Save First to Manage FAQs" : "Manage FAQs"}
         </Button>
         <Button 
-          onClick={handleContextClick}
+          onClick={onContextClick}
           className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
           size="sm"
           disabled={!workflowId}
@@ -112,7 +106,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
           {!workflowId ? "Save First to Set Context" : "Chatbot Context"}
         </Button>
         <WebsiteCrawler 
-          workflowId={workflowId} 
+          workflowId={workflowId || ''}
           disabled={!workflowId}
           title={!workflowId ? "Save your workflow first to import content" : ""}
           onSaveWorkflow={onSaveWorkflow}

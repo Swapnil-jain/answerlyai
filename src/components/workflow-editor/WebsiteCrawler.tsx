@@ -47,12 +47,16 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to crawl website')
       }
 
       setProgress('Processing website content...')
       const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to crawl website')
+      }
 
       setProgress('Updating chatbot context...')
       // Update the workflow's context with the crawled data

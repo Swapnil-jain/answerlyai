@@ -160,19 +160,8 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
   }, [loadWorkflows])
 
   const handleWorkflowClick = (workflowId: string) => {
-    // Prevent re-navigation to the same workflow
-    if (currentWorkflowId.current === workflowId) {
-      return
-    }
-
-    // Update the current workflow ID
-    currentWorkflowId.current = workflowId
-    
-    // Call the parent handler instead of using router
+    // Call the parent handler
     onWorkflowSelect(workflowId)
-    
-    // Update URL without triggering a reload
-    window.history.pushState({}, '', `/builder/${workflowId}`)
   }
 
   const showAlert = (title: string, description: string) => {
