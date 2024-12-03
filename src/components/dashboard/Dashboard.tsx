@@ -7,7 +7,7 @@ import { workflowCache } from '@/lib/cache/workflowCache'
 import { logger } from '@/lib/utils/logger'
 import AuthGuard from '@/components/auth/AuthGuard'
 import Header from '@/components/header'
-import { Bot, MessageSquare, Users, BarChart2 } from 'lucide-react'
+import { Bot, BarChart2 } from 'lucide-react'
 import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
 
@@ -38,7 +38,15 @@ function DashboardContent() {
       // Try to get from cache first
       const cachedStats = workflowCache.getDashboardStats()
       if (cachedStats) {
-        setStats(cachedStats)
+        // Ensure all properties are present
+        setStats({
+          activeChatbots: cachedStats.activeChatbots || 0,
+          totalChats: cachedStats.totalChats || 0,
+          averageResponseTime: cachedStats.averageResponseTime || 0,
+          responseRate: cachedStats.responseRate || 0,
+          pricingTier: cachedStats.pricingTier || 'hobbyist',
+          workflowLimit: cachedStats.workflowLimit || Infinity
+        })
         setIsLoading(false)
         // Optionally validate cache in background
         validateStatsInBackground()

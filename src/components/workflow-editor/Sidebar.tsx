@@ -22,6 +22,8 @@ interface SidebarProps {
 export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow, onChatbotClick, onWidgetClick, onFAQClick, onContextClick }: SidebarProps) {
   const router = useRouter()
   const { supabase } = useSupabase()
+  
+  const isMac = typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType)
@@ -47,6 +49,14 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
     }
     router.push(`/context/${workflowId}`)
   }
+
+  // Create a wrapper function that preserves the boolean return value
+  const handleSaveWorkflow = onSaveWorkflow 
+    ? async () => {
+        const result = await onSaveWorkflow()
+        return result  // Return the boolean result
+      }
+    : undefined
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -109,7 +119,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
           workflowId={workflowId || ''}
           disabled={!workflowId}
           title={!workflowId ? "Save your workflow first to import content" : ""}
-          onSaveWorkflow={onSaveWorkflow}
+          onSaveWorkflow={handleSaveWorkflow}
         />
       </div>
       

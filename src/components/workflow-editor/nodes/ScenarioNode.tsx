@@ -24,7 +24,7 @@ export default function ScenarioNode({ data, id, selected }: ScenarioNodeProps) 
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !event.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       setIsEditing(false)
       data.label = label || 'Scenario'
@@ -36,7 +36,7 @@ export default function ScenarioNode({ data, id, selected }: ScenarioNodeProps) 
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${selected ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}>
       <NodeResizer 
         minWidth={150}
         minHeight={50}

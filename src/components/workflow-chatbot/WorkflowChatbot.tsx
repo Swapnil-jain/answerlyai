@@ -204,9 +204,16 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     setIsLoading(true);
 
     try {
+      // Get the session
+      const { data: { session } } = await supabase.auth.getSession()
+      
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // Add the auth token to the request
+          "Authorization": `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({
           message: currentInput.trim(),
           workflowId: workflowId,
@@ -234,7 +241,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           {
             type: "bot",
             content: data.response,
-            source: data.source // 'cache' or 'llm'
+            source: data.source
           },
         ]);
       } else {

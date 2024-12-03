@@ -1,7 +1,7 @@
 'use client'
 
 import 'reactflow/dist/style.css'
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import ReactFlow, {
   addEdge,
   MiniMap,
@@ -13,8 +13,10 @@ import ReactFlow, {
   Edge,
   useReactFlow,
   ReactFlowProvider,
-  DefaultEdge,
-  ViewportProps,
+  BackgroundVariant,
+  Viewport,
+  Connection,
+  NodeChange,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
 import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, Sparkles } from 'lucide-react'
@@ -40,7 +42,8 @@ import { Button } from '@/components/ui/button'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
-import { eventEmitter } from '@/lib/utils/events'
+// import { RateLimiter } from '@/lib/utils/rateLimiter'
+// import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -81,11 +84,7 @@ const initialNodes: Node[] = [
 ]
 
 // Add default viewport configuration
-const defaultViewport: Partial<ViewportProps> = {
-  x: 0,
-  y: 0,
-  zoom: 0.5  // Adjust this value to control initial zoom level (1 is 100%, 0.5 is 50%)
-}
+const defaultViewport: Viewport = { x: 0, y: 0, zoom: 1 }
 
 interface WorkflowEditorProps {
   workflowId?: string
@@ -98,8 +97,6 @@ interface SavedWorkflow {
   edges: Edge[]
   updatedAt: string
 }
-
-const MAX_WORKFLOWS = 5;
 
 // Add this near the top of the file with other imports
 const proOptions = { hideAttribution: true }
@@ -152,6 +149,20 @@ const validateDecisionPath = (
   });
 };
 
+// Add this interface near the top with other interfaces
+interface AlertMessageType {
+  title: string
+  description: string
+  type: 'success' | 'navigation'
+  onClose?: () => void
+}
+
+// Add this type definition near the top with other interfaces
+interface RateLimitResponse {
+  allowed: boolean
+  reason?: string
+}
+
 // Create a new component for the flow content
 function Flow({ workflowId }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -163,10 +174,11 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const router = useRouter()
   const { supabase } = useSupabase()
   const [alertOpen, setAlertOpen] = useState(false)
-  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string; type: 'success' | 'navigation' }>({
+  const [alertMessage, setAlertMessage] = useState<AlertMessageType>({
     title: '',
     description: '',
-    type: 'success'
+    type: 'success',
+    onClose: undefined
   })
   const [workflowToOverwrite, setWorkflowToOverwrite] = useState<string | null>(null)
 
@@ -211,6 +223,28 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       return
     }
 
+    // Skip during initial load
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false
+      // Store initial values
+      initialNodesRef.current = nodes
+      initialEdgesRef.current = edges
+      initialNameRef.current = workflowName
+      setHasUnsavedChanges(false)
+      return
+    }
+
+    // Skip if we're just loading the default state
+    if (
+      nodes.length === 1 && 
+      nodes[0].type === 'start' && 
+      edges.length === 0 && 
+      workflowName === 'My Workflow'
+    ) {
+      setHasUnsavedChanges(false)
+      return
+    }
+
     // Compare current values with initial values
     const hasNodeChanges = JSON.stringify(nodes) !== JSON.stringify(initialNodesRef.current)
     const hasEdgeChanges = JSON.stringify(edges) !== JSON.stringify(initialEdgesRef.current)
@@ -240,8 +274,13 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     }
   }, [workflowId])
 
-  const showAlert = (title: string, description: string, type: 'success' | 'navigation' = 'success') => {
-    setAlertMessage({ title, description, type })
+  const showAlert = (
+    title: string,
+    description: string,
+    type: 'success' | 'navigation' = 'success',
+    onClose?: () => void
+  ) => {
+    setAlertMessage({ title, description, type, onClose })
     setAlertOpen(true)
   }
 
@@ -254,6 +293,41 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in to save your workflow')
+
+      // // Estimate tokens for workflow
+      // const workflowTokens = estimateTokens.workflow(nodes, edges)
+
+      // // Check rate limit
+      // const rateLimitCheck = await RateLimiter.checkRateLimit(
+      //   user.id,
+      //   'training',
+      //   workflowTokens
+      // ).catch(error => {
+      //   console.error('Rate limit check error:', error)
+      //   // Default to allowing if there's an error checking
+      //   return { allowed: true } as RateLimitResponse
+      // })
+
+      // if (!rateLimitCheck.allowed) {
+      //   throw new Error(
+      //     'reason' in rateLimitCheck 
+      //       ? rateLimitCheck.reason 
+      //       : 'Training limit exceeded'
+      //   )
+      // }
+
+      // Check for duplicate names regardless of whether it's a new or existing workflow
+      const { data: existingWorkflow } = await supabase
+        .from('workflows')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .eq('name', workflowName)
+        .neq('id', currentWorkflowId || '') // Exclude current workflow when checking
+        .single()
+
+      if (existingWorkflow) {
+        throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
+      }
 
       // Ensure user has a tier entry
       await ensureUserTier(supabase, user.id)
@@ -371,13 +445,22 @@ function Flow({ workflowId }: WorkflowEditorProps) {
             workflowCache.setWorkflowList(updatedList)
           }
 
-          setPendingNavigation(`/builder/${data.id}`)
-          showAlert('Success! 🎉', 'Your workflow has been created successfully.')
+          // Update the alert message to include navigation
+          showAlert(
+            'Success! 🎉', 
+            'Your workflow has been created successfully.',
+            'success',
+            () => router.push(`/builder/${data.id}`)
+          )
           setHasUnsavedChanges(false)
         }
         return true
       }
     } catch (error) {
+      // Only catch non-validation errors here
+      if (error instanceof Error && error.message.includes('validation')) {
+        throw error  // Re-throw validation errors
+      }
       showAlert(
         'Error Saving Workflow',
         error instanceof Error ? error.message : 'Failed to save workflow. Please try again.'
@@ -433,7 +516,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     loadWorkflow()
   }, [workflowId, setNodes, setEdges])
 
-  const onConnect = useCallback((params) => {
+  const onConnect = useCallback((params: Connection) => {
     // Validate scenario connections
     if (params.sourceHandle === 'scenario-out') {
       // Only allow connections to decision nodes' scenario handles
@@ -608,7 +691,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   }, [])
 
   // Add this to filter out Start node deletion
-  const handleNodesChange = useCallback((changes) => {
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
     // Filter out any attempts to remove the Start node
     const safeChanges = changes.filter(change => {
       if (change.type === 'remove') {
@@ -629,50 +712,28 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const addNewWorkflow = async () => {
     try {
       setIsCreating(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Please sign in to create a workflow')
-
-      // Get user's tier and current workflow count
-      const { data: tierData, error: tierError } = await supabase
-        .from('user_tiers')
-        .select('pricing_tier, workflow_count')
-        .eq('user_id', user.id)
-        .single()
-
-      if (tierError) throw tierError
-
-      const currentTier = tierData?.pricing_tier || 'hobbyist'
-      const currentCount = tierData?.workflow_count || 0
-      const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
-
-      // Check if user has reached their limit
-      if (currentCount >= tierLimit) {
-        showAlert(
-          'Workflow Limit Reached',
-          `You've reached the maximum limit of ${tierLimit} ${
-            tierLimit === 1 ? 'workflow' : 'workflows'
-          } for your ${currentTier} tier. Please upgrade to create more workflows.`
-        )
-        return
-      }
-
-      // If within limits, create new workflow with unique ID for start node
-      setNodes([
-        {
-          id: generateUniqueId('start'),
-          type: 'start',
-          position: { x: 0, y: 0 },
-          data: { label: 'Start' }
-        }
-      ])
+      
+      // Reset everything to initial state
+      setNodes(initialNodes)
       setEdges([])
-      setWorkflowName('New Workflow')
-      router.push('/builder')
+      setWorkflowName('My Workflow')
+      setCurrentWorkflow(null)
+      setCurrentWorkflowId(undefined)
+      setHasUnsavedChanges(false)
+      
+      // Reset refs
+      initialNodesRef.current = initialNodes
+      initialEdgesRef.current = []
+      initialNameRef.current = 'My Workflow'
+
+      // Clear any pending navigation
+      setPendingNavigation(null)
+      
+      // Update URL without full page reload
+      window.history.pushState({}, '', '/builder')
     } catch (error) {
-      showAlert(
-        'Error Creating Workflow',
-        error instanceof Error ? error.message : 'Failed to create new workflow'
-      )
+      console.error('Error creating new workflow:', error)
+      showAlert('Error', 'Failed to create new workflow')
     } finally {
       setIsCreating(false)
     }
@@ -802,6 +863,18 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const handleAlertAction = async () => {
     if (hasUnsavedChanges && pendingNavigation) {
       try {
+        // Try to validate first
+        try {
+          validateWorkflow()
+        } catch (validationError) {
+          // Show the specific validation error
+          showAlert(
+            'Validation Error',
+            validationError instanceof Error ? validationError.message : 'Invalid workflow configuration'
+          )
+          return  // Don't proceed with navigation if validation fails
+        }
+
         const saveSuccessful = await saveWorkflow()
         if (saveSuccessful) {
           if (pendingNavigation === '/builder') {
@@ -820,12 +893,14 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           }
           setPendingNavigation(null)
           setAlertOpen(false)
-        } else {
-          showAlert('Error', 'Failed to save changes. Please try again.')
         }
       } catch (error) {
         console.error('Error saving workflow:', error)
-        showAlert('Error', 'Failed to save changes before leaving')
+        // Show the specific error message
+        showAlert(
+          'Error',
+          error instanceof Error ? error.message : 'Failed to save changes before leaving'
+        )
       }
     } else if (pendingNavigation) {
       if (pendingNavigation === '/builder') {
@@ -914,6 +989,95 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       setPendingNavigation(`/builder/${selectedWorkflowId}`)
     } else {
       handleWorkflowSelect(selectedWorkflowId)
+    }
+  }
+
+  // Add this near the top with other state declarations
+  const [copiedNode, setCopiedNode] = useState<Node | null>(null)
+
+  // Add this effect to handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyboard = (event: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+      const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey
+
+      if (cmdOrCtrl && event.key === 'c') {
+        // Get the selected node
+        const selectedNode = nodes.find(node => node.selected)
+        if (selectedNode && selectedNode.type !== 'start') {
+          // Create a copy without position and with new ID
+          const nodeCopy = {
+            ...selectedNode,
+            id: generateUniqueId(selectedNode.type || 'default'),
+            position: { ...selectedNode.position },  // We'll adjust this when pasting
+            data: { ...selectedNode.data }
+          }
+          setCopiedNode(nodeCopy)
+        }
+      }
+
+      if (cmdOrCtrl && event.key === 'v' && copiedNode) {
+        // Get the current viewport center
+        const { x, y } = reactFlowInstance.getViewport()
+        const center = reactFlowInstance.project({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2
+        })
+
+        // Create new node with offset from original
+        const newNode = {
+          ...copiedNode,
+          id: generateUniqueId(copiedNode.type || 'default'),
+          position: {
+            x: center.x + 50,  // Add offset to avoid exact overlap
+            y: center.y + 50
+          }
+        }
+
+        setNodes(nds => [...nds, newNode])
+        setHasUnsavedChanges(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyboard)
+    return () => window.removeEventListener('keydown', handleKeyboard)
+  }, [nodes, copiedNode, reactFlowInstance, setNodes])
+
+  // Add this effect to handle initial state when landing on /builder
+  useEffect(() => {
+    // If we're on /builder (no workflowId), reset to initial state
+    if (!workflowId) {
+      setNodes(initialNodes)
+      setEdges([])
+      setWorkflowName('My Workflow')
+      setCurrentWorkflow(null)
+      setCurrentWorkflowId(undefined)
+      setHasUnsavedChanges(false)
+      
+      // Reset refs
+      initialNodesRef.current = initialNodes
+      initialEdgesRef.current = []
+      initialNameRef.current = 'My Workflow'
+    }
+  }, [workflowId, setNodes, setEdges])
+
+  const handlePasteNode = () => {
+    if (copiedNode && reactFlowInstance) {
+      const { x, y } = reactFlowInstance.getViewport()
+      const center = reactFlowInstance.project({
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2
+      })
+      
+      const newNode = {
+        ...copiedNode,
+        id: generateUniqueId(copiedNode.type || 'default'),
+        position: {
+          x: center.x + 50,  // Add offset to avoid exact overlap
+          y: center.y + 50
+        }
+      }
+      setNodes((nds) => nds.concat(newNode))
     }
   }
 
@@ -1015,7 +1179,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                 >
                   <Controls />
                   <MiniMap />
-                  <Background variant="dots" gap={12} size={1} />
+                  <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
                 </ReactFlow>
               </div>
               <div className="flex justify-between items-center p-4 bg-white border-t">
@@ -1035,8 +1199,17 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     disabled={isSaving}
                     className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
                   >
-                    <Save className="h-4 w-4" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save
+                      </>
+                    )}
                   </Button>
                   <Button
                     onClick={handleChatbotClick}
@@ -1102,7 +1275,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
               </div>
             ) : (
               // Show single OK button for success/error alerts
-              <AlertDialogAction onClick={() => setAlertOpen(false)}>
+              <AlertDialogAction onClick={() => {
+                setAlertOpen(false)
+                if (alertMessage?.onClose) {
+                  alertMessage.onClose()
+                }
+              }}>
                 OK
               </AlertDialogAction>
             )}

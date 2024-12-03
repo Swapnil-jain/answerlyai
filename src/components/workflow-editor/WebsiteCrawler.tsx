@@ -10,7 +10,7 @@ interface WebsiteCrawlerProps {
   workflowId: string
   disabled?: boolean
   title?: string
-  onSaveWorkflow?: () => Promise<void>
+  onSaveWorkflow?: () => Promise<boolean>
 }
 
 export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWorkflow }: WebsiteCrawlerProps) {
@@ -83,13 +83,21 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         setIsOpen(false)
         setProgress('')
       }, 2000)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error crawling website:', error)
-      if (error.name === 'AbortError') {
-        setError('Request timed out. Please try again or check the URL.')
+      
+      // Type guard for Error objects
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          setError('Request timed out. Please try again or check the URL.')
+        } else {
+          setError(error.message || 'Failed to crawl website. Please try again.')
+        }
       } else {
-        setError(error.message || 'Failed to crawl website. Please try again.')
+        // Handle non-Error objects
+        setError('Failed to crawl website. Please try again.')
       }
+      
       setProgress('')
     } finally {
       setIsCrawling(false)

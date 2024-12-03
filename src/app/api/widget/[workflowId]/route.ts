@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request, context: { params: { workflowId: string } }) {
+export async function GET(request: NextRequest) {
   try {
-    const resolvedParams = await context.params; // Await the params Promise
-    const workflowId = resolvedParams?.workflowId;
+    // Extract `workflowId` from the request URL
+    const { pathname } = new URL(request.url);
+    const workflowId = pathname.split('/').pop();
 
     if (!workflowId) {
-      throw new Error('workflowId is missing in params.');
+      throw new Error('workflowId is missing in the URL.');
     }
     
     console.log('Serving widget for workflow:', workflowId);

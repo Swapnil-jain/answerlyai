@@ -16,6 +16,8 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
+// import { RateLimiter } from '@/lib/utils/rateLimiter'
+// import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 interface ContextManagerProps {
   workflowId: string
@@ -73,6 +75,23 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
     try {
       setIsSaving(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // // Estimate tokens for context
+      // const contextTokens = estimateTokens.text(context)
+
+      // // Check rate limit
+      // const rateLimitCheck = await RateLimiter.checkRateLimit(
+      //   user.id,
+      //   'training',
+      //   contextTokens
+      // )
+
+      // if (!rateLimitCheck.allowed) {
+      //   showAlert('Rate Limit Exceeded', rateLimitCheck.reason || 'Training limit exceeded', 'error')
+      //   return
+      // }
 
       const { error } = await supabase
         .from('workflows')
@@ -92,6 +111,10 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       if (onSaveWorkflow) {
         await onSaveWorkflow()
       }
+
+      // // Record token usage after successful save
+      // await RateLimiter.recordTokenUsage(user.id, 'training', contextTokens)
+
     } catch (error) {
       console.error('Error saving context:', error)
       showAlert('Error', 'Failed to save context', 'error')

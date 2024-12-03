@@ -31,10 +31,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [workflowToDelete, setWorkflowToDelete] = useState<string | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
-  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string }>({
-    title: '',
-    description: ''
-  })
+  const [alertMessage, setAlertMessage] = useState<{ 
+    title: string; 
+    description: string;
+    onClose?: () => void;
+  } | null>(null)
 
   const loadWorkflows = async () => {
     try {
@@ -164,8 +165,8 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     onWorkflowSelect(workflowId)
   }
 
-  const showAlert = (title: string, description: string) => {
-    setAlertMessage({ title, description })
+  const showAlert = (title: string, description: string, onClose?: () => void) => {
+    setAlertMessage({ title, description, onClose })
     setAlertOpen(true)
   }
 
@@ -180,7 +181,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
 
     try {
       setIsDeleting(workflowToDelete)
-      setDeleteConfirmOpen(false) // Close the confirmation dialog immediately
+      setDeleteConfirmOpen(false)
 
       const { error } = await supabase
         .from('workflows')
@@ -199,11 +200,23 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         logger.log('warn', 'cache', 'Failed to update cache after deletion')
       }
 
-      showAlert('Success', 'Workflow deleted successfully')
+      showAlert('Success', 'Workflow deleted successfully.')
+      
+      // Navigate to /builder after alert is closed
+      const handleAlertClose = () => {
+        router.push('/builder')
+      }
+      
+      // Update the alert state to include the close handler
+      setAlertMessage({ 
+        title: 'Success', 
+        description: 'Workflow deleted successfully.',
+        onClose: handleAlertClose 
+      })
+
     } catch (error) {
       logger.log('error', 'database', 'Failed to delete workflow: ' + error)
       showAlert('Error', 'Failed to delete workflow. Please try again.')
-      // Reload list to ensure consistency
       loadWorkflows()
     } finally {
       setIsDeleting(null)
@@ -254,19 +267,15 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
             </Button>
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={(e) => handleDelete(workflow.id, e)}
-              disabled={isDeleting !== null} // Disable all delete buttons while any deletion is in progress
-              className={`h-8 w-8 ${
-                isDeleting === workflow.id 
-                  ? 'text-blue-600' 
-                  : 'text-red-600 hover:text-red-800'
-              }`}
+              disabled={isDeleting === workflow.id}
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
             >
               {isDeleting === workflow.id ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
               ) : (
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
               )}
             </Button>
           </div>
@@ -300,30 +309,52 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
                 setDeleteConfirmOpen(false)
                 setWorkflowToDelete(null)
               }}
+              disabled={!!isDeleting}
             >
               Cancel
             </Button>
             <Button
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600 text-white"
+              disabled={!!isDeleting}
             >
-              Delete
+              {isDeleting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Deleting...
+                </div>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Add Alert Dialog */}
-      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+      <AlertDialog 
+        open={alertOpen} 
+        onOpenChange={(open) => {
+          setAlertOpen(open)
+          if (!open && alertMessage?.onClose) {
+            alertMessage.onClose()
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{alertMessage.title}</AlertDialogTitle>
+            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              {alertMessage.description}
+              {alertMessage?.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setAlertOpen(false)}>
+            <AlertDialogAction onClick={() => {
+              setAlertOpen(false)  // Close the dialog
+              if (alertMessage?.onClose) {
+                alertMessage.onClose()  // Execute the onClose handler
+              }
+            }}>
               OK
             </AlertDialogAction>
           </AlertDialogFooter>

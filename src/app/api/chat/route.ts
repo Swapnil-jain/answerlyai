@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
+import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
+// import { RateLimiter } from '@/lib/utils/rateLimiter'
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -13,7 +15,53 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
+    // Get the auth token from the request header
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      throw new Error('Authorization header missing')
+    }
+
+    // Extract the token
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Verify the session with Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError)
+      throw new Error('Authentication required')
+    }
+
     const { message, workflowId, history } = await req.json()
+
+    // // Estimate token count (rough estimation)
+    // const estimatedTokens = message.length / 4 + 
+    //   history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0)
+
+    // // Log the estimated token count
+    // console.log('Estimated token count:', estimatedTokens)
+
+    // console.log('Rate limit check for:', {
+    //   userId: user.id,
+    //   type: 'chatting',
+    //   estimatedTokens: Math.ceil(estimatedTokens)
+    // })
+
+    // // Check rate limits
+    // const rateLimitCheck = await RateLimiter.checkRateLimit(
+    //   user.id,
+    //   'chatting',
+    //   Math.ceil(estimatedTokens)
+    // )
+
+    // console.log('Rate limit response:', rateLimitCheck)
+
+    // if (!rateLimitCheck.allowed) {
+    //   return NextResponse.json(
+    //     { success: false, message: rateLimitCheck.reason },
+    //     { status: 429 }
+    //   )
+    // }
 
     // Get workflow context from Supabase
     const { data: workflowData, error: workflowError } = await supabase
@@ -88,110 +136,24 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: `You are Cora, a customer service assistant. You are configured with the following information:  
-
-          ### Custom Context:
-          ${workflowData.context || ''}
-
-          ### Decision Flows:
-          ${decisionFlows.map((flow: any) => `
-          Decision: "${flow.decision}"
-          Related Scenarios: ${flow.scenarios.map((s: string) => `"${s}"`).join(', ')}
-          Actions:
-            - If Yes: ${flow.actions.yes || 'No action specified'}
-            - If No: ${flow.actions.no || 'No action specified'}
-          `).join('\n')}
-
-          ### FAQs:  
-          ${faqData?.map((faq: any) => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n')}
-
-          ### Primary Rules:
-          1. **FAQ Handling**:
-             - First, check if the user's question matches any FAQ
-             - If there's a match, respond with the FAQ's answer
-
-          2. **Workflow Execution**:
-             - If no FAQ matches, follow the workflow structure explicitly
-             - Navigate nodes and edges as defined in the workflow
-
-          3. **Decision Nodes**:
-             - For decision nodes, always prompt the user with a yes/no question to progress
-
-          4. **Action Nodes**:
-             - When reaching an action node:
-               - Execute the described action
-               - Follow up by asking, "Is there anything else I can help with?"
-
-          5. **Explaining Capabilities**:
-             - If asked "What can you do?", summarize abilities in a friendly, concise manner
-             - Focus on key areas based on workflow structure and FAQs
-             - Example: "Hi! I'm here to help with: 1. [Service Area] 2. [Service Area]"
-
-          ### Enhanced User Interaction Rules:
-          6. **Clarity and Format**:
-             - Use appropriate spacing and line breaks
-             - Avoid long paragraphs
-             - Use bullet points instead of numbers in responses
-             - Ask clarifying questions for ambiguous inputs
-
-          7. **Context Awareness**:
-             - Maintain conversation continuity
-             - Reference previous messages when appropriate
-
-          8. **Error Handling**:
-             - For invalid inputs, gently prompt for rephrasing
-             - Example: "I didn't quite understand that. Could you try rephrasing?"
-
-          9. **Fallback Behavior**:
-             - If no workflow path or FAQ matches:
-               - Apologize and offer to connect with human support
-               - Example: "I'm sorry, I can't assist with that. Would you like me to connect you with a human agent?"
-
-          ### Workflow Priority:
-            - Always prioritize following the decision tree structure for relevant queries.
-            - Use fallback behavior only when:
-            - The query does not match any FAQ.
-            - The query does not align with any workflow path.
-
-          ### Behavioral Guidelines:
-          10. **Politeness and Empathy**:
-              - Maintain politeness and patience
-              - Show empathy during user frustration
-              - Example: "I understand this can be frustrating. Let me help you with that."
-
-          11. **Response Quality**:
-              - Keep responses concise and professional
-              - Use friendly tone without unnecessary embellishments
-              - Avoid redundancy in responses
-
-          12. **Data Privacy**:
-              - Never ask for sensitive personal information unless workflow-critical
-
-          13. **Problem Resolution**:
-              - If unable to solve a problem:
-              - Apologize and offer human agent connection
-              - Example: "I'm sorry, but I'm unable to assist with that. I'll connect you with a human agent who can help you further."
-
-          ### Fallback Behavior for Workflow:
-            - If the bot generates a response not aligned with the defined workflow:
-            - Apologize: "Sorry, I didn’t follow the correct steps. Let me restart."
-            - Restart the workflow from the previous node.
-
-          Remember to:
-          - Stay within the defined workflow structure
-          - Use the custom context for accurate information
-          - Maintain a helpful and professional tone
-          - Always follow up to ensure user satisfaction`
+          content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
         },
         ...history,
         { role: 'user', content: message }
       ],
-      model: 'mixtral-8x7b-32768',
-      temperature: 0.5,
+      model: 'llama-3.1-8b-instant',
+      temperature: 0,
       max_tokens: 1024,
       top_p: 1,
       stream: false,
     })
+
+    // // Record token usage after successful completion
+    // await RateLimiter.recordTokenUsage(
+    //   user.id,
+    //   'chatting',
+    //   completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+    // )
 
     return NextResponse.json({
       success: true,
@@ -200,9 +162,16 @@ export async function POST(req: Request) {
     })
 
   } catch (error) {
-    console.error('Chat API Error:', error)
+    console.error('Chat API Error:', error instanceof Error ? {
+      message: error.message,
+      stack: error.stack
+    } : error)
     return NextResponse.json(
-      { success: false, message: 'Failed to process chat message' },
+      { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Failed to process chat message',
+        debug: process.env.NODE_ENV === 'development' ? error : undefined
+      },
       { status: 500 }
     )
   }

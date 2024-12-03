@@ -17,15 +17,17 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
+// import { RateLimiter } from '@/lib/utils/rateLimiter'
+// import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 interface FAQ {
-  id?: string
+  id: string
   question: string
   answer: string
-  user_id?: string
-  workflow_id?: string
-  created_at?: string
-  updated_at?: string
+  user_id: string
+  workflow_id: string
+  created_at: string
+  updated_at: string
 }
 
 interface FAQUploadProps {
@@ -125,10 +127,13 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
           const parsedFaqs = rows.slice(1).map(row => {
             const [question, answer] = row.split(',')
             return { 
+              id: crypto.randomUUID(),
               question, 
               answer,
               user_id: user.id,
-              workflow_id: workflowId
+              workflow_id: workflowId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
           })
 
@@ -153,16 +158,29 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
     }
   }
 
-  const addNewFAQ = () => {
-    const now = new Date().toISOString()
-    setFaqs([...faqs, { 
-      id: crypto.randomUUID(), 
-      question: '', 
-      answer: '',
-      workflow_id: workflowId,
-      created_at: now,
-      updated_at: now
-    }])
+  const addNewFAQ = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const now = new Date().toISOString()
+      setFaqs([...faqs, { 
+        id: crypto.randomUUID(), 
+        question: '', 
+        answer: '',
+        user_id: user.id,
+        workflow_id: workflowId,
+        created_at: now,
+        updated_at: now
+      }])
+    } catch (error) {
+      console.error('Error adding new FAQ:', error)
+      setAlertMessage({
+        title: 'Error',
+        description: 'Failed to add new FAQ. Please try again.'
+      })
+      setAlertOpen(true)
+    }
   }
 
   const deleteFAQ = async (id: string) => {
@@ -178,7 +196,14 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         if (error) throw error
 
         // Update cache after successful deletion
-        const updatedFaqs = faqs.filter(faq => faq.id !== id)
+        const updatedFaqs = faqs
+          .filter(faq => faq.id !== id)
+          .map(faq => ({
+            ...faq,
+            created_at: faq.created_at || new Date().toISOString(),
+            updated_at: faq.updated_at || new Date().toISOString()
+          }))
+        
         workflowCache.setFAQs(workflowId, updatedFaqs)
       }
       
@@ -212,15 +237,27 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       
       const validFaqs = faqs
         .filter(faq => faq.question.trim() !== '' && faq.answer.trim() !== '')
-        .map(faq => ({
-          ...faq,
-          user_id: user.id,
-          workflow_id: workflowId,
-          created_at: faq.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }))
 
-      logger.log('info', 'database', `Saving ${validFaqs.length} FAQs to database`)
+      // // Estimate total tokens for all FAQs
+      // const totalTokens = validFaqs.reduce((acc, faq) => 
+      //   acc + estimateTokens.faq(faq.question, faq.answer), 0)
+
+      // // Check rate limit
+      // const rateLimitCheck = await RateLimiter.checkRateLimit(
+      //   user.id,
+      //   'training',
+      //   totalTokens
+      // )
+
+      // if (!rateLimitCheck.allowed) {
+      //   setAlertMessage({
+      //     title: 'Rate Limit Exceeded',
+      //     description: rateLimitCheck.reason || 'Training limit exceeded'
+      //   })
+      //   setAlertOpen(true)
+      //   return
+      // }
+
       const { error } = await supabase
         .from('faqs')
         .upsert(validFaqs, { 
@@ -246,6 +283,10 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       if (onSaveWorkflow) {
         await onSaveWorkflow()
       }
+
+      // // Record token usage after successful save
+      // await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
+
     } catch (error) {
       logger.log('error', 'database', 'Failed to save FAQs: ' + error)
       setAlertMessage({

@@ -36,6 +36,8 @@ interface DashboardStats {
   totalChats: number
   averageResponseTime: number
   responseRate: number
+  pricingTier: string
+  workflowLimit: number
   timestamp: number
 }
 

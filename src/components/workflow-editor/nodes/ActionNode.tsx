@@ -29,7 +29,7 @@ export default function ActionNode({ id, data, isConnectable, selected }: NodePr
   )
 
   return (
-    <div className="relative">
+    <div className={`relative ${selected ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}>
       <NodeResizer 
         minWidth={150}
         minHeight={50}
