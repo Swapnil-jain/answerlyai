@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Groq } from 'groq-sdk'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts'
-// import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { RateLimiter } from '@/lib/utils/rateLimiter'
 
 //API Route which is used by the snippet which will be used by the client website.
 
@@ -29,36 +29,38 @@ export async function POST(req: NextRequest) {
     // Remove auth check for widget requests
     // Instead, verify the request origin if needed
     const origin = req.headers.get('origin');
-    console.log('Request origin:', origin);
+
+    // Get userId from header or use domain as fallback
+    const userId = req.headers.get('X-User-ID') || 
+                  (origin ? new URL(origin).hostname : 'anonymous');
 
     const { message, history = [] } = await req.json();
 
-    // // Estimate token count
-    // const estimatedTokens = message.length / 4 + 
-    //   history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0);
+    // Estimate token count
+    const estimatedTokens = message.length / 4 + 
+      history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0);
 
-    // // Check rate limits
-    // const rateLimitCheck = await RateLimiter.checkRateLimit(
-    //   user.id,
-    //   'chatting',
-    //   Math.ceil(estimatedTokens)
-    // );
+    const rateLimitCheck = await RateLimiter.checkRateLimit(
+      userId,
+      'chatting',
+      Math.ceil(estimatedTokens)
+    );
 
-    // if (!rateLimitCheck.allowed) {
-    //   return new NextResponse(
-    //     JSON.stringify({ 
-    //       success: false, 
-    //       message: rateLimitCheck.reason 
-    //     }),
-    //     { 
-    //       status: 429,
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //         'Access-Control-Allow-Origin': '*',
-    //       },
-    //     }
-    //   );
-    // }
+    if (!rateLimitCheck.allowed) {
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          message: rateLimitCheck.reason 
+        }),
+        { 
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
 
     // Get workflow data from Supabase
     const { data: workflow, error: workflowError } = await supabase
@@ -142,12 +144,12 @@ export async function POST(req: NextRequest) {
       stream: false,
     });
 
-    // // Record token usage
-    // await RateLimiter.recordTokenUsage(
-    //   user.id,
-    //   'chatting',
-    //   completion.usage?.total_tokens || Math.ceil(estimatedTokens)
-    // );
+    // Record token usage
+    await RateLimiter.recordTokenUsage(
+      userId,
+      'chatting',
+      completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+    );
 
     return new NextResponse(
       JSON.stringify({
@@ -160,7 +162,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
         },
       }
     );
@@ -180,7 +182,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
         },
       }
     );
@@ -193,7 +195,7 @@ export async function OPTIONS(req: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
     },
   });
 }

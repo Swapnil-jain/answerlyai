@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         function initializeWidget() {
           console.log('Initializing widget...');
           
-          function ChatWidget({ workflowId, theme = 'light', position = 'bottom-right' }) {
+          function ChatWidget({ workflowId, theme = 'light', position = 'bottom-right', userId }) {
             const [isOpen, setIsOpen] = React.useState(false);
             const [messages, setMessages] = React.useState([initialMessage]);
             const [input, setInput] = React.useState('');
@@ -71,7 +71,8 @@ export async function GET(request: NextRequest) {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
-                    'Origin': window.location.origin
+                    'Origin': window.location.origin,
+                    ...(userId && { 'X-User-ID': userId })
                   },
                   body: JSON.stringify({
                     message: userMessage,

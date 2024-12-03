@@ -29,8 +29,18 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       setError('')
       setProgress('Starting crawler...')
 
+      const { data: existingData, error: contextError } = await supabase
+        .from('workflows')
+        .select('context')
+        .eq('id', workflowId)
+        .single()
+
+      if (contextError) throw contextError
+
+      const existingContext = existingData?.context || ''
+
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
       const response = await fetch('/api/crawl', {
         method: 'POST',
@@ -59,11 +69,15 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       }
 
       setProgress('Updating chatbot context...')
-      // Update the workflow's context with the crawled data
+      
+      const combinedContext = existingContext
+        ? `${existingContext}\n\nWebsite Content from ${url}:\n${data.websiteContent}`
+        : data.websiteContent
+
       const { error: updateError } = await supabase
         .from('workflows')
         .update({
-          context: data.websiteContent,
+          context: combinedContext,
           last_crawled: new Date().toISOString(),
           website_url: url
         })
@@ -72,7 +86,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       if (updateError) throw updateError
 
       // Update cache
-      workflowCache.updateWorkflowContext(workflowId, data.websiteContent)
+      workflowCache.updateWorkflowContext(workflowId, combinedContext)
 
       if (onSaveWorkflow) {
         await onSaveWorkflow()

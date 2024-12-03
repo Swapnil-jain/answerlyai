@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
-// import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { RateLimiter } from '@/lib/utils/rateLimiter'
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -32,36 +32,41 @@ export async function POST(req: Request) {
       throw new Error('Authentication required')
     }
 
+    // Ensure user.id exists
+    if (!user.id) {
+      throw new Error('User ID not found')
+    }
+
     const { message, workflowId, history } = await req.json()
 
-    // // Estimate token count (rough estimation)
-    // const estimatedTokens = message.length / 4 + 
-    //   history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0)
+    // Estimate token count (rough estimation)
+    const estimatedTokens = message.length / 4 + 
+      history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0)
 
-    // // Log the estimated token count
-    // console.log('Estimated token count:', estimatedTokens)
+    // Log the estimated token count
+    console.log('Estimated token count:', estimatedTokens)
 
-    // console.log('Rate limit check for:', {
-    //   userId: user.id,
-    //   type: 'chatting',
-    //   estimatedTokens: Math.ceil(estimatedTokens)
-    // })
+    console.log('Rate limit check for:', {
+      userId: user.id,
+      type: 'chatting',
+      estimatedTokens: Math.ceil(estimatedTokens)
+    })
 
-    // // Check rate limits
-    // const rateLimitCheck = await RateLimiter.checkRateLimit(
-    //   user.id,
-    //   'chatting',
-    //   Math.ceil(estimatedTokens)
-    // )
+    // Check rate limits
+    const rateLimitCheck = await RateLimiter.checkRateLimit(
+      user.id,
+      'chatting',
+      Math.ceil(estimatedTokens)
+    )
 
-    // console.log('Rate limit response:', rateLimitCheck)
+    console.log('Rate limit response:', rateLimitCheck)
 
-    // if (!rateLimitCheck.allowed) {
-    //   return NextResponse.json(
-    //     { success: false, message: rateLimitCheck.reason },
-    //     { status: 429 }
-    //   )
-    // }
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        { success: false, message: rateLimitCheck.reason },
+        { status: 429 }
+      )
+    }
 
     // Get workflow context from Supabase
     const { data: workflowData, error: workflowError } = await supabase
@@ -148,12 +153,12 @@ export async function POST(req: Request) {
       stream: false,
     })
 
-    // // Record token usage after successful completion
-    // await RateLimiter.recordTokenUsage(
-    //   user.id,
-    //   'chatting',
-    //   completion.usage?.total_tokens || Math.ceil(estimatedTokens)
-    // )
+    // Record token usage after successful completion
+    await RateLimiter.recordTokenUsage(
+      user.id,
+      'chatting',
+      completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+    )
 
     return NextResponse.json({
       success: true,

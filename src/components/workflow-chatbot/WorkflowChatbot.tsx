@@ -3,6 +3,9 @@ import { Node, Edge } from "reactflow";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase/provider";
+import { MessageSquare, ArrowLeft, LayoutDashboard } from "lucide-react";
+import Link from "next/link";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog"
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -40,6 +43,11 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const lastMessageTime = useRef<Date>();
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string }>({
+    title: '',
+    description: ''
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -282,109 +290,129 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     }
   };
 
+  const showAlert = (title: string, description: string) => {
+    setAlertMessage({ title, description })
+    setAlertOpen(true)
+  }
+
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b">
-        <div className="flex items-center gap-4">
-          <a href="/" className="text-xl font-semibold text-blue-600">
-            AnswerlyAI
-          </a>
-        </div>
-        <div className="flex items-center gap-4">
-          <a
-            href="/how-it-works"
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            How it works
-          </a>
-          <a
-            href="/waitlist"
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            Waitlist
-          </a>
-          <a
-            href="/pre-launch"
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            Pre-launch offer
-          </a>
-          <a
-            href="/builder"
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            Workflow
-          </a>
-        </div>
-      </div>
+      <header className="w-full py-3 bg-white/80 backdrop-blur-sm shadow-sm border-b">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/" className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
+              </Link>
+              <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+                <MessageSquare className="w-3 h-3 text-blue-600" />
+                <span className="text-xs font-medium text-blue-600">
+                  Chat Interface
+                </span>
+              </div>
+            </div>
 
-      <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full">
-        <div className="flex justify-between items-center py-4 px-6">
-          <h1 className="text-xl font-semibold">Chat Assistant</h1>
-          <Button
-            onClick={() => router.push(`/builder/${workflowId}`)}
-            variant="outline"
-            className="flex items-center gap-2 text-sm"
-          >
-            « Back to Workflow Editor
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => router.push(`/builder/${workflowId}`)}
+                variant="ghost"
+                className="flex items-center gap-2"
               >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Editor
+              </Button>
+              <Link href="/dashboard">
+                <Button
+                  variant="ghost"
+                  className="hidden md:flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex flex-1 max-w-4xl mx-auto w-full">
+        <div className="flex flex-col flex-1">
+          <div className="flex justify-between items-center py-4 px-6">
+            <h1 className="text-xl font-semibold">Chat Assistant</h1>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              {messages.map((message, index) => (
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.type === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-800"
+                  key={index}
+                  className={`flex ${
+                    message.type === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {message.content}
+                  <div
+                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                      message.type === "user"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {message.content}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-4 py-2 text-gray-800">
-                  Typing...
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 rounded-lg px-4 py-2 text-gray-800">
+                    Typing...
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="p-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={currentInput}
-              onChange={(e) => setCurrentInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleUserInput();
-                }
-              }}
-              placeholder="Type your message..."
-              className="flex-1 border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <Button
-              onClick={handleUserInput}
-              disabled={isLoading || !currentInput.trim()}
-              className="bg-black text-white hover:bg-gray-800"
-            >
-              Send
-            </Button>
+          <div className="p-6">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={currentInput}
+                onChange={(e) => setCurrentInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleUserInput();
+                  }
+                }}
+                placeholder="Type your message..."
+                className="flex-1 border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Button
+                onClick={handleUserInput}
+                disabled={isLoading || !currentInput.trim()}
+                className="bg-black text-white hover:bg-gray-800"
+              >
+                Send
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertOpen(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

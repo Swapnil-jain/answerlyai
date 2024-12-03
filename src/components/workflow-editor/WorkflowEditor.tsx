@@ -19,7 +19,7 @@ import ReactFlow, {
   NodeChange,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
-import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, Sparkles } from 'lucide-react'
+import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
 import AuthGuard from '@/components/auth/AuthGuard'
 import {
@@ -42,8 +42,8 @@ import { Button } from '@/components/ui/button'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
-// import { RateLimiter } from '@/lib/utils/rateLimiter'
-// import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -294,27 +294,27 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in to save your workflow')
 
-      // // Estimate tokens for workflow
-      // const workflowTokens = estimateTokens.workflow(nodes, edges)
+      // Estimate tokens for workflow
+      const workflowTokens = estimateTokens.workflow(nodes, edges)
 
-      // // Check rate limit
-      // const rateLimitCheck = await RateLimiter.checkRateLimit(
-      //   user.id,
-      //   'training',
-      //   workflowTokens
-      // ).catch(error => {
-      //   console.error('Rate limit check error:', error)
-      //   // Default to allowing if there's an error checking
-      //   return { allowed: true } as RateLimitResponse
-      // })
+      // Check rate limit
+      const rateLimitCheck = await RateLimiter.checkRateLimit(
+        user.id,
+        'training',
+        workflowTokens
+      ).catch(error => {
+        console.error('Rate limit check error:', error)
+        // Default to allowing if there's an error checking
+        return { allowed: true } as RateLimitResponse
+      })
 
-      // if (!rateLimitCheck.allowed) {
-      //   throw new Error(
-      //     'reason' in rateLimitCheck 
-      //       ? rateLimitCheck.reason 
-      //       : 'Training limit exceeded'
-      //   )
-      // }
+      if (!rateLimitCheck.allowed) {
+        throw new Error(
+          'reason' in rateLimitCheck 
+            ? rateLimitCheck.reason 
+            : 'Training limit exceeded'
+        )
+      }
 
       // Check for duplicate names regardless of whether it's a new or existing workflow
       const { data: existingWorkflow } = await supabase
@@ -1292,7 +1292,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 }
 
 // Create a wrapper component to handle initialization
-function WorkflowEditorWrapper({ workflowId }: WorkflowEditorProps) {
+const WorkflowEditorWrapper = ({ workflowId }: WorkflowEditorProps) => {
   return (
     <AuthGuard>
       <ReactFlowProvider>

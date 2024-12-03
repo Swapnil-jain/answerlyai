@@ -17,8 +17,8 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-// import { RateLimiter } from '@/lib/utils/rateLimiter'
-// import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 interface FAQ {
   id: string
@@ -234,29 +234,29 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       setIsSaving(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-      
+
       const validFaqs = faqs
         .filter(faq => faq.question.trim() !== '' && faq.answer.trim() !== '')
 
-      // // Estimate total tokens for all FAQs
-      // const totalTokens = validFaqs.reduce((acc, faq) => 
-      //   acc + estimateTokens.faq(faq.question, faq.answer), 0)
+      // Estimate total tokens for all FAQs
+      const totalTokens = validFaqs.reduce((acc, faq) => 
+        acc + estimateTokens.faq(faq.question, faq.answer), 0)
 
-      // // Check rate limit
-      // const rateLimitCheck = await RateLimiter.checkRateLimit(
-      //   user.id,
-      //   'training',
-      //   totalTokens
-      // )
+      // Check rate limit
+      const rateLimitCheck = await RateLimiter.checkRateLimit(
+        user.id,
+        'training',
+        totalTokens
+      )
 
-      // if (!rateLimitCheck.allowed) {
-      //   setAlertMessage({
-      //     title: 'Rate Limit Exceeded',
-      //     description: rateLimitCheck.reason || 'Training limit exceeded'
-      //   })
-      //   setAlertOpen(true)
-      //   return
-      // }
+      if (!rateLimitCheck.allowed) {
+        setAlertMessage({
+          title: 'Rate Limit Exceeded',
+          description: `${rateLimitCheck.reason}. Your FAQ changes could not be saved. Please try again later or contact support if this persists.`
+        })
+        setAlertOpen(true)
+        return
+      }
 
       const { error } = await supabase
         .from('faqs')
@@ -284,8 +284,8 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         await onSaveWorkflow()
       }
 
-      // // Record token usage after successful save
-      // await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
+      // Record token usage after successful save
+      await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
 
     } catch (error) {
       logger.log('error', 'database', 'Failed to save FAQs: ' + error)
@@ -307,111 +307,113 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </div>
-    )
-  }
-
   return (
-    <div className="flex-1 max-w-6xl mx-auto p-8 pt-20">
-      <div className="space-y-8">
-        {/* Description Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">FAQ Management for Workflow</h2>
-            <Button
-              onClick={handleBackClick}
-              className="flex items-center gap-2"
-            >
-              « Back to Workflow Editor
-            </Button>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Add FAQs to your chatbot either by uploading a CSV file or manually entering them below. 
-            These FAQs will be used to enhance your chatbot's responses with custom knowledge.
-          </p>
-          
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 className="font-semibold mb-2">Example CSV format:</h3>
-            <code className="block text-sm text-gray-600">
-              question,answer<br/>
-              What are your business hours?,We are open Monday to Friday, 9 AM to 5 PM<br/>
-              How do I reset my password?,Click on the "Forgot Password" link on the login page
-            </code>
-          </div>
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
-
-        {/* Upload and Manual Entry Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Manage FAQs</h2>
-            <div className="flex gap-3">
-              <FileInput onChange={handleFileUpload} />
+      )}
+      
+      <div className="flex-1 max-w-6xl mx-auto p-8 pt-20">
+        <div className="space-y-8">
+          {/* Description Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">FAQ Management for Workflow</h2>
               <Button
-                onClick={addNewFAQ}
-                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white"
+                onClick={handleBackClick}
+                className="flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" /> Add FAQ
+                « Back to Workflow Editor
               </Button>
-              <Button
-                onClick={saveFAQs}
-                disabled={isSaving}
-                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Saving...' : 'Save All'}
-              </Button>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Add FAQs to your chatbot either by uploading a CSV file or manually entering them below. 
+              These FAQs will be used to enhance your chatbot's responses with custom knowledge.
+            </p>
+            
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="font-semibold mb-2">Example CSV format:</h3>
+              <code className="block text-sm text-gray-600">
+                question,answer<br/>
+                What are your business hours?,We are open Monday to Friday, 9 AM to 5 PM<br/>
+                How do I reset my password?,Click on the "Forgot Password" link on the login page
+              </code>
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Answer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {faqs.map((faq) => (
-                  <tr key={faq.id}>
-                    <td className="px-6 py-4">
-                      <Input
-                        className="w-full"
-                        value={faq.question}
-                        onChange={(e) => handleFAQChange(faq.id, 'question', e.target.value)}
-                        placeholder="Enter question..."
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Input
-                        className="w-full"
-                        value={faq.answer}
-                        onChange={(e) => handleFAQChange(faq.id, 'answer', e.target.value)}
-                        placeholder="Enter answer..."
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteFAQ(faq.id || '')}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
+          {/* Upload and Manual Entry Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Manage FAQs</h2>
+              <div className="flex gap-3">
+                <FileInput onChange={handleFileUpload} />
+                <Button
+                  onClick={addNewFAQ}
+                  className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Plus className="w-4 h-4" /> Add FAQ
+                </Button>
+                <Button
+                  onClick={saveFAQs}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Saving...' : 'Save All'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="min-w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Answer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {faqs.map((faq) => (
+                    <tr key={faq.id}>
+                      <td className="px-6 py-4">
+                        <Input
+                          className="w-full"
+                          value={faq.question}
+                          onChange={(e) => handleFAQChange(faq.id, 'question', e.target.value)}
+                          placeholder="Enter question..."
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Input
+                          className="w-full"
+                          value={faq.answer}
+                          onChange={(e) => handleFAQChange(faq.id, 'answer', e.target.value)}
+                          placeholder="Enter answer..."
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteFAQ(faq.id || '')}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Alert Dialogs */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -459,4 +461,4 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       </AlertDialog>
     </div>
   )
-} 
+}

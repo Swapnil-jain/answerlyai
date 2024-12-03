@@ -16,8 +16,8 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-// import { RateLimiter } from '@/lib/utils/rateLimiter'
-// import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { estimateTokens } from '@/lib/utils/tokenEstimator'
 
 interface ContextManagerProps {
   workflowId: string
@@ -31,7 +31,11 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [alertMessage, setAlertMessage] = useState<{ title: string; description: string; type: 'success' | 'error' | 'confirm' } | null>(null)
+  const [alertMessage, setAlertMessage] = useState<{ 
+    title: string; 
+    description: string; 
+    type: 'success' | 'error' | 'confirm' | 'info' 
+  } | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
 
   useEffect(() => {
@@ -78,20 +82,24 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // // Estimate tokens for context
-      // const contextTokens = estimateTokens.text(context)
+      // Estimate tokens for context
+      const contextTokens = estimateTokens.text(context)
 
-      // // Check rate limit
-      // const rateLimitCheck = await RateLimiter.checkRateLimit(
-      //   user.id,
-      //   'training',
-      //   contextTokens
-      // )
+      // Check rate limit
+      const rateLimitCheck = await RateLimiter.checkRateLimit(
+        user.id,
+        'training',
+        contextTokens
+      )
 
-      // if (!rateLimitCheck.allowed) {
-      //   showAlert('Rate Limit Exceeded', rateLimitCheck.reason || 'Training limit exceeded', 'error')
-      //   return
-      // }
+      if (!rateLimitCheck.allowed) {
+        showAlert(
+          'Rate Limit Exceeded',
+          `${rateLimitCheck.reason}. Your context changes could not be saved. Please try again later or contact support if this persists.`,
+          'error'
+        )
+        return
+      }
 
       const { error } = await supabase
         .from('workflows')

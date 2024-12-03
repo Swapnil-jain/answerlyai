@@ -1,16 +1,30 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useSupabase } from '@/lib/supabase/provider';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CopyIcon, CheckIcon, ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function WidgetPage() {
   const params = useParams();
   const workflowId = params.workflowId as string;
   const [copied, setCopied] = useState(false);
+  const { supabase } = useSupabase();
+  const [userId, setUserId] = useState<string>('');
+  
+  // Get the current user's ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, [supabase.auth]);
   
   // Get the base URL, fallback to window.location if env var is not set
   const getBaseUrl = () => {
@@ -25,7 +39,8 @@ export default function WidgetPage() {
     window.addEventListener('AnswerlyAIWidgetReady', function() {
         window.AnswerlyAIWidget.init({
             theme: 'blue',
-            position: 'bottom-right'
+            position: 'bottom-right',
+            userId: '${userId}'
         });
     });
 </script>`;
@@ -86,7 +101,13 @@ export default function WidgetPage() {
             <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-4">
               <li><code>theme</code>: 'blue' (default) or 'light'</li>
               <li><code>position</code>: 'bottom-right' (default) or 'bottom-left'</li>
+              <li><code>userId</code>: Automatically set to your account ID for rate limiting</li>
             </ul>
+            <div className="mt-4 p-4 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                Note: The widget code includes your user ID ({userId}) to ensure all chat interactions are tracked under your account.
+              </p>
+            </div>
           </div>
         </TabsContent>
         
