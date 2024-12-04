@@ -6,6 +6,7 @@ import { useSupabase } from "@/lib/supabase/provider";
 import { MessageSquare, ArrowLeft, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog"
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -66,20 +67,25 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        // Load workflow from Supabase instead of localStorage
+        // Choose appropriate tables based on admin status
+        const isAdminUser = isAdmin(user.id)
+        const workflowTable = isAdminUser ? 'sample_workflows' : 'workflows'
+        const faqTable = isAdminUser ? 'sample_faqs' : 'faqs'
+
+        // Load workflow from appropriate table
         const { data: workflowData, error: workflowError } = await supabase
-          .from("workflows")
+          .from(workflowTable)
           .select("*")
           .eq("id", workflowId)
           .single();
 
         if (workflowError) throw workflowError;
 
-        // Load FAQs
+        // Load FAQs from appropriate table
         const { data: faqData, error: faqError } = await supabase
-          .from("faqs")
+          .from(faqTable)
           .select("*")
-          .eq("user_id", user.id);
+          .eq("workflow_id", workflowId);
 
         if (faqError) throw faqError;
         setFaqs(faqData || []);
@@ -124,6 +130,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // Skip chat session creation for admin users
+        if (isAdmin(user.id)) return;
+
         const { data, error } = await supabase
           .from('chat_sessions')
           .insert({
@@ -160,6 +169,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   }, [workflowId, supabase]);
 
   const updateChatStats = async (responseTime: number, wasSuccessful: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || isAdmin(user.id)) return; // Skip for admin users
+    
     if (!currentSession?.id) return;
 
     try {

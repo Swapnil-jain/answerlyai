@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
 import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -68,18 +69,22 @@ export async function POST(req: Request) {
       )
     }
 
-    // Get workflow context from Supabase
+    // Get workflow context from appropriate table
+    const isAdminUser = isAdmin(user.id)
+    const workflowTable = isAdminUser ? 'sample_workflows' : 'workflows'
+    const faqTable = isAdminUser ? 'sample_faqs' : 'faqs'
+
     const { data: workflowData, error: workflowError } = await supabase
-      .from('workflows')
+      .from(workflowTable)
       .select('context, nodes, edges')
       .eq('id', workflowId)
       .single()
 
     if (workflowError) throw workflowError
 
-    // Get FAQs for this workflow
+    // Get FAQs from appropriate table
     const { data: faqData, error: faqError } = await supabase
-      .from('faqs')
+      .from(faqTable)
       .select('*')
       .eq('workflow_id', workflowId)
 

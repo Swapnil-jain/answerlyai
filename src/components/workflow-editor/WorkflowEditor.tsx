@@ -45,6 +45,7 @@ import { TIER_LIMITS } from '@/lib/constants/tiers'
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
+import { eventEmitter } from '@/lib/utils/events'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -311,6 +312,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       // Choose appropriate table based on admin status
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
+      const isNewWorkflow = !currentWorkflowId
 
       // Skip rate limits and tier checks for admin users
       if (!isAdmin(user.id)) {
@@ -416,7 +418,25 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         workflowCache.setWorkflowList(updatedList)
       }
 
-      showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
+      // Emit event to update SavedWorkflows
+      eventEmitter.emit('workflowUpdated', {
+        id: data.id,
+        name: data.name,
+        updated_at: data.updated_at
+      })
+
+      // For non-admin users creating a new workflow, show success message with navigation
+      if (!isAdmin(user.id) && isNewWorkflow) {
+        showAlert(
+          'Success! 🎉', 
+          'Your workflow has been created successfully.',
+          'success',
+          () => router.push(`/builder/${data.id}`)
+        )
+      } else {
+        showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
+      }
+
       setHasUnsavedChanges(false)
       return true
 

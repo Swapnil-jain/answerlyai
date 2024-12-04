@@ -131,7 +131,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       // Update cache after successful save
       workflowCache.updateWorkflowContext(workflowId, context)
       setHasUnsavedChanges(false)
-      showAlert('Success', 'Context saved successfully', 'success')
+      showAlert('Success', 'Context saved successfully.', 'success')
 
       if (onSaveWorkflow) {
         await onSaveWorkflow()

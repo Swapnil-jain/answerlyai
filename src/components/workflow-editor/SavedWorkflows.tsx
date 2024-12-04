@@ -184,57 +184,65 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     setAlertOpen(true)
   }
 
-  const handleDelete = async (workflowId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setWorkflowToDelete(workflowId)
-    setDeleteConfirmOpen(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!workflowToDelete) return
-
+  const handleDeleteWorkflow = async (id: string) => {
     try {
-      setIsDeleting(workflowToDelete)
-      setDeleteConfirmOpen(false)
+      setIsDeleting(id)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
 
       const { error } = await supabase
-        .from('workflows')
+        .from(table)
         .delete()
-        .eq('id', workflowToDelete)
+        .eq('id', id)
 
-      if (error) throw error
-      
-      // Update local state first
-      setWorkflows(current => current.filter(w => w.id !== workflowToDelete))
-      
-      // Try to update cache
-      try {
-        workflowCache.removeWorkflow(workflowToDelete)
-      } catch (cacheError) {
-        logger.log('warn', 'cache', 'Failed to update cache after deletion')
+      if (error) {
+        console.error('Delete error:', {
+          error,
+          details: {
+            table,
+            workflowId: id,
+            userId: user.id,
+            isAdmin: isAdmin(user.id)
+          }
+        })
+        throw error
       }
 
-      showAlert('Success', 'Workflow deleted successfully.')
-      
-      // Navigate to /builder after alert is closed
-      const handleAlertClose = () => {
-        router.push('/builder')
+      // Update local state
+      setWorkflows(currentWorkflows => 
+        currentWorkflows.filter(w => w.id !== id)
+      )
+
+      // Update cache
+      const listCache = workflowCache.getWorkflowList()
+      if (listCache) {
+        const updatedList = listCache.filter(w => w.id !== id)
+        workflowCache.setWorkflowList(updatedList)
       }
-      
-      // Update the alert state to include the close handler
-      setAlertMessage({ 
-        title: 'Success', 
-        description: 'Workflow deleted successfully.',
-        onClose: handleAlertClose 
+      workflowCache.removeWorkflow(id)
+
+      setDeleteConfirmOpen(false)
+      setWorkflowToDelete(null)
+
+      // Show success message and navigate
+      setAlertMessage({
+        title: 'Success',
+        description: 'Workflow deleted successfully',
+        onClose: () => router.push('/builder')
       })
+      setAlertOpen(true)
 
     } catch (error) {
-      logger.log('error', 'database', 'Failed to delete workflow: ' + error)
-      showAlert('Error', 'Failed to delete workflow. Please try again.')
-      loadWorkflows()
+      console.error('Failed to delete workflow:', error)
+      setAlertMessage({
+        title: 'Error',
+        description: 'Failed to delete workflow. Please try again.'
+      })
+      setAlertOpen(true)
     } finally {
       setIsDeleting(null)
-      setWorkflowToDelete(null)
     }
   }
 
@@ -252,7 +260,19 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     }
   }
 
-  // Also, let's memoize the workflow list to prevent unnecessary re-renders
+  // Move these functions before the useMemo
+  const handleDelete = async (workflowId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setWorkflowToDelete(workflowId)
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!workflowToDelete) return
+    await handleDeleteWorkflow(workflowToDelete)
+  }
+
+  // Then the memoized workflow list
   const workflowList = useMemo(() => (
     <div className="space-y-2 max-h-[200px] overflow-y-auto">
       {workflows.map((workflow) => (
@@ -311,18 +331,15 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Workflow</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this workflow? This action cannot be undone.
+              This action cannot be undone. This will permanently delete your workflow.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-2">
+          <AlertDialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setDeleteConfirmOpen(false)
-                setWorkflowToDelete(null)
-              }}
+              onClick={() => setDeleteConfirmOpen(false)}
               disabled={!!isDeleting}
             >
               Cancel
@@ -338,7 +355,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
                   Deleting...
                 </div>
               ) : (
-                'Delete'
+'Delete'
               )}
             </Button>
           </AlertDialogFooter>
