@@ -13,7 +13,7 @@ export default function ContactSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <div className="bg-blue-50 p-8 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
             <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="h-6 w-6 text-white" />
@@ -29,20 +29,9 @@ export default function ContactSection() {
             <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageSquare className="h-6 w-6 text-white" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Live Chat</h3>
+            <h3 className="text-xl font-semibold mb-2">Live Chatbot</h3>
             <p className="text-gray-600 mb-4">Available 24/7</p>
             <Button className="bg-blue-600 hover:bg-blue-700">Start Chat</Button>
-          </div>
-
-          <div className="bg-blue-50 p-8 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Phone className="h-6 w-6 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Schedule a Call</h3>
-            <p className="text-gray-600 mb-4">Book a demo with our team</p>
-            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-              Book Time
-            </Button>
           </div>
         </div>
       </div>

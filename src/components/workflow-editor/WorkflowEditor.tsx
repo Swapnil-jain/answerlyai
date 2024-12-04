@@ -19,7 +19,7 @@ import ReactFlow, {
   NodeChange,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
-import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut } from 'lucide-react'
+import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, BookOpen } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
 import AuthGuard from '@/components/auth/AuthGuard'
 import {
@@ -44,6 +44,7 @@ import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -284,6 +285,20 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     setAlertOpen(true)
   }
 
+  // Add state for admin mode
+  const [isAdminMode, setIsAdminMode] = useState(false)
+
+  // Add effect to check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && isAdmin(user.id)) {
+        setIsAdminMode(true)
+      }
+    }
+    checkAdminStatus()
+  }, [supabase])
+
   const saveWorkflow = async () => {
     if (isSaving) return false
     
@@ -294,173 +309,127 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Please sign in to save your workflow')
 
-      // Estimate tokens for workflow
-      const workflowTokens = estimateTokens.workflow(nodes, edges)
+      // Choose appropriate table based on admin status
+      const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
 
-      // Check rate limit
-      const rateLimitCheck = await RateLimiter.checkRateLimit(
-        user.id,
-        'training',
-        workflowTokens
-      ).catch(error => {
-        console.error('Rate limit check error:', error)
-        // Default to allowing if there's an error checking
-        return { allowed: true } as RateLimitResponse
-      })
+      // Skip rate limits and tier checks for admin users
+      if (!isAdmin(user.id)) {
+        // Keep all existing validation logic
+        const workflowTokens = estimateTokens.workflow(nodes, edges)
+        const rateLimitCheck = await RateLimiter.checkRateLimit(
+          user.id,
+          'training',
+          workflowTokens
+        ).catch(error => {
+          console.error('Rate limit check error:', error)
+          return { allowed: true } as RateLimitResponse
+        })
 
-      if (!rateLimitCheck.allowed) {
-        throw new Error(
-          'reason' in rateLimitCheck 
-            ? rateLimitCheck.reason 
-            : 'Training limit exceeded'
-        )
-      }
-
-      // Check for duplicate names regardless of whether it's a new or existing workflow
-      const { data: existingWorkflow } = await supabase
-        .from('workflows')
-        .select('id, name')
-        .eq('user_id', user.id)
-        .eq('name', workflowName)
-        .neq('id', currentWorkflowId || '') // Exclude current workflow when checking
-        .single()
-
-      if (existingWorkflow) {
-        throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
-      }
-
-      // Ensure user has a tier entry
-      await ensureUserTier(supabase, user.id)
-
-      // Get user's tier and current workflow count
-      const { data: tierData, error: tierError } = await supabase
-        .from('user_tiers')
-        .select('pricing_tier, workflow_count')
-        .eq('user_id', user.id)
-        .single()
-
-      if (tierError) throw tierError
-
-      const currentTier = tierData?.pricing_tier || 'hobbyist'
-      const currentCount = tierData?.workflow_count || 0
-      const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
-
-      // Add debug logs
-      console.log('Save workflow:', { workflowId, currentWorkflowId, isNewWorkflow: !workflowId })
-
-      // If we have a workflowId or currentWorkflowId, this is an existing workflow
-      if (currentWorkflowId) {
-        console.log('Updating existing workflow:', currentWorkflowId)
-
-        const { data, error } = await supabase
-          .from('workflows')
-          .update({
-            name: workflowName,
-            nodes: nodes,
-            edges: edges,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentWorkflowId)
-          .select()
-          .single()
-
-        if (error) throw error
-
-        // Update cache
-        if (data) {
-          workflowCache.setWorkflow(data)
-          
-          // Update the list cache
-          const listCache = workflowCache.getWorkflowList()
-          if (listCache) {
-            const updatedList = listCache.map(w => 
-              w.id === data.id 
-                ? { 
-                    id: data.id, 
-                    name: data.name, 
-                    updated_at: data.updated_at 
-                  }
-                : w
-            )
-            workflowCache.setWorkflowList(updatedList)
-          }
-        }
-
-        showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
-        setHasUnsavedChanges(false)
-        return true
-      } else {
-        // This is a new workflow
-        console.log('Creating new workflow')
-
-        // Check tier limit
-        if (currentCount >= tierLimit) {
+        if (!rateLimitCheck.allowed) {
           throw new Error(
-            `You've reached the maximum limit of ${tierLimit} ${
-              tierLimit === 1 ? 'workflow' : 'workflows'
-            } for your ${currentTier} tier. Please upgrade to create more workflows.`
+            'reason' in rateLimitCheck 
+              ? rateLimitCheck.reason 
+              : 'Training limit exceeded'
           )
         }
 
-        // Check for name conflicts
+        // Keep existing duplicate name check
         const { data: existingWorkflow } = await supabase
           .from('workflows')
           .select('id, name')
           .eq('user_id', user.id)
           .eq('name', workflowName)
+          .neq('id', currentWorkflowId || '')
           .single()
 
         if (existingWorkflow) {
           throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
         }
 
-        // Create new workflow
-        const workflowData = {
-          name: workflowName,
-          nodes: nodes,
-          edges: edges,
-          user_id: user.id,
-          updated_at: new Date().toISOString()
-        }
-
-        const { data, error } = await supabase
-          .from('workflows')
-          .insert([workflowData])
-          .select()
+        // Keep existing tier checks
+        await ensureUserTier(supabase, user.id)
+        const { data: tierData, error: tierError } = await supabase
+          .from('user_tiers')
+          .select('pricing_tier, workflow_count')
+          .eq('user_id', user.id)
           .single()
 
-        if (error) throw error
+        if (tierError) throw tierError
 
-        // Rest of new workflow creation code...
-        if (data) {
-          workflowCache.setWorkflow(data)
-          
-          const listCache = workflowCache.getWorkflowList()
-          if (listCache) {
-            const updatedList = [...listCache, { 
-              id: data.id, 
-              name: data.name, 
-              updated_at: data.updated_at 
-            }]
-            workflowCache.setWorkflowList(updatedList)
-          }
+        const currentTier = tierData?.pricing_tier || 'hobbyist'
+        const currentCount = tierData?.workflow_count || 0
+        const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
 
-          // Update the alert message to include navigation
-          showAlert(
-            'Success! 🎉', 
-            'Your workflow has been created successfully.',
-            'success',
-            () => router.push(`/builder/${data.id}`)
+        if (!currentWorkflowId && currentCount >= tierLimit) {
+          throw new Error(
+            `You've reached the maximum limit of ${tierLimit} ${
+              tierLimit === 1 ? 'workflow' : 'workflows'
+            } for your ${currentTier} tier. Please upgrade to create more workflows.`
           )
-          setHasUnsavedChanges(false)
         }
-        return true
       }
+
+      // Prepare the workflow data differently based on table
+      const workflowData = {
+        id: currentWorkflowId || undefined,
+        name: workflowName,
+        nodes: nodes,
+        edges: edges,
+        updated_at: new Date().toISOString(),
+        ...(table === 'workflows' ? { user_id: user.id } : {}) // Only add user_id for regular workflows
+      }
+
+      console.log('Saving workflow:', { table, workflowData }) // Debug log
+
+      // Save to appropriate table
+      const { data, error, status } = await supabase
+        .from(table)
+        .upsert(workflowData)
+        .select()
+        .single()
+
+      console.log('Save response:', { data, error, status }) // Debug log
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message || 'Failed to save workflow')
+      }
+
+      if (!data) {
+        throw new Error('No data returned from save operation')
+      }
+
+      // Keep all existing cache update logic
+      workflowCache.setWorkflow(data)
+      
+      const listCache = workflowCache.getWorkflowList()
+      if (listCache) {
+        const updatedList = listCache.map(w => 
+          w.id === data.id 
+            ? { 
+                id: data.id, 
+                name: data.name, 
+                updated_at: data.updated_at 
+              }
+            : w
+        )
+        workflowCache.setWorkflowList(updatedList)
+      }
+
+      showAlert('Success! 🎉', 'Your workflow has been saved successfully.')
+      setHasUnsavedChanges(false)
+      return true
+
     } catch (error) {
-      // Only catch non-validation errors here
+      // Keep existing error handling
       if (error instanceof Error && error.message.includes('validation')) {
-        throw error  // Re-throw validation errors
+        throw error
       }
+      console.error('Save error:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       showAlert(
         'Error Saving Workflow',
         error instanceof Error ? error.message : 'Failed to save workflow. Please try again.'
@@ -1083,6 +1052,11 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
   return (
     <div className="flex flex-col h-screen">
+      {isAdminMode && (
+        <div className="bg-yellow-50 border-b border-yellow-200 p-2 text-center text-yellow-800 font-semibold">
+          Admin Mode - Changes will be saved to sample workflows
+        </div>
+      )}
       {/* Add loading overlay */}
       {(isLoading || isCreating) && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
@@ -1113,6 +1087,16 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           ) : (
             <>
               <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
+                {!isAdminMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Sample Workflow
+                  </Button>
+                )}
                 <Button
                   onClick={() => handleNavigationWithCheck('/dashboard')}
                   variant="ghost"

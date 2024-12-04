@@ -60,13 +60,14 @@ export default function PricingSection() {
               </span>
             </div>
             <h3 className="text-2xl font-bold mb-4 mt-4">Enthusiast</h3>
-            <p className="text-4xl font-bold mb-6">$19.90<span className="text-lg font-normal">/month</span></p>
+            <p className="text-4xl font-bold mb-6">$14.90<span className="text-lg font-normal">/month</span></p>
             <ul className="space-y-4 mb-8 flex-grow">
               <li>✓ 3 Chatbots</li>
               <li>✓ Advanced Analytics</li>
               <li>✓ Priority Support</li>
               <li>✓ Full Customization</li>
-              <li>✓ 250,000 tokens/day</li>
+              <li>✓ 500,000 tokens/day</li>
+              <li>✓ Embed on unlimited websites</li>
             </ul>
             <Button 
               className="w-full bg-blue-600 hover:bg-blue-700"

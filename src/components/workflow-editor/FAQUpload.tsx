@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface FAQ {
   id: string
@@ -74,6 +75,9 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      // Choose appropriate table based on admin status
+      const table = isAdmin(user.id) ? 'sample_faqs' : 'faqs'
+
       // Try to get from cache first
       const cachedFAQs = workflowCache.getFAQs(workflowId)
       if (cachedFAQs) {
@@ -85,14 +89,13 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       // Load from database if not in cache
       logger.log('info', 'database', `Fetching FAQs for workflow ${workflowId}`)
       const { data, error } = await supabase
-        .from('faqs')
+        .from(table)
         .select('*')
-        .eq('user_id', user.id)
         .eq('workflow_id', workflowId)
         .order('created_at', { ascending: true })
 
       if (error) throw error
-
+      
       // Update state and cache
       if (data) {
         logger.log('info', 'database', `Retrieved ${data.length} FAQs from database`)
@@ -185,32 +188,29 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
 
   const deleteFAQ = async (id: string) => {
     try {
-      // If the FAQ has an ID in the database, delete it from there
-      if (id && faqs.find(faq => faq.id === id)?.created_at) {
-        logger.log('info', 'database', `Deleting FAQ ${id}`)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const table = isAdmin(user.id) ? 'sample_faqs' : 'faqs'
+      
+      if (id) {
         const { error } = await supabase
-          .from('faqs')
+          .from(table)
           .delete()
           .eq('id', id)
 
         if (error) throw error
-
-        // Update cache after successful deletion
-        const updatedFaqs = faqs
-          .filter(faq => faq.id !== id)
-          .map(faq => ({
-            ...faq,
-            created_at: faq.created_at || new Date().toISOString(),
-            updated_at: faq.updated_at || new Date().toISOString()
-          }))
-        
-        workflowCache.setFAQs(workflowId, updatedFaqs)
       }
-      
+
       // Remove from local state
       setFaqs(currentFaqs => currentFaqs.filter(faq => faq.id !== id))
+      
+      // Update cache ONCE - remove duplicate cache updates
+      const updatedFaqs = faqs.filter(faq => faq.id !== id)
+      workflowCache.setFAQs(workflowId, updatedFaqs)
+      
     } catch (error) {
-      logger.log('error', 'database', 'Failed to delete FAQ: ' + error)
+      console.error('Failed to delete FAQ:', error)
       setAlertMessage({
         title: 'Error Deleting FAQ',
         description: 'Failed to delete FAQ. Please try again.'
@@ -235,63 +235,81 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      const isAdminUser = isAdmin(user.id)
+      const table = isAdminUser ? 'sample_faqs' : 'faqs'
+
+      // Prepare FAQs for saving
       const validFaqs = faqs
         .filter(faq => faq.question.trim() !== '' && faq.answer.trim() !== '')
+        .map(faq => {
+          const now = new Date().toISOString()
+          return {
+            id: faq.id,
+            question: faq.question.trim(),
+            answer: faq.answer.trim(),
+            workflow_id: workflowId,
+            created_at: faq.created_at || now,
+            updated_at: now,
+            ...(isAdminUser ? {} : { user_id: user.id })
+          }
+        })
 
-      // Estimate total tokens for all FAQs
+      // Only check rate limits for non-admin users
       const totalTokens = validFaqs.reduce((acc, faq) => 
         acc + estimateTokens.faq(faq.question, faq.answer), 0)
+      if (!isAdminUser) {
+        // Check rate limit
+        const rateLimitCheck = await RateLimiter.checkRateLimit(
+          user.id,
+          'training',
+          totalTokens
+        )
 
-      // Check rate limit
-      const rateLimitCheck = await RateLimiter.checkRateLimit(
-        user.id,
-        'training',
-        totalTokens
-      )
+        if (!rateLimitCheck.allowed) {
+          setAlertMessage({
+            title: 'Rate Limit Exceeded',
+            description: rateLimitCheck.reason || 'Rate limit exceeded'
+          })
+          setAlertOpen(true)
+          return
+        }
+      }
 
-      if (!rateLimitCheck.allowed) {
+      console.log('Saving FAQs:', { table, validFaqs }) // Debug log
+
+      const { data, error } = await supabase
+        .from(table)
+        .upsert(validFaqs)
+        .select()
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+
+      if (data) {
+        workflowCache.setFAQs(workflowId, data)
+        setFaqs(data)
+        setHasUnsavedChanges(false)
         setAlertMessage({
-          title: 'Rate Limit Exceeded',
-          description: `${rateLimitCheck.reason}. Your FAQ changes could not be saved. Please try again later or contact support if this persists.`
+          title: 'Success',
+          description: 'FAQs saved successfully!'
         })
         setAlertOpen(true)
-        return
+
+        if (onSaveWorkflow) {
+          await onSaveWorkflow()
+        }
       }
 
-      const { error } = await supabase
-        .from('faqs')
-        .upsert(validFaqs, { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        })
-
-      if (error) throw error
-
-      // Update cache after successful save
-      workflowCache.setFAQs(workflowId, validFaqs)
-      logger.log('info', 'database', 'FAQs saved successfully')
-      
-      fetchFAQs() // Refresh the list
-      setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
-      setAlertMessage({
-        title: 'FAQs Saved',
-        description: 'Your FAQs have been saved successfully!'
-      })
-      setAlertOpen(true)
-
-      // After successful FAQ save
-      if (onSaveWorkflow) {
-        await onSaveWorkflow()
-      }
-
-      // Record token usage after successful save
-      await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
+       // Record token usage after successful save
+       await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
 
     } catch (error) {
-      logger.log('error', 'database', 'Failed to save FAQs: ' + error)
+      console.error('Error saving FAQs:', error)
       setAlertMessage({
         title: 'Error Saving FAQs',
-        description: 'Failed to save FAQs. Please try again.'
+        description: error instanceof Error ? error.message : 'Failed to save FAQs. Please try again.'
       })
       setAlertOpen(true)
     } finally {

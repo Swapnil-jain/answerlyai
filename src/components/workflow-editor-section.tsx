@@ -80,7 +80,7 @@ export default function WorkflowEditorSection() {
           </div>
 
           {/* Method 3: Text Input */}
-          <div>
+          <div className="relative">
             <div className="bg-green-50 p-8 rounded-2xl">
               <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mb-6">
                 <PenLine className="w-8 h-8 text-green-600" />

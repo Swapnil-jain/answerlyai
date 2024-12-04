@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { estimateTokens } from '@/lib/utils/tokenEstimator'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface ContextManagerProps {
   workflowId: string
@@ -46,28 +47,41 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
   const loadContext = async () => {
     try {
-      // Try cache first
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
+
+      // Try cache first with validation
       const cachedContext = workflowCache.getWorkflowContext(workflowId)
-      if (cachedContext) {
+      if (cachedContext !== null) {
         setContext(cachedContext)
         setIsLoading(false)
+        
+        // Validate cache in background
+        validateCache(workflowId, cachedContext, table)
         return
       }
 
-      // Load from database
       const { data, error } = await supabase
-        .from('workflows')
+        .from(table)
         .select('context')
         .eq('id', workflowId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Database error:', error)
+        throw error
+      }
+
       if (data?.context) {
         setContext(data.context)
         workflowCache.updateWorkflowContext(workflowId, data.context)
       }
     } catch (error) {
       console.error('Error loading context:', error)
+      // Invalidate cache on error
+      workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to load context', 'error')
     } finally {
       setIsLoading(false)
@@ -82,49 +96,53 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Estimate tokens for context
-      const contextTokens = estimateTokens.text(context)
-
-      // Check rate limit
-      const rateLimitCheck = await RateLimiter.checkRateLimit(
-        user.id,
-        'training',
-        contextTokens
-      )
-
-      if (!rateLimitCheck.allowed) {
-        showAlert(
-          'Rate Limit Exceeded',
-          `${rateLimitCheck.reason}. Your context changes could not be saved. Please try again later or contact support if this persists.`,
-          'error'
+      const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
+      // Only check rate limits for non-admin users
+      if (!isAdmin(user.id)) {
+        const rateLimitCheck = await RateLimiter.checkRateLimit(
+          user.id,
+          'training',
+          estimateTokens.text(context)
         )
-        return
+
+        if (!rateLimitCheck.allowed) {
+          showAlert(
+            'Rate Limit Exceeded',
+            rateLimitCheck.reason || 'Rate limit exceeded',
+            'error'
+          )
+          return
+        }
       }
 
       const { error } = await supabase
-        .from('workflows')
+        .from(table)
         .update({ 
           context: context,
           updated_at: new Date().toISOString()
         })
         .eq('id', workflowId)
 
-      if (error) throw error
+      if (error) {
+        console.error('Save error:', error)
+        throw error
+      }
 
+      // Update cache after successful save
       workflowCache.updateWorkflowContext(workflowId, context)
       setHasUnsavedChanges(false)
       showAlert('Success', 'Context saved successfully', 'success')
 
-      // Save workflow after context is saved
       if (onSaveWorkflow) {
         await onSaveWorkflow()
       }
 
-      // // Record token usage after successful save
-      // await RateLimiter.recordTokenUsage(user.id, 'training', contextTokens)
-
+      // Record token usage after successful save
+      await RateLimiter.recordTokenUsage(user.id, 'training', estimateTokens.text(context))
     } catch (error) {
       console.error('Error saving context:', error)
+      // Invalidate cache on error to ensure consistency
+      workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to save context', 'error')
     } finally {
       setIsSaving(false)
@@ -160,6 +178,29 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
           router.push(`/builder/${workflowId}`)
         })
       }
+    }
+  }
+
+  // Add cache validation function
+  const validateCache = async (workflowId: string, cachedContext: string, table: string) => {
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('context')
+        .eq('id', workflowId)
+        .single()
+
+      if (error) throw error
+
+      // If database data differs from cache, update both state and cache
+      if (data?.context !== cachedContext) {
+        setContext(data.context || '')
+        workflowCache.updateWorkflowContext(workflowId, data.context || '')
+      }
+    } catch (error) {
+      console.error('Cache validation error:', error)
+      // On validation error, invalidate cache
+      workflowCache.removeWorkflow(workflowId)
     }
   }
 

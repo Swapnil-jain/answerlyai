@@ -9,6 +9,7 @@ import { logger } from '@/lib/utils/logger'
 import { eventEmitter } from '@/lib/utils/events'
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { AlertDialogAction } from '@/components/ui/alert-dialog'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface SavedWorkflow {
   id: string
@@ -42,10 +43,14 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setWorkflows([])
+        workflowCache.clearCache()
         return
       }
 
-      // Try to get from cache first
+      const isAdminUser = isAdmin(user.id)
+      const table = isAdminUser ? 'sample_workflows' : 'workflows'
+
+      // Try cache first
       try {
         const cachedWorkflows = workflowCache.getWorkflowList()
         if (cachedWorkflows) {
@@ -53,7 +58,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
           setInitialLoading(false)
           
           // Validate cache against database in background
-          validateCache(user.id, cachedWorkflows)
+          validateCache(user.id, cachedWorkflows, table, isAdminUser)
           return
         }
       } catch (cacheError) {
@@ -61,45 +66,53 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       }
 
       // Load from database
-      await loadFromDatabase(user.id)
+      logger.log('info', 'database', 'Fetching workflow list from database')
+      const query = supabase
+        .from(table)
+        .select('id, name, updated_at')
+        .order('updated_at', { ascending: false })
+
+      // Only filter by user_id for non-admin users
+      if (!isAdminUser) {
+        query.eq('user_id', user.id)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      if (data) {
+        logger.log('info', 'database', `Retrieved ${data.length} workflows from database`)
+        setWorkflows(data)
+        workflowCache.setWorkflowList(data)
+      }
     } catch (error) {
       logger.log('error', 'database', 'Failed to load workflows: ' + error)
+      workflowCache.clearCache()
     } finally {
       setInitialLoading(false)
     }
   }
 
-  // Separate function to load from database
-  const loadFromDatabase = async (userId: string) => {
-    logger.log('info', 'database', 'Fetching workflow list from database')
-    const { data, error } = await supabase
-      .from('workflows')
-      .select('id, name, updated_at')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-
-    if (error) throw error
-
-    if (data) {
-      logger.log('info', 'database', `Retrieved ${data.length} workflows from database`)
-      setWorkflows(data)
-      // Try to update cache, but don't fail if cache is unavailable
-      try {
-        workflowCache.setWorkflowList(data)
-      } catch (cacheError) {
-        logger.log('warn', 'cache', 'Failed to update cache')
-      }
-    }
-  }
-
-  // Validate cache against database in background
-  const validateCache = async (userId: string, cachedData: SavedWorkflow[]) => {
+  // Update validateCache to handle admin mode correctly
+  const validateCache = async (
+    userId: string, 
+    cachedData: SavedWorkflow[], 
+    table: string,
+    isAdminUser: boolean
+  ) => {
     try {
-      const { data, error } = await supabase
-        .from('workflows')
+      const query = supabase
+        .from(table)
         .select('id, name, updated_at')
-        .eq('user_id', userId)
         .order('updated_at', { ascending: false })
+
+      // Only filter by user_id for non-admin users
+      if (!isAdminUser) {
+        query.eq('user_id', userId)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 
@@ -109,21 +122,17 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       if (isStale) {
         logger.log('info', 'cache', 'Cache is stale, updating from database')
         setWorkflows(data)
-        try {
-          workflowCache.setWorkflowList(data)
-        } catch (cacheError) {
-          logger.log('warn', 'cache', 'Failed to update stale cache')
-        }
+        workflowCache.setWorkflowList(data)
       }
     } catch (error) {
       logger.log('warn', 'cache', 'Cache validation failed: ' + error)
+      workflowCache.clearCache()
     }
   }
 
-  // Add this method to update a workflow in the list
-  const updateWorkflowInList = (updatedWorkflow: { id: string; name: string; updated_at: string }) => {
+  // Update updateWorkflowInList to handle admin mode
+  const updateWorkflowInList = (updatedWorkflow: SavedWorkflow) => {
     setWorkflows(currentWorkflows => {
-      // Create a new array instead of modifying the existing one
       const workflowExists = currentWorkflows.some(w => w.id === updatedWorkflow.id)
       
       let newWorkflows
@@ -135,13 +144,18 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         newWorkflows = [...currentWorkflows, updatedWorkflow]
       }
 
-      return newWorkflows.sort((a, b) => 
+      // Sort by updated_at
+      const sortedWorkflows = newWorkflows.sort((a, b) => 
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       )
+
+      // Update cache with new list
+      workflowCache.setWorkflowList(sortedWorkflows)
+      return sortedWorkflows
     })
   }
 
-  // Update the useEffect to listen for workflow updates with data
+  // Update useEffect to handle cache invalidation on unmount
   useEffect(() => {
     loadWorkflows()
     
@@ -158,7 +172,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     return () => {
       unsubscribe()
     }
-  }, [loadWorkflows])
+  }, [])
 
   const handleWorkflowClick = (workflowId: string) => {
     // Call the parent handler

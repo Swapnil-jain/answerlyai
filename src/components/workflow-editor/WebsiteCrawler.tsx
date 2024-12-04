@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input'
 import { useSupabase } from '@/lib/supabase/provider'
 import { workflowCache } from '@/lib/cache/workflowCache'
+import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface WebsiteCrawlerProps {
   workflowId: string
@@ -25,17 +26,36 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
     if (!url || !workflowId) return
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
+
       setIsCrawling(true)
       setError('')
       setProgress('Starting crawler...')
 
+      const { data: workflowCheck, error: workflowError } = await supabase
+        .from(table)
+        .select('id')
+        .eq('id', workflowId)
+        .single()
+
+      if (workflowError) {
+        console.error('Workflow access check error:', workflowError)
+        throw new Error('Unable to access workflow')
+      }
+
       const { data: existingData, error: contextError } = await supabase
-        .from('workflows')
+        .from(table)
         .select('context')
         .eq('id', workflowId)
         .single()
 
-      if (contextError) throw contextError
+      if (contextError) {
+        console.error('Context fetch error:', contextError)
+        throw contextError
+      }
 
       const existingContext = existingData?.context || ''
 
@@ -74,18 +94,44 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         ? `${existingContext}\n\nWebsite Content from ${url}:\n${data.websiteContent}`
         : data.websiteContent
 
-      const { error: updateError } = await supabase
-        .from('workflows')
-        .update({
-          context: combinedContext,
+      const updateData = {
+        context: combinedContext,
+        updated_at: new Date().toISOString()
+      }
+
+      if (table === 'workflows') {
+        Object.assign(updateData, {
           last_crawled: new Date().toISOString(),
           website_url: url
         })
+      }
+
+      console.log('Updating context with:', { table, workflowId, updateData })
+
+      const { data: result, error: updateError } = await supabase
+        .from(table)
+        .update(updateData)
         .eq('id', workflowId)
+        .select()
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Context update error:', {
+          error: updateError,
+          details: {
+            table,
+            workflowId,
+            userId: user.id,
+            isAdmin: isAdmin(user.id),
+            updateData
+          }
+        })
+        throw new Error(`Failed to update context: ${updateError.message}`)
+      }
 
-      // Update cache
+      if (!result) {
+        throw new Error('No data returned from update')
+      }
+
       workflowCache.updateWorkflowContext(workflowId, combinedContext)
 
       if (onSaveWorkflow) {
@@ -98,20 +144,16 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         setProgress('')
       }, 2000)
     } catch (error: unknown) {
-      console.error('Error crawling website:', error)
-      
-      // Type guard for Error objects
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          setError('Request timed out. Please try again or check the URL.')
-        } else {
-          setError(error.message || 'Failed to crawl website. Please try again.')
+      console.error('Crawl error:', {
+        error,
+        details: {
+          url,
+          workflowId,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
         }
-      } else {
-        // Handle non-Error objects
-        setError('Failed to crawl website. Please try again.')
-      }
-      
+      })
+      setError(error instanceof Error ? error.message : 'Failed to crawl website')
       setProgress('')
     } finally {
       setIsCrawling(false)

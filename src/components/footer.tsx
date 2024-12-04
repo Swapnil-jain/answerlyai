@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import {Twitter, Linkedin, Instagram } from 'lucide-react'
+import Image from 'next/image'
 
 export default function Footer() {
   return (
@@ -28,15 +28,17 @@ export default function Footer() {
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Connect</h3>
-            <div className="flex space-x-4">
-              <Link href="#" className="text-gray-500 hover:text-blue-600">
-                <Twitter className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="text-gray-500 hover:text-blue-600">
-                <Linkedin className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="text-gray-500 hover:text-blue-600">
-                <Instagram className="w-5 h-5" />
+            <div className="flex items-center space-x-4">
+              <Link href="https://x.com/answerlyAI" className="text-gray-500 hover:text-blue-600 flex items-center gap-2">
+              <span className="text-sm">Follow us on</span>
+                <Image 
+                  src="/X-icon.svg"
+                  alt="X (formerly Twitter) icon"
+                  width={20}
+                  height={20}
+                  className="w-5 h-5"
+                />
+                
               </Link>
             </div>
             <div className="mt-4">
