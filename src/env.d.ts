@@ -1,7 +1,7 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      GROQ_API_KEY: string;
+      GROQ_API_KEYS: string; // Comma-separated list of API keys
       NEXT_PUBLIC_APP_URL: string;
       POSTGRES_URL: string;
       POSTGRES_PRISMA_URL: string;

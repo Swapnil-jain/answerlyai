@@ -12,18 +12,14 @@ export async function GET(request: NextRequest) {
     
     console.log('Serving widget for workflow:', workflowId);
     
-    const protocol = request.headers.get('x-forwarded-proto') || 'http';
-    const host = request.headers.get('host') || 'localhost:3000';
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}`;
 
     const widgetScript = `
       console.log('Widget script loaded for workflow:', '${workflowId}');
       (function() {
-        // Add initial message when chat opens
-        const initialMessage = {
-          type: 'bot',
-          content: 'Hi 👋, I am Cora - Your very own chat assistant! How may I help you today?'
-        };
+        // Add initial message when chat opens - moved into the ChatWidget component
+        // to support dynamic name
 
         console.log('Widget IIFE executing');
         
@@ -52,9 +48,27 @@ export async function GET(request: NextRequest) {
         function initializeWidget() {
           console.log('Initializing widget...');
           
-          function ChatWidget({ workflowId, theme = 'light', position = 'bottom-right', userId }) {
+          function ChatWidget({ workflowId, theme = 'light', position = 'bottom-right', userId, name = 'Cora' }) {
+            // Get theme color based on theme name
+            const getThemeColor = (theme) => {
+              switch(theme) {
+                case 'blue': return '#2563eb';
+                case 'red': return '#dc2626';
+                case 'green': return '#16a34a';
+                case 'purple': return '#7c3aed';
+                case 'indigo': return '#4f46e5';
+                case 'pink': return '#db2777';
+                case 'orange': return '#ea580c';
+                case 'light': return '#1f2937';
+                default: return '#2563eb'; // default blue
+              }
+            };
+
             const [isOpen, setIsOpen] = React.useState(false);
-            const [messages, setMessages] = React.useState([initialMessage]);
+            const [messages, setMessages] = React.useState([{
+              type: 'bot',
+              content: \`Hi 👋, I am \${name} - Your very own chat assistant! How may I help you today?\`
+            }]);
             const [input, setInput] = React.useState('');
             const [isLoading, setIsLoading] = React.useState(false);
 
@@ -72,7 +86,8 @@ export async function GET(request: NextRequest) {
                   headers: { 
                     'Content-Type': 'application/json',
                     'Origin': window.location.origin,
-                    ...(userId && { 'X-User-ID': userId })
+                    ...(userId && { 'X-User-ID': userId }),
+                    'X-Assistant-Name': name // Add the name to headers
                   },
                   body: JSON.stringify({
                     message: userMessage,
@@ -113,17 +128,37 @@ export async function GET(request: NextRequest) {
               React.createElement('button', {
                 onClick: () => setIsOpen(!isOpen),
                 style: {
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '30px',
-                  backgroundColor: theme === 'blue' ? '#2563eb' : '#1f2937',
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '32px',
+                  backgroundColor: getThemeColor(theme),
                   color: 'white',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  display: isOpen ? 'none' : 'block'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  display: isOpen ? 'none' : 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'transform 0.2s ease',
+                  ':hover': {
+                    transform: 'scale(1.05)'
+                  }
                 }
-              }, '💬'),
+              }, React.createElement('svg', {
+                width: '32',
+                height: '32',
+                viewBox: '0 0 24 24',
+                fill: 'currentColor',
+                style: {
+                  transform: 'translateY(-1px)'
+                }
+              }, [
+                // Modern robot icon
+                React.createElement('path', {
+                  d: 'M13.5 2c1.93 0 3.5 1.57 3.5 3.5v1c0 .17-.01.33-.03.5h1.53c1.38 0 2.5 1.12 2.5 2.5v10c0 1.38-1.12 2.5-2.5 2.5h-12c-1.38 0-2.5-1.12-2.5-2.5v-10c0-1.38 1.12-2.5 2.5-2.5h1.53c-.02-.17-.03-.33-.03-.5v-1c0-1.93 1.57-3.5 3.5-3.5h4zm0 2h-4c-.83 0-1.5.67-1.5 1.5v1c0 .83.67 1.5 1.5 1.5h4c.83 0 1.5-.67 1.5-1.5v-1c0-.83-.67-1.5-1.5-1.5zm-6 4h-1c-.28 0-.5.22-.5.5v10c0 .28.22.5.5.5h12c.28 0 .5-.22.5-.5v-10c0-.28-.22-.5-.5-.5h-11zm2 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z',
+                  fillRule: 'evenodd'
+                })
+              ])),
               
               isOpen && React.createElement('div', {
                 style: {

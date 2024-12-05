@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { 
+  AlertDialog, 
+  AlertDialogContent, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogDescription, 
+  AlertDialogFooter 
+} from "@/components/ui/alert-dialog";
 import { useSmoothScroll } from "@/hooks/use-smooth-scroll";
 import { useSupabase } from "@/lib/supabase/provider";
 import { LogOut, LogIn, LayoutDashboard, Sparkles } from "lucide-react";
@@ -31,12 +39,30 @@ export default function Header({ className = "" }: HeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isBuilder]);
 
-  const handleLogout = async () => {
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({
+    title: '',
+    description: '',
+    onClose: () => {}
+  });
+
+  const handleLogout = () => {
+    setAlertMessage({
+      title: 'Confirm Logout',
+      description: 'Are you sure you want to logout?',
+      onClose: () => setAlertOpen(false)
+    });
+    setAlertOpen(true);
+  };
+
+  const confirmLogout = async () => {
     try {
       await supabase.auth.signOut();
-      router.push("/login");
+      router.push("/");
     } catch (error) {
       console.error("Error logging out:", error);
+    } finally {
+      setAlertOpen(false);
     }
   };
 
@@ -57,6 +83,24 @@ export default function Header({ className = "" }: HeaderProps) {
           : "bg-transparent"
       }`}
     >
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="secondary" onClick={() => setAlertOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmLogout}>
+              Confirm
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
@@ -111,11 +155,7 @@ export default function Header({ className = "" }: HeaderProps) {
                     </Button>
                   </Link>
                 )}
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  className="hidden md:flex items-center gap-2"
-                >
+                <Button variant="ghost" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   Logout
                 </Button>

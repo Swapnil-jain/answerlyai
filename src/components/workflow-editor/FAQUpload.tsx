@@ -62,6 +62,9 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
   const [alertOpen, setAlertOpen] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showUnsavedAlert, setShowUnsavedAlert] = useState(false)
+  const [deletedFaqs, setDeletedFaqs] = useState<FAQ[]>([])
+  const [faqToDelete, setFaqToDelete] = useState<FAQ | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
   // Move the initial fetch to useEffect instead of calling directly
   useEffect(() => {
@@ -114,48 +117,29 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
     }
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const text = e.target?.result as string
         const rows = text.split('\n')
-        
-        try {
-          setIsSaving(true)
-          const { data: { user } } = await supabase.auth.getUser()
-          if (!user) throw new Error('Not authenticated')
 
-          const parsedFaqs = rows.slice(1).map(row => {
-            const [question, answer] = row.split(',')
-            return { 
-              id: crypto.randomUUID(),
-              question, 
-              answer,
-              user_id: user.id,
-              workflow_id: workflowId,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          })
+        const parsedFaqs = rows.slice(1).map(row => {
+          const [question, answer] = row.split(',')
+          return {
+            id: crypto.randomUUID(),
+            question,
+            answer,
+            user_id: '',  // Will be set during save
+            workflow_id: workflowId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        })
 
-          const { error } = await supabase
-            .from('faqs')
-            .insert(parsedFaqs)
-
-          if (error) throw error
-          fetchFAQs()
-        } catch (error) {
-          console.error('Error saving FAQs:', error)
-          setAlertMessage({
-            title: 'Error Uploading FAQs',
-            description: 'Failed to upload FAQs. Please check your file format and try again.'
-          })
-          setAlertOpen(true)
-        } finally {
-          setIsSaving(false)
-        }
+        setFaqs([...faqs, ...parsedFaqs])
+        setHasUnsavedChanges(true)
       }
       reader.readAsText(file)
     }
@@ -186,29 +170,21 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
     }
   }
 
-  const deleteFAQ = async (id: string) => {
+  const handleDeleteClick = (faq: FAQ) => {
+    setFaqToDelete(faq);
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!faqToDelete) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      const table = isAdmin(faqToDelete.user_id) ? 'sample_faqs' : 'faqs'
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', faqToDelete.id)
 
-      const table = isAdmin(user.id) ? 'sample_faqs' : 'faqs'
-      
-      if (id) {
-        const { error } = await supabase
-          .from(table)
-          .delete()
-          .eq('id', id)
-
-        if (error) throw error
-      }
-
-      // Remove from local state
-      setFaqs(currentFaqs => currentFaqs.filter(faq => faq.id !== id))
-      
-      // Update cache ONCE - remove duplicate cache updates
-      const updatedFaqs = faqs.filter(faq => faq.id !== id)
-      workflowCache.setFAQs(workflowId, updatedFaqs)
-      
+      if (error) throw error
     } catch (error) {
       console.error('Failed to delete FAQ:', error)
       setAlertMessage({
@@ -216,8 +192,18 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         description: 'Failed to delete FAQ. Please try again.'
       })
       setAlertOpen(true)
+    } finally {
+      setFaqs(currentFaqs => {
+        const updatedFaqs = currentFaqs.filter(faq => faq.id !== faqToDelete.id);
+        workflowCache.setFAQs(workflowId, updatedFaqs);
+        return updatedFaqs;
+      });
+      setDeletedFaqs([...deletedFaqs, faqToDelete]);
+      setHasUnsavedChanges(true);
+      setDeleteAlertOpen(false);
+      setFaqToDelete(null);
     }
-  }
+  };
 
   const handleFAQChange = (id: string, field: 'question' | 'answer', value: string) => {
     const newFaqs = [...faqs]
@@ -288,34 +274,48 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       }
 
       if (data) {
-        workflowCache.setFAQs(workflowId, data)
-        setFaqs(data)
-        setHasUnsavedChanges(false)
+        workflowCache.setFAQs(workflowId, data);
+        setFaqs(data);
+        setHasUnsavedChanges(false);
         setAlertMessage({
           title: 'Success',
           description: 'FAQs saved successfully!'
-        })
-        setAlertOpen(true)
+        });
+        setAlertOpen(true);
 
         if (onSaveWorkflow) {
-          await onSaveWorkflow()
+          await onSaveWorkflow();
         }
       }
 
+      // Delete FAQs
+      for (const faq of deletedFaqs) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq('id', faq.id)
+
+        if (error) {
+          console.error('Error deleting FAQ:', error)
+        }
+      }
+
+      setDeletedFaqs([]);
+
        // Record token usage after successful save
-       await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
+       await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens);
 
     } catch (error) {
       console.error('Error saving FAQs:', error)
       setAlertMessage({
         title: 'Error Saving FAQs',
         description: error instanceof Error ? error.message : 'Failed to save FAQs. Please try again.'
-      })
-      setAlertOpen(true)
+      });
+      setAlertOpen(true);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
@@ -416,7 +416,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteFAQ(faq.id || '')}
+                          onClick={() => handleDeleteClick(faq)}
                           className="text-red-600 hover:text-red-800"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -473,6 +473,24 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               Save & Exit
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this FAQ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="secondary" onClick={() => setDeleteAlertOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Confirm
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -26,18 +26,14 @@ export default function WidgetPage() {
     getUserId();
   }, [supabase.auth]);
   
-  // Get the base URL, fallback to window.location if env var is not set
-  const getBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      return process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    }
-    return process.env.NEXT_PUBLIC_APP_URL || '';
-  };
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    (typeof window !== 'undefined' ? window.location.origin : '');
   
-  const widgetCode = `<script src="${getBaseUrl()}/api/widget/${workflowId}"></script>
+  const widgetCode = `<script src="${baseUrl}/api/widget/${workflowId}"></script>
 <script>
     window.addEventListener('AnswerlyAIWidgetReady', function() {
         window.AnswerlyAIWidget.init({
+            name: 'Cora',
             theme: 'blue',
             position: 'bottom-right',
             userId: '${userId}'
@@ -99,13 +95,27 @@ export default function WidgetPage() {
             <h3 className="text-lg font-semibold">Customization Options</h3>
             <p className="text-gray-600">You can customize the widget by passing options to the init function:</p>
             <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-4">
-              <li><code>theme</code>: 'blue' (default) or 'light'</li>
+              <li><code>name</code>: Assistant name (defaults to 'Cora')</li>
+              <li>
+                <code>theme</code>: Color theme for the widget button (defaults to 'blue')
+                <ul className="list-disc list-inside ml-6 mt-2 text-gray-500">
+                  <li>'violet' - <span className="w-3 h-3 inline-block bg-violet-600 rounded-full"></span></li>
+                  <li>'indigo' - <span className="w-3 h-3 inline-block bg-indigo-600 rounded-full"></span></li>
+                  <li>'blue' - <span className="w-3 h-3 inline-block bg-blue-600 rounded-full"></span></li>
+                  <li>'green' - <span className="w-3 h-3 inline-block bg-green-600 rounded-full"></span></li>
+                  <li>'yellow' - <span className="w-3 h-3 inline-block bg-yellow-500 rounded-full"></span></li>
+                  <li>'orange' - <span className="w-3 h-3 inline-block bg-orange-500 rounded-full"></span></li>
+                  <li>'red' - <span className="w-3 h-3 inline-block bg-red-600 rounded-full"></span></li>
+                  <li>'light' - <span className="w-3 h-3 inline-block bg-gray-800 rounded-full"></span></li>
+                </ul>
+              </li>
               <li><code>position</code>: 'bottom-right' (default) or 'bottom-left'</li>
               <li><code>userId</code>: Automatically set to your account ID for rate limiting</li>
             </ul>
             <div className="mt-4 p-4 bg-blue-50 rounded-md">
               <p className="text-sm text-blue-800">
-                Note: The widget code includes your user ID ({userId}) to ensure all chat interactions are tracked under your account.
+                <strong>Note:</strong> The widget supports VIBGYOR color themes (Violet, Indigo, Blue, Green, Yellow, Orange, Red) 
+                plus a 'light' theme. Choose the color that best matches your website's design.
               </p>
             </div>
           </div>

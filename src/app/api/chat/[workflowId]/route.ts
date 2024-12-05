@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Groq } from 'groq-sdk'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts'
 import { RateLimiter } from '@/lib/utils/rateLimiter'
+import { isAdmin } from '@/lib/utils/adminCheck'
+import ApiKeyRotation from '@/lib/utils/apiKeyRotation'
 
 //API Route which is used by the snippet which will be used by the client website.
 
@@ -11,10 +12,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY!,
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,9 +59,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get workflow data from Supabase
+    // Check if user is admin using the adminCheck utility
+    const isAdminUser = isAdmin(userId);
+    const workflowTable = isAdminUser ? 'sample_workflows' : 'workflows';
+    const faqTable = isAdminUser ? 'sample_faqs' : 'faqs';
+
+    // Get workflow data
     const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
+      .from(workflowTable)
       .select('*')
       .eq('id', workflowId)
       .single();
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // Get FAQs for this workflow
     const { data: faqData, error: faqError } = await supabase
-      .from('faqs')
+      .from(faqTable)
       .select('*')
       .eq('workflow_id', workflowId);
 
@@ -128,45 +130,58 @@ export async function POST(req: NextRequest) {
       })
       .flat();
 
-    const completion = await groq.chat.completions.create({
-      messages: [
+    // Get assistant name from header or use default
+    const assistantName = req.headers.get('X-Assistant-Name') || 'Cora';
+
+    // Get the next available Groq client
+    const groq = ApiKeyRotation.getNextClient();
+
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: generateSystemPrompt(workflow.context, decisionFlows, faqData, assistantName)
+          },
+          ...history,
+          { role: 'user', content: message }
+        ],
+        model: 'llama-3.1-8b-instant',
+        temperature: 0,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: false,
+      });
+
+      // Record token usage
+      await RateLimiter.recordTokenUsage(
+        userId,
+        'chatting',
+        completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+      );
+
+      return new NextResponse(
+        JSON.stringify({
+          success: true,
+          response: completion.choices[0]?.message?.content || 'No response generated',
+          source: 'llm'
+        }),
         {
-          role: 'system',
-          content: generateSystemPrompt(workflow.context, decisionFlows, faqData)
-        },
-        ...history,
-        { role: 'user', content: message }
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature: 0,
-      max_tokens: 1024,
-      top_p: 1,
-      stream: false,
-    });
-
-    // Record token usage
-    await RateLimiter.recordTokenUsage(
-      userId,
-      'chatting',
-      completion.usage?.total_tokens || Math.ceil(estimatedTokens)
-    );
-
-    return new NextResponse(
-      JSON.stringify({
-        success: true,
-        response: completion.choices[0]?.message?.content || 'No response generated',
-        source: 'llm'
-      }), 
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
-        },
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, X-User-ID, X-Assistant-Name',
+          },
+        }
+      );
+    } catch (error: any) {
+      // If the error is related to the API key, mark it as failed
+      if (error?.status === 401 || error?.message?.includes('api_key')) {
+        ApiKeyRotation.markKeyAsFailed(groq.apiKey);
       }
-    );
-
+      throw error;
+    }
   } catch (error) {
     console.error('Chat API Error:', error);
     return new NextResponse(
@@ -182,7 +197,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
+          'Access-Control-Allow-Headers': 'Content-Type, X-User-ID, X-Assistant-Name',
         },
       }
     );
@@ -195,7 +210,7 @@ export async function OPTIONS(req: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-User-ID',
+      'Access-Control-Allow-Headers': 'Content-Type, X-User-ID, X-Assistant-Name',
     },
   });
 }

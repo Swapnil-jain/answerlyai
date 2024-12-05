@@ -229,7 +229,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       // Show success message and navigate
       setAlertMessage({
         title: 'Success',
-        description: 'Workflow deleted successfully',
+        description: 'Workflow deleted successfully.',
         onClose: () => router.push('/builder')
       })
       setAlertOpen(true)

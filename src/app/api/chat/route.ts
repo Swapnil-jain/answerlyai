@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Groq from 'groq-sdk'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { isAdmin } from '@/lib/utils/adminCheck'
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-})
+import ApiKeyRotation from '@/lib/utils/apiKeyRotation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,35 +138,45 @@ export async function POST(req: Request) {
       })
       .flat()
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
-        },
-        ...history,
-        { role: 'user', content: message }
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature: 0,
-      max_tokens: 1024,
-      top_p: 1,
-      stream: false,
-    })
+    // Get the next available Groq client
+    const groq = ApiKeyRotation.getNextClient();
 
-    // Record token usage after successful completion
-    await RateLimiter.recordTokenUsage(
-      user.id,
-      'chatting',
-      completion.usage?.total_tokens || Math.ceil(estimatedTokens)
-    )
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
+          },
+          ...history,
+          { role: 'user', content: message }
+        ],
+        model: 'llama-3.1-8b-instant',
+        temperature: 0,
+        max_tokens: 1024,
+        top_p: 1,
+        stream: false,
+      })
 
-    return NextResponse.json({
-      success: true,
-      response: completion.choices[0]?.message?.content || 'No response generated',
-      source: 'llm'
-    })
+      // Record token usage after successful completion
+      await RateLimiter.recordTokenUsage(
+        user.id,
+        'chatting',
+        completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+      )
 
+      return NextResponse.json({
+        success: true,
+        response: completion.choices[0]?.message?.content || 'No response generated',
+        source: 'llm'
+      })
+    } catch (error: any) {
+      // If the error is related to the API key, mark it as failed
+      if (error?.status === 401 || error?.message?.includes('api_key')) {
+        ApiKeyRotation.markKeyAsFailed(groq.apiKey);
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Chat API Error:', error instanceof Error ? {
       message: error.message,

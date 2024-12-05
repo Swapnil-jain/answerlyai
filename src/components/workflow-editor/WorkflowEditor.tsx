@@ -46,6 +46,7 @@ import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
 import { eventEmitter } from '@/lib/utils/events'
+import { SAMPLE_WORKFLOW_ID } from '@/lib/utils/adminCheck'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -1070,6 +1071,134 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     }
   }
 
+  // Add this function to handle sample workflow click
+  const handleSampleWorkflowClick = async () => {
+    try {
+      if (hasUnsavedChanges) {
+        showAlert(
+          'Unsaved Changes',
+          'Would you like to save your changes before creating a copy of the sample workflow?',
+          'navigation'
+        )
+        setPendingNavigation('sample')
+        return
+      }
+
+      setIsLoading(true)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // 1. Fetch sample workflow data
+      const { data: sampleWorkflow, error: workflowError } = await supabase
+        .from('sample_workflows')
+        .select('*')
+        .eq('id', SAMPLE_WORKFLOW_ID)
+        .single()
+
+      if (workflowError) throw workflowError
+
+      // 2. Fetch sample FAQs
+      const { data: sampleFaqs, error: faqError } = await supabase
+        .from('sample_faqs')
+        .select('*')
+        .eq('workflow_id', SAMPLE_WORKFLOW_ID)
+
+      if (faqError) throw faqError
+
+      // 3. Create new workflow with sample data
+      const { data: newWorkflow, error: createError } = await supabase
+        .from('workflows')
+        .insert({
+          name: `${sampleWorkflow.name} Copy`,
+          nodes: sampleWorkflow.nodes,
+          edges: sampleWorkflow.edges,
+          context: sampleWorkflow.context,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (createError) throw createError
+
+      // 4. Create FAQs for the new workflow
+      if (sampleFaqs?.length > 0) {
+        const newFaqs = sampleFaqs.map(faq => ({
+          question: faq.question,
+          answer: faq.answer,
+          workflow_id: newWorkflow.id,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+
+        const { error: faqCreateError } = await supabase
+          .from('faqs')
+          .insert(newFaqs)
+
+        if (faqCreateError) throw faqCreateError
+      }
+
+      // 5. Update cache and UI
+      workflowCache.setWorkflow(newWorkflow)
+      
+      // Update workflow list cache
+      const listCache = workflowCache.getWorkflowList()
+      if (listCache) {
+        const updatedList = [...listCache, { 
+          id: newWorkflow.id, 
+          name: newWorkflow.name, 
+          updated_at: newWorkflow.updated_at 
+        }]
+        workflowCache.setWorkflowList(updatedList)
+      }
+
+      // Emit event to update SavedWorkflows
+      eventEmitter.emit('workflowUpdated', {
+        id: newWorkflow.id,
+        name: newWorkflow.name,
+        updated_at: newWorkflow.updated_at
+      })
+
+      // Show success message and navigate
+      showAlert(
+        'Success! 🎉',
+        'Sample workflow has been copied to your account.',
+        'success',
+        () => router.push(`/builder/${newWorkflow.id}`)
+      )
+
+    } catch (error) {
+      console.error('Error copying sample workflow:', error)
+      showAlert('Error', 'Failed to copy sample workflow')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    setAlertMessage({
+      title: 'Confirm Logout',
+      description: 'Are you sure you want to logout?',
+      type: 'navigation', // Add this line
+      onClose: () => setAlertOpen(false)
+    });
+    setAlertOpen(true);
+  };
+
+  const confirmLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    } finally {
+      setAlertOpen(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       {isAdminMode && (
@@ -1109,6 +1238,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
               <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
                 {!isAdminMode && (
                   <Button
+                    onClick={handleSampleWorkflowClick}
                     variant="ghost"
                     size="sm"
                     className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700"
@@ -1136,19 +1266,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   Home
                 </Button>
                 <Button
-                  onClick={async () => {
-                    if (hasUnsavedChanges) {
-                      showAlert(
-                        'Unsaved Changes',
-                        'Would you like to save your changes before logging out?',
-                        'navigation'
-                      )
-                      setPendingNavigation('/')
-                    } else {
-                      await supabase.auth.signOut()
-                      router.push('/')
-                    }
-                  }}
+                  onClick={handleLogout}
                   variant="ghost"
                   size="sm"
                   className="flex items-center gap-2"
@@ -1223,14 +1341,14 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     <MessageSquare className="h-4 w-4" />
                     See Live Chatbot
                   </Button>
-                  <Button
-                    onClick={handleWidgetClick}
-                    disabled={!currentWorkflowId}
-                    className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
-                  >
-                    <Code className="h-4 w-4" />
-                    Get Widget Code
-                  </Button>
+                    <Button
+                      onClick={handleWidgetClick}
+                      disabled={!currentWorkflowId}
+                      className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
+                    >
+                      <Code className="h-4 w-4" />
+                      Get Widget Code
+                    </Button>
                 </div>
               </div>
             </>
@@ -1288,6 +1406,24 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                 OK
               </AlertDialogAction>
             )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertMessage?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="secondary" onClick={() => setAlertOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmLogout}>
+              Confirm
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

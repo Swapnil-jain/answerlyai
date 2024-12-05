@@ -1,9 +1,10 @@
 export function generateSystemPrompt(
     context: string | null,
     decisionFlows: any[],
-    faqData: any[]
+    faqData: any[],
+    assistantName: string = 'Cora'
   ) {
-    return `You are Cora, a customer service assistant. You are configured with the following information:  
+    return `You are ${assistantName}, a customer service assistant. You are configured with the following information:  
   
   ### Custom Context:
   ${context || ''}

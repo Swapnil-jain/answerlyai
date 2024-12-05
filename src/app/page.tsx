@@ -6,6 +6,7 @@ import DemoSection from '@/components/demo-section'
 import PricingSection from '@/components/pricing-section'
 import ContactSection from '@/components/contact-section'
 import Footer from '@/components/footer'
+import ChatWidget from '@/components/ChatWidget'
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
       <PricingSection />
       <ContactSection />
       <Footer />
+      <ChatWidget />
     </main>
   )
 }
