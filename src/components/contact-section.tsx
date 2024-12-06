@@ -3,7 +3,7 @@ import { Mail, MessageSquare, Phone } from 'lucide-react'
 
 export default function ContactSection() {
   return (
-    <section className="w-full py-20 bg-white">
+    <section id="contact" className="w-full py-20 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-6">Get in Touch</h2>
@@ -31,7 +31,6 @@ export default function ContactSection() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Live Chatbot</h3>
             <p className="text-gray-600 mb-4">Available 24/7</p>
-            <Button className="bg-blue-600 hover:bg-blue-700">Start Chat</Button>
           </div>
         </div>
       </div>

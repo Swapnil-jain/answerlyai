@@ -5,34 +5,37 @@ import Link from 'next/link'
 export default function HeroSection() {
   return (
     <section className="w-full min-h-[90vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-left space-y-8">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-600">Only. Relevant. Features.</span>
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="text-left space-y-6 lg:space-y-8">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+              <div className="inline-flex items-center justify-center">
+                <span className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only. Relevant. Features.</span>
+                </span>
               </div>
-              <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full ml-4">
-                <MousePointer2 className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-600">No-Code Required</span>
+              <div className="inline-flex items-center justify-center">
+                <span className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+                  <MousePointer2 className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600 whitespace-nowrap">No-Code Required</span>
+                </span>
               </div>
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
               Your Customer Support,{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
                 Simplified
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 max-w-xl">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-xl">
               Create powerful AI chatbots as easily as chatting with a friend. 
-              Just drag, drop, and describe – no coding needed. Transform your 
-              customer support into meaningful conversations.
+              Just drag, drop, and describe – no coding needed.
             </p>
 
-            <div className="flex flex-wrap gap-6 items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
                 <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
                 <span className="text-sm text-gray-600">Drag & Drop Builder</span>
@@ -52,12 +55,20 @@ export default function HeroSection() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <Link href="/builder">
+              <Link href="/mobile-notice" className="sm:hidden w-full">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  Try Now <ArrowRight className="h-5 w-5" />
+                  Get Started <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/builder" className="hidden sm:block">
+                <Button 
+                  size="lg" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Get Started <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
               <p className="text-gray-500 flex items-center gap-2">
@@ -68,18 +79,18 @@ export default function HeroSection() {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t">
+            <div className="grid grid-cols-3 gap-4 sm:gap-6 pt-8 border-t">
               <div>
-                <h4 className="text-2xl font-bold text-gray-900">24/7</h4>
-                <p className="text-sm text-gray-600">Always Available</p>
+                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">24/7</h4>
+                <p className="text-xs sm:text-sm text-gray-600">Always Available</p>
               </div>
               <div>
-                <h4 className="text-2xl font-bold text-gray-900">90%</h4>
-                <p className="text-sm text-gray-600">Query Resolution</p>
+                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">90%</h4>
+                <p className="text-xs sm:text-sm text-gray-600">Query Resolution</p>
               </div>
               <div>
-                <h4 className="text-2xl font-bold text-gray-900">50%</h4>
-                <p className="text-sm text-gray-600">Cost Reduction</p>
+                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">50%</h4>
+                <p className="text-xs sm:text-sm text-gray-600">Cost Reduction</p>
               </div>
             </div>
           </div>
@@ -115,4 +126,3 @@ export default function HeroSection() {
     </section>
   )
 }
-

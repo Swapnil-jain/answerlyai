@@ -2,22 +2,23 @@
 
 import { Button } from './ui/button'
 import Link from "next/link"
-import { useSupabase } from '@/lib/supabase/provider'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { useEffect, useState } from 'react'
 
 export default function PricingSection() {
-  const { supabase } = useSupabase()
+  const { supabase, getUser } = useAuth()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await getUser()
       setIsLoggedIn(!!session)
     }
     checkSession()
   }, [supabase.auth])
 
   const getStartedLink = isLoggedIn ? "/builder" : "/login"
+  const mobileLink = "/mobile-notice"
 
   return (
     <section id="pricing" className="w-full py-20 bg-slate-50">
@@ -44,12 +45,14 @@ export default function PricingSection() {
               <li>✓ Basic Customization</li>
               <li>✓ 100,000 tokens/day</li>
             </ul>
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              asChild
-            >
-              <Link href={getStartedLink}>Get Started</Link>
-            </Button>
+            <div>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center"
+                asChild
+              >
+                <Link href={window.innerWidth < 640 ? mobileLink : getStartedLink}>Get Started</Link>
+              </Button>
+            </div>
           </div>
 
           {/* Enthusiast Plan */}
@@ -69,12 +72,15 @@ export default function PricingSection() {
               <li>✓ 500,000 tokens/day</li>
               <li>✓ Embed on unlimited websites</li>
             </ul>
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled
-            >
-              Coming Soon
-            </Button>
+            <div>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 hidden sm:block flex items-center justify-center"
+                disabled
+              >
+                Coming Soon
+              </Button>
+ 
+            </div>
           </div>
 
           {/* Enterprise Plan */}
@@ -96,16 +102,17 @@ export default function PricingSection() {
               <li>✓ SLA Agreement</li>
               <li>✓ Advanced Security</li>
             </ul>
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled
-            >
-              Coming Soon
-            </Button>
+            <div>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 hidden sm:block flex items-center justify-center"
+                disabled
+              >
+                Coming Soon
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     </section>
   )
 }
-

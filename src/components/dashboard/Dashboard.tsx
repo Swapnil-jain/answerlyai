@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { useSupabase } from '@/lib/supabase/provider'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { logger } from '@/lib/utils/logger'
 import AuthGuard from '@/components/auth/AuthGuard'
@@ -21,7 +21,7 @@ interface DashboardStats {
 }
 
 function DashboardContent() {
-  const { supabase } = useSupabase()
+  const { supabase, getUser } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     activeChatbots: 0,
     totalChats: 0,
@@ -53,57 +53,53 @@ function DashboardContent() {
         return
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) return
 
       // Ensure user has a tier entry
       await ensureUserTier(supabase, user.id)
 
-      // Get user's pricing tier
-      const { data: tierData, error: tierError } = await supabase
-        .from('user_tiers')
-        .select('pricing_tier, workflow_count')
-        .eq('user_id', user.id)
-        .single()
+      // Batch fetch tier data and chat sessions
+      const [{ data: tierData, error: tierError }, { data: chatData, error: chatError }] = await Promise.all([
+        supabase
+          .from('user_tiers')
+          .select('pricing_tier, workflow_count')
+          .eq('user_id', user.id)
+          .single(),
+        supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+      ])
 
       if (tierError) throw tierError
+      if (chatError) throw chatError
 
       const currentTier = tierData?.pricing_tier || 'hobbyist'
       const workflowLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
 
-      // Get chat statistics
-      let chatStats = []
+      // Calculate chat statistics
       let avgResponseTime = 0
       let responseRate = 0
 
-      try {
-        const { data: chatData, error: chatError } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('user_id', user.id)
+      if (chatData && chatData.length > 0) {
+        // Calculate average response time
+        avgResponseTime = chatData.reduce((acc, session) => 
+          acc + (session.average_response_time || 0), 0) / chatData.length
 
-        if (!chatError && chatData) {
-          chatStats = chatData
-          // Calculate average response time
-          avgResponseTime = chatData.reduce((acc, session) => 
-            acc + (session.average_response_time || 0), 0) / (chatData.length || 1)
-
-          // Calculate response rate
-          const totalResponses = chatData.reduce((acc, session) => 
-            acc + (session.successful_responses || 0), 0)
-          const totalMessages = chatData.reduce((acc, session) => 
-            acc + (session.total_messages || 0), 0)
-          responseRate = totalMessages > 0 
-            ? (totalResponses / totalMessages) * 100 
-            : 0
-        }
-      } catch (error) {
-        console.warn('Chat statistics not available:', error)
+        // Calculate response rate
+        const totalResponses = chatData.reduce((acc, session) => 
+          acc + (session.successful_responses || 0), 0)
+        const totalMessages = chatData.reduce((acc, session) => 
+          acc + (session.total_messages || 0), 0)
+        responseRate = totalMessages > 0 
+          ? (totalResponses / totalMessages) * 100 
+          : 0
       }
 
       const newStats = {
         activeChatbots: tierData.workflow_count || 0,
-        totalChats: chatStats.length,
+        totalChats: chatData?.length || 0,
         averageResponseTime: Number(avgResponseTime.toFixed(2)),
         responseRate: Number(responseRate.toFixed(1)),
         pricingTier: currentTier,
@@ -133,7 +129,7 @@ function DashboardContent() {
   const validateStatsInBackground = async () => {
     try {
       // Fetch fresh data from database
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) return
 
       // Ensure user has a tier entry

@@ -3,7 +3,7 @@ import { Globe, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useSupabase } from '@/lib/supabase/provider'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { isAdmin } from '@/lib/utils/adminCheck'
 
@@ -15,7 +15,7 @@ interface WebsiteCrawlerProps {
 }
 
 export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWorkflow }: WebsiteCrawlerProps) {
-  const { supabase } = useSupabase()
+  const { supabase, getUser } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [url, setUrl] = useState('')
   const [isCrawling, setIsCrawling] = useState(false)
@@ -26,7 +26,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
     if (!url || !workflowId) return
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'

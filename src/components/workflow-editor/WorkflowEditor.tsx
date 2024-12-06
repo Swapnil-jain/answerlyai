@@ -219,6 +219,36 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   // Add a ref to track mounted state
   const isMounted = useRef(false)
 
+  // Track changes to detect unsaved work
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false
+      return
+    }
+
+    const nodesChanged = JSON.stringify(nodes) !== JSON.stringify(initialNodesRef.current)
+    const edgesChanged = JSON.stringify(edges) !== JSON.stringify(initialEdgesRef.current)
+    const nameChanged = workflowName !== initialNameRef.current
+
+    setHasUnsavedChanges(nodesChanged || edgesChanged || nameChanged)
+  }, [nodes, edges, workflowName])
+
+  // Update initial refs when workflow is loaded or saved
+  useEffect(() => {
+    if (!isFreshLoad.current) return
+    
+    initialNodesRef.current = nodes
+    initialEdgesRef.current = edges
+    initialNameRef.current = workflowName
+    isFreshLoad.current = false
+  }, [nodes, edges, workflowName])
+
+  // Reset fresh load flag when workflow ID changes
+  useEffect(() => {
+    isFreshLoad.current = true
+    isInitialLoad.current = true
+  }, [workflowId])
+
   // Update the effect to track changes
   useEffect(() => {
     // Skip if not mounted yet or loading
@@ -480,24 +510,61 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         }
 
         // Load from database if not in cache
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not authenticated')
+
+        const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
         const { data: workflow, error } = await supabase
-          .from('workflows')
+          .from(table)
           .select('*')
           .eq('id', workflowId)
           .single()
 
-        if (error) throw error
+        if (error) {
+          console.error('Database error:', error)
+          throw new Error(`Error loading workflow: ${error.message}`)
+        }
 
-        // Update state and cache
-        setNodes(workflow.nodes || initialNodes)
-        setEdges(workflow.edges || [])
+        if (!workflow) {
+          throw new Error('Workflow not found')
+        }
+
+        const newNodes = workflow.nodes || initialNodes
+        const newEdges = workflow.edges || []
+        
+        // Set initial values first
+        initialNodesRef.current = newNodes
+        initialEdgesRef.current = newEdges
+        initialNameRef.current = workflow.name
+        
+        // Then update state
+        setNodes(newNodes)
+        setEdges(newEdges)
         setWorkflowName(workflow.name)
+        setHasUnsavedChanges(false)
+
+        setCurrentWorkflow({
+          id: workflowId,
+          name: workflow.name,
+          nodes: newNodes,
+          edges: newEdges
+        })
         workflowCache.setWorkflow(workflow)
+        window.history.pushState({}, '', `/builder/${workflowId}`)
+
       } catch (error) {
         console.error('Error loading workflow:', error)
+        // Reset everything in error case
+        initialNodesRef.current = initialNodes
+        initialEdgesRef.current = []
+        initialNameRef.current = 'My Workflow'
+        
         setNodes(initialNodes)
         setEdges([])
         setWorkflowName('My Workflow')
+        setCurrentWorkflow(null)
+        setCurrentWorkflowId(undefined)
+        setHasUnsavedChanges(false)
       } finally {
         setIsLoading(false)
       }
@@ -772,13 +839,24 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         }
 
         // Load from database if not in cache
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not authenticated')
+
+        const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
         const { data: workflow, error } = await supabase
-          .from('workflows')
+          .from(table)
           .select('*')
           .eq('id', selectedWorkflowId)
           .single()
 
-        if (error) throw error
+        if (error) {
+          console.error('Database error:', error)
+          throw new Error(`Error loading workflow: ${error.message}`)
+        }
+
+        if (!workflow) {
+          throw new Error('Workflow not found')
+        }
 
         const newNodes = workflow.nodes || initialNodes
         const newEdges = workflow.edges || []
@@ -825,7 +903,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       showAlert(
         'Unsaved Changes',
         'Would you like to save your changes before switching workflows?',
-        'navigation'
+        'success'
       )
       setPendingNavigation(`/builder/${selectedWorkflowId}`)
     } else {
@@ -842,7 +920,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       showAlert(
         'Unsaved Changes',
         'Would you like to save your changes before leaving?',
-        'navigation'
+        'success'
       )
       setPendingNavigation(path)
     } else {
@@ -851,64 +929,62 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   }
 
   const handleAlertAction = async () => {
-    if (hasUnsavedChanges && pendingNavigation) {
-      try {
-        // Try to validate first
-        try {
-          validateWorkflow()
-        } catch (validationError) {
-          // Show the specific validation error
-          showAlert(
-            'Validation Error',
-            validationError instanceof Error ? validationError.message : 'Invalid workflow configuration'
-          )
-          return  // Don't proceed with navigation if validation fails
-        }
-
-        const saveSuccessful = await saveWorkflow()
-        if (saveSuccessful) {
-          if (pendingNavigation === '/builder') {
-            // This is a new workflow creation
-            addNewWorkflow()
-          } else if (pendingNavigation.startsWith('/builder/')) {
-            // This is a workflow selection
-            const selectedWorkflowId = pendingNavigation.split('/builder/')[1]
-            await handleWorkflowSelect(selectedWorkflowId)
-          } else {
-            // This is a regular navigation
-            if (pendingNavigation === '/' && alertMessage?.description?.includes('logging out')) {
-              await supabase.auth.signOut()
-            }
+    try {
+      if (pendingNavigation) {
+        if (alertMessage?.type === 'navigation') {
+          // Handle logout
+          await confirmLogout()
+        } else {
+          // Handle navigation with unsaved changes
+          setIsSaving(true)
+          const saveSuccessful = await saveWorkflow()
+          if (saveSuccessful) {
             router.push(pendingNavigation)
           }
-          setPendingNavigation(null)
-          setAlertOpen(false)
         }
-      } catch (error) {
-        console.error('Error saving workflow:', error)
-        // Show the specific error message
-        showAlert(
-          'Error',
-          error instanceof Error ? error.message : 'Failed to save changes before leaving'
-        )
       }
-    } else if (pendingNavigation) {
-      if (pendingNavigation === '/builder') {
-        // This is a new workflow creation without unsaved changes
-        addNewWorkflow()
-      } else if (pendingNavigation.startsWith('/builder/')) {
-        // This is a workflow selection without unsaved changes
-        const selectedWorkflowId = pendingNavigation.split('/builder/')[1]
-        await handleWorkflowSelect(selectedWorkflowId)
-      } else {
-        // This is a regular navigation without unsaved changes
-        if (pendingNavigation === '/' && alertMessage?.description?.includes('logging out')) {
-          await supabase.auth.signOut()
-        }
-        router.push(pendingNavigation)
-      }
-      setPendingNavigation(null)
+    } catch (error) {
+      console.error('Error handling alert action:', error)
+      showAlert(
+        'Error',
+        error instanceof Error ? error.message : 'An error occurred'
+      )
+    } finally {
+      setIsSaving(false)
       setAlertOpen(false)
+    }
+  }
+
+  const handleLogout = () => {
+    if (hasUnsavedChanges) {
+      showAlert(
+        'Unsaved Changes',
+        'Would you like to save your changes before logging out?',
+        'success'
+      )
+      setPendingNavigation('logout')
+    } else {
+      showAlert(
+        'Confirm Logout',
+        'Are you sure you want to logout?',
+        'navigation'
+      )
+      setPendingNavigation('logout')
+    }
+  }
+
+  const confirmLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      // Clear any cached data
+      workflowCache.clearCache()
+      router.push('/')
+    } catch (error) {
+      console.error('Error logging out:', error)
+      showAlert(
+        'Error',
+        'Failed to logout. Please try again.'
+      )
     }
   }
 
@@ -960,7 +1036,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       showAlert(
         'Unsaved Changes',
         'Would you like to save your changes before creating a new workflow?',
-        'navigation'
+        'success'
       )
       setPendingNavigation('/builder')
     } else {
@@ -974,7 +1050,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       showAlert(
         'Unsaved Changes',
         'Would you like to save your changes before switching workflows?',
-        'navigation'
+        'success'
       )
       setPendingNavigation(`/builder/${selectedWorkflowId}`)
     } else {
@@ -1078,7 +1154,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         showAlert(
           'Unsaved Changes',
           'Would you like to save your changes before creating a copy of the sample workflow?',
-          'navigation'
+          'success'
         )
         setPendingNavigation('sample')
         return
@@ -1088,6 +1164,29 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+
+      // Check workflow limit for non-admin users
+      if (!isAdmin(user.id)) {
+        // Get user's current tier
+        const { data: userTier } = await supabase
+          .from('user_tiers')
+          .select('pricing_tier')
+          .eq('user_id', user.id)
+          .single()
+
+        const currentTier = userTier?.pricing_tier || 'hobbyist'
+          const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
+
+          // Count user's existing workflows
+          const { count } = await supabase
+            .from('workflows')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+
+          if (count && count >= tierLimit) {
+            throw new Error(`You have reached the maximum number of workflows (${tierLimit}) for your current tier. Please upgrade to create more workflows.`)
+        }
+      }
 
       // 1. Fetch sample workflow data
       const { data: sampleWorkflow, error: workflowError } = await supabase
@@ -1172,32 +1271,19 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
     } catch (error) {
       console.error('Error copying sample workflow:', error)
-      showAlert('Error', 'Failed to copy sample workflow')
+      if (error instanceof Error) {
+        if (error.message.includes('You have reached the maximum number of workflows')) {
+          showAlert('Error', error.message)
+        } else {
+          showAlert('Error', 'Failed to copy sample workflow')
+        }
+      } else {
+        showAlert('Error', 'Failed to copy sample workflow')
+      }
     } finally {
       setIsLoading(false)
     }
   }
-
-  const handleLogout = () => {
-    setAlertMessage({
-      title: 'Confirm Logout',
-      description: 'Are you sure you want to logout?',
-      type: 'navigation', // Add this line
-      onClose: () => setAlertOpen(false)
-    });
-    setAlertOpen(true);
-  };
-
-  const confirmLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      router.push("/");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    } finally {
-      setAlertOpen(false);
-    }
-  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -1365,25 +1451,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             {alertMessage?.type === 'navigation' ? (
-              // Show navigation options only for navigation alerts
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (pendingNavigation) {
-                      router.push(pendingNavigation)
-                    }
-                    setPendingNavigation(null)
-                    setAlertOpen(false)
-                  }}
-                >
-                  Don't Save
-                </Button>
-                <Button
                   onClick={handleAlertAction}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  variant="destructive"
                 >
-                  Save & Continue
+                  Confirm
                 </Button>
                 <Button
                   variant="outline"
@@ -1395,35 +1468,59 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                   Cancel
                 </Button>
               </div>
+            ) : alertMessage?.type === 'success' && pendingNavigation ? (
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAlertAction}
+                  disabled={isSaving}
+                  className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save & Continue'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (pendingNavigation) {
+                      router.push(pendingNavigation)
+                    }
+                    setPendingNavigation(null)
+                    setAlertOpen(false)
+                  }}
+                  disabled={isSaving}
+                >
+                  Don't Save
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPendingNavigation(null)
+                    setAlertOpen(false)
+                  }}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+              </div>
             ) : (
-              // Show single OK button for success/error alerts
-              <AlertDialogAction onClick={() => {
-                setAlertOpen(false)
-                if (alertMessage?.onClose) {
-                  alertMessage.onClose()
-                }
-              }}>
+              <AlertDialogAction 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={() => {
+                  setAlertOpen(false)
+                  if (alertMessage?.onClose) {
+                    alertMessage.onClose()
+                  }
+                }}
+              >
                 OK
               </AlertDialogAction>
             )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{alertMessage?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {alertMessage?.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="secondary" onClick={() => setAlertOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmLogout}>
-              Confirm
-            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

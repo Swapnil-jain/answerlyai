@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from './client'
 import { Loader2 } from 'lucide-react'
+import { workflowCache } from '@/lib/cache/workflowCache'
+import { authCache } from '@/lib/cache/authCache'
 
 interface SupabaseContext {
   supabase: SupabaseClient
@@ -31,8 +33,14 @@ export default function SupabaseProvider({
     // Listen for changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: "INITIAL_SESSION" | "PASSWORD_RECOVERY" | "TOKEN_REFRESHED" | "USER_UPDATED" | "MFA_CHALLENGE_VERIFIED" | "SIGNED_OUT" | "SIGNED_IN" | "USER_DELETED", session) => {
       console.log('Auth state changed:', _event)
+      // Clear all caches when auth state changes
+      if (_event === 'SIGNED_OUT' || _event === 'SIGNED_IN' || _event === 'USER_DELETED') {
+        console.log('Clearing caches due to auth state change')
+        workflowCache.clearCache()
+        authCache.clearCache()
+      }
       setSession(session)
     })
 

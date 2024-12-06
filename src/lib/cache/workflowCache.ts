@@ -41,6 +41,17 @@ interface DashboardStats {
   timestamp: number
 }
 
+interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  offset?: number;
+}
+
+interface CacheOptions {
+  batchKey?: string;
+  pagination?: PaginationOptions;
+}
+
 const CACHE_PREFIX = 'workflow_'
 const LIST_CACHE_KEY = 'workflow_list'
 const METADATA_KEY = 'workflow_metadata_'
@@ -51,6 +62,11 @@ const DASHBOARD_CACHE_KEY = 'dashboard_stats'
 const DASHBOARD_CACHE_DURATION = 1000 * 60 * 15 // 15 minutes for dashboard stats (needs to be fresher)
 
 export const workflowCache = {
+  // Check if cache is expired
+  isCacheExpired: (timestamp: number, duration: number = CACHE_DURATION): boolean => {
+    return Date.now() - timestamp > duration
+  },
+
   // Get the current cache size
   getCacheSize: (): number => {
     try {
@@ -137,23 +153,19 @@ export const workflowCache = {
   // Get a single workflow from cache
   getWorkflow: (id: string): CachedWorkflow | null => {
     try {
-      const cached = localStorage.getItem(`${CACHE_PREFIX}${id}`)
-      if (!cached) {
-        logger.log('info', 'cache', `Cache miss for workflow ${id}`)
-        return null
-      }
-
       const metadata = workflowCache.getMetadata(id)
-      if (!metadata || Date.now() - metadata.timestamp > CACHE_DURATION) {
-        logger.log('info', 'cache', `Cache expired for workflow ${id}`)
+      if (!metadata || workflowCache.isCacheExpired(metadata.timestamp)) {
         workflowCache.removeWorkflow(id)
         return null
       }
 
+      const cached = localStorage.getItem(`${CACHE_PREFIX}${id}`)
+      if (!cached) return null
+
       logger.log('info', 'cache', `Cache hit for workflow ${id}`)
       return JSON.parse(cached).data
-    } catch {
-      logger.log('error', 'cache', `Error reading workflow ${id} from cache`)
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to read workflow cache: ${error}`)
       return null
     }
   },
@@ -184,20 +196,19 @@ export const workflowCache = {
   // Get the list of workflows from cache
   getWorkflowList: (): WorkflowListItem[] | null => {
     try {
-      const cached = localStorage.getItem(LIST_CACHE_KEY)
-      if (!cached) {
-        return null
-      }
-
       const metadata = workflowCache.getMetadata('list')
-      if (!metadata || Date.now() - metadata.timestamp > CACHE_DURATION) {
-        localStorage.removeItem(LIST_CACHE_KEY)
-        localStorage.removeItem(`${METADATA_KEY}list`)
+      if (!metadata || workflowCache.isCacheExpired(metadata.timestamp)) {
+        workflowCache.clearCache()
         return null
       }
 
+      const cached = localStorage.getItem(LIST_CACHE_KEY)
+      if (!cached) return null
+
+      logger.log('info', 'cache', 'Cache hit for workflow list')
       return JSON.parse(cached).data
-    } catch {
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to read workflow list cache: ${error}`)
       return null
     }
   },
@@ -261,63 +272,62 @@ export const workflowCache = {
     }
   },
 
-  // Get FAQs for a workflow from cache
-  getFAQs: (workflowId: string): FAQ[] | null => {
+  // Set FAQs for a workflow in cache with batch operation support
+  setFAQs(workflowId: string, faqs: FAQ[], options?: { batchKey?: string }) {
     try {
-      const cached = localStorage.getItem(`${FAQ_CACHE_PREFIX}${workflowId}`)
-      if (!cached) {
-        logger.log('info', 'cache', `Cache miss for FAQs of workflow ${workflowId}`)
+      const cacheKey = options?.batchKey ? 
+        `${FAQ_CACHE_PREFIX}${workflowId}_${options.batchKey}` : 
+        `${FAQ_CACHE_PREFIX}${workflowId}`
+
+      const cacheData = {
+        data: faqs,
+        timestamp: Date.now()
+      }
+
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+      this.setMetadata(`faq_${workflowId}`, JSON.stringify(cacheData).length)
+      logger.log('info', 'cache', `Cached ${faqs.length} FAQs for workflow ${workflowId}`)
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to cache FAQs: ${error}`)
+    }
+  },
+
+  // Get FAQs for a workflow from cache with batch support
+  getFAQs(workflowId: string, options?: { batchKey?: string }): FAQ[] | null {
+    try {
+      const cacheKey = options?.batchKey ? 
+        `${FAQ_CACHE_PREFIX}${workflowId}_${options.batchKey}` : 
+        `${FAQ_CACHE_PREFIX}${workflowId}`
+
+      const metadata = this.getMetadata(`faq_${workflowId}`)
+      if (!metadata || this.isCacheExpired(metadata.timestamp)) {
+        this.removeFAQs(workflowId)
         return null
       }
 
-      const { data, timestamp } = JSON.parse(cached)
-      
-      // Check if cache is expired
-      if (Date.now() - timestamp > CACHE_DURATION) {
-        logger.log('info', 'cache', `Cache expired for FAQs of workflow ${workflowId}`)
-        localStorage.removeItem(`${FAQ_CACHE_PREFIX}${workflowId}`)
-        return null
-      }
+      const cached = localStorage.getItem(cacheKey)
+      if (!cached) return null
 
       logger.log('info', 'cache', `Cache hit for FAQs of workflow ${workflowId}`)
-      return data
-    } catch {
-      logger.log('error', 'cache', `Error reading FAQs from cache for workflow ${workflowId}`)
+      return JSON.parse(cached).data
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to read FAQ cache: ${error}`)
       return null
     }
   },
 
-  // Set FAQs for a workflow in cache
-  setFAQs: (workflowId: string, faqs: FAQ[]) => {
+  // Remove FAQs for a workflow from cache with batch support
+  removeFAQs(workflowId: string, options?: { batchKey?: string }) {
     try {
-      const data = JSON.stringify({
-        data: faqs,
-        timestamp: Date.now()
-      })
+      const cacheKey = options?.batchKey ? 
+        `${FAQ_CACHE_PREFIX}${workflowId}_${options.batchKey}` : 
+        `${FAQ_CACHE_PREFIX}${workflowId}`
 
-      const size = data.length
-      
-      if (!workflowCache.cleanupCache(size)) {
-        logger.log('warn', 'cache', `Insufficient storage space for FAQs of workflow ${workflowId}`)
-        return
-      }
-
-      localStorage.setItem(`${FAQ_CACHE_PREFIX}${workflowId}`, data)
-      workflowCache.setMetadata(`faq_${workflowId}`, size)
-      logger.log('info', 'cache', `Cached FAQs for workflow ${workflowId} (${size} bytes)`)
-    } catch (error) {
-      logger.log('error', 'cache', `Failed to cache FAQs for workflow ${workflowId}`)
-    }
-  },
-
-  // Remove FAQs for a workflow from cache
-  removeFAQs: (workflowId: string) => {
-    try {
-      localStorage.removeItem(`${FAQ_CACHE_PREFIX}${workflowId}`)
+      localStorage.removeItem(cacheKey)
       localStorage.removeItem(`${METADATA_KEY}faq_${workflowId}`)
       logger.log('info', 'cache', `Removed FAQs for workflow ${workflowId} from cache`)
     } catch (error) {
-      logger.log('error', 'cache', `Failed to remove FAQs for workflow ${workflowId} from cache`)
+      logger.log('warn', 'cache', `Failed to remove FAQs from cache: ${error}`)
     }
   },
 
@@ -325,24 +335,18 @@ export const workflowCache = {
   getDashboardStats: (): DashboardStats | null => {
     try {
       const cached = localStorage.getItem(DASHBOARD_CACHE_KEY)
-      if (!cached) {
-        logger.log('info', 'cache', 'Cache miss for dashboard stats')
-        return null
-      }
+      if (!cached) return null
 
-      const data = JSON.parse(cached)
-      
-      // Check if cache is expired (using shorter duration for dashboard)
-      if (Date.now() - data.timestamp > DASHBOARD_CACHE_DURATION) {
-        logger.log('info', 'cache', 'Cache expired for dashboard stats')
+      const stats: DashboardStats = JSON.parse(cached)
+      if (workflowCache.isCacheExpired(stats.timestamp, DASHBOARD_CACHE_DURATION)) {
         localStorage.removeItem(DASHBOARD_CACHE_KEY)
         return null
       }
 
       logger.log('info', 'cache', 'Cache hit for dashboard stats')
-      return data
-    } catch {
-      logger.log('error', 'cache', 'Error reading dashboard stats from cache')
+      return stats
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to read dashboard stats cache: ${error}`)
       return null
     }
   },
@@ -391,6 +395,86 @@ export const workflowCache = {
       }
     } catch (error) {
       console.error('Error updating workflow context in cache:', error)
+    }
+  },
+
+  // Get paginated workflows from cache
+  getPaginatedWorkflows(options?: PaginationOptions): { data: WorkflowListItem[]; total: number } | null {
+    try {
+      const cached = this.getWorkflowList()
+      if (!cached) return null
+
+      const { page = 1, limit = 10, offset = 0 } = options || {}
+      const start = offset || (page - 1) * limit
+      const end = start + limit
+
+      return {
+        data: cached.slice(start, end),
+        total: cached.length
+      }
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to get paginated workflows: ${error}`)
+      return null
+    }
+  },
+
+  // Get paginated FAQs from cache
+  getPaginatedFAQs(workflowId: string, options?: CacheOptions): { data: FAQ[]; total: number } | null {
+    try {
+      const cached = this.getFAQs(workflowId, { batchKey: options?.batchKey })
+      if (!cached) return null
+
+      const { page = 1, limit = 10, offset = 0 } = options?.pagination || {}
+      const start = offset || (page - 1) * limit
+      const end = start + limit
+
+      return {
+        data: cached.slice(start, end),
+        total: cached.length
+      }
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to get paginated FAQs: ${error}`)
+      return null
+    }
+  },
+
+  // Set workflows with pagination support
+  setPaginatedWorkflows(workflows: WorkflowListItem[], options?: PaginationOptions) {
+    try {
+      const existing = this.getWorkflowList() || []
+      const { offset = 0 } = options || {}
+
+      // Replace items at the specified offset
+      const updated = [
+        ...existing.slice(0, offset),
+        ...workflows,
+        ...existing.slice(offset + workflows.length)
+      ]
+
+      this.setWorkflowList(updated)
+      logger.log('info', 'cache', `Updated paginated workflows at offset ${offset}`)
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to set paginated workflows: ${error}`)
+    }
+  },
+
+  // Set FAQs with pagination support
+  setPaginatedFAQs(workflowId: string, faqs: FAQ[], options?: CacheOptions) {
+    try {
+      const existing = this.getFAQs(workflowId, { batchKey: options?.batchKey }) || []
+      const { offset = 0 } = options?.pagination || {}
+
+      // Replace items at the specified offset
+      const updated = [
+        ...existing.slice(0, offset),
+        ...faqs,
+        ...existing.slice(offset + faqs.length)
+      ]
+
+      this.setFAQs(workflowId, updated, { batchKey: options?.batchKey })
+      logger.log('info', 'cache', `Updated paginated FAQs at offset ${offset}`)
+    } catch (error) {
+      logger.log('warn', 'cache', `Failed to set paginated FAQs: ${error}`)
     }
   }
 } 

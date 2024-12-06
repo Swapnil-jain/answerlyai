@@ -9,17 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@radix-ui/react-accordion": "^1.2.1",
-    "@radix-ui/react-alert-dialog": "^1.0.5",
-    "@radix-ui/react-dialog": "^1.1.2",
-    "@radix-ui/react-dropdown-menu": "^2.1.2",
-    "@radix-ui/react-slot": "^1.1.0",
-    "@radix-ui/react-tabs": "^1.1.1",
+    "@radix-ui/react": "^1.1.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.46.2",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
     "groq-sdk": "^0.8.0",
     "lucide-react": "^0.461.0",
     "next": "15.0.3",
@@ -35,7 +29,9 @@
     "@types/react-dom": "^18",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "ts-node": "^10.9.2"
   }
 }

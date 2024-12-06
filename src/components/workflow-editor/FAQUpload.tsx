@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Loader2, Save, Trash2 } from 'lucide-react'
-import { useSupabase } from '@/lib/supabase/provider'
+import { Plus, Save, Trash2 } from 'lucide-react'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { logger } from '@/lib/utils/logger'
@@ -53,7 +53,7 @@ const FileInput = ({ onChange }: { onChange: (e: React.ChangeEvent<HTMLInputElem
 )
 
 export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps) {
-  const { supabase } = useSupabase()
+  const { supabase, getUser } = useAuth()
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -75,7 +75,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
 
   const fetchFAQs = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       // Choose appropriate table based on admin status
@@ -147,7 +147,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
 
   const addNewFAQ = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       const now = new Date().toISOString()
@@ -218,7 +218,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
   const saveFAQs = async () => {
     try {
       setIsSaving(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       const isAdminUser = isAdmin(user.id)
@@ -261,59 +261,76 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         }
       }
 
-      console.log('Saving FAQs:', { table, validFaqs }) // Debug log
+      // Batch operations
+      const BATCH_SIZE = 50
+      const results: FAQ[] = []
+      const batchKey = Date.now().toString()
 
-      const { data, error } = await supabase
-        .from(table)
-        .upsert(validFaqs)
-        .select()
+      for (let i = 0; i < validFaqs.length; i += BATCH_SIZE) {
+        const batch = validFaqs.slice(i, i + BATCH_SIZE)
+        const { data, error } = await supabase
+          .from(table)
+          .upsert(batch)
+          .select()
 
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
+        if (error) {
+          console.error('Supabase error:', error)
+          throw error
+        }
 
-      if (data) {
-        workflowCache.setFAQs(workflowId, data);
-        setFaqs(data);
-        setHasUnsavedChanges(false);
-        setAlertMessage({
-          title: 'Success',
-          description: 'FAQs saved successfully!'
-        });
-        setAlertOpen(true);
-
-        if (onSaveWorkflow) {
-          await onSaveWorkflow();
+        if (data) {
+          results.push(...data)
+          // Cache each batch with a unique key
+          workflowCache.setFAQs(workflowId, data, { batchKey: `${batchKey}_${i}` })
         }
       }
 
-      // Delete FAQs
-      for (const faq of deletedFaqs) {
+      // Delete FAQs in batches
+      for (let i = 0; i < deletedFaqs.length; i += BATCH_SIZE) {
+        const batch = deletedFaqs.slice(i, i + BATCH_SIZE)
+        const ids = batch.map(faq => faq.id)
+        
         const { error } = await supabase
           .from(table)
           .delete()
-          .eq('id', faq.id)
+          .in('id', ids)
 
         if (error) {
-          console.error('Error deleting FAQ:', error)
+          console.error('Error deleting FAQs:', error)
+          throw error
         }
       }
 
-      setDeletedFaqs([]);
+      // Update final state
+      if (results.length > 0) {
+        workflowCache.setFAQs(workflowId, results)
+        setFaqs(results)
+        setHasUnsavedChanges(false)
+        setDeletedFaqs([])
+        
+        setAlertMessage({
+          title: 'Success',
+          description: `Successfully saved ${results.length} FAQs!`
+        })
+        setAlertOpen(true)
 
-       // Record token usage after successful save
-       await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens);
+        if (onSaveWorkflow) {
+          await onSaveWorkflow()
+        }
+
+        // Record token usage after successful save
+        await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
+      }
 
     } catch (error) {
       console.error('Error saving FAQs:', error)
       setAlertMessage({
         title: 'Error Saving FAQs',
         description: error instanceof Error ? error.message : 'Failed to save FAQs. Please try again.'
-      });
-      setAlertOpen(true);
+      })
+      setAlertOpen(true)
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
   };
 

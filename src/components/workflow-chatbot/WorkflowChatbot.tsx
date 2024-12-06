@@ -7,6 +7,7 @@ import { MessageSquare, ArrowLeft, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { isAdmin } from '@/lib/utils/adminCheck'
+import { workflowCache } from "@/lib/cache/workflowCache";
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -30,6 +31,17 @@ interface ChatSession {
   response_times: number[];
 }
 
+interface CachedWorkflow {
+  id: string;
+  nodes: Node[];
+  edges: Edge[];
+}
+
+interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
 export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const router = useRouter();
   const { supabase } = useSupabase();
@@ -49,6 +61,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     title: '',
     description: ''
   })
+  const [faqPage, setFaqPage] = useState(1)
+  const [hasMoreFaqs, setHasMoreFaqs] = useState(true)
+  const FAQ_PAGE_SIZE = 20
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,70 +74,101 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   }, [messages]);
 
   useEffect(() => {
-    const loadWorkflowAndFAQs = async () => {
-      try {
+    if (workflowId) {
+      loadWorkflowAndFAQs()
+    }
+  }, [workflowId, supabase])
+
+  const loadWorkflowAndFAQs = async () => {
+    try {
         setIsLoading(true);
         const {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
 
-        // Choose appropriate tables based on admin status
-        const isAdminUser = isAdmin(user.id)
-        const workflowTable = isAdminUser ? 'sample_workflows' : 'workflows'
-        const faqTable = isAdminUser ? 'sample_faqs' : 'faqs'
+      // Choose appropriate tables based on admin status
+      const isAdminUser = isAdmin(user.id)
+      const workflowTable = isAdminUser ? 'sample_workflows' : 'workflows'
+      const faqTable = isAdminUser ? 'sample_faqs' : 'faqs'
 
-        // Load workflow from appropriate table
+      // Try to get workflow from cache first
+      const cachedWorkflow = workflowCache.getWorkflow(workflowId)
+      if (cachedWorkflow) {
+        setWorkflow({
+          nodes: cachedWorkflow.nodes || [],
+          edges: cachedWorkflow.edges || [],
+        })
+      } else {
+        // Load workflow from database
         const { data: workflowData, error: workflowError } = await supabase
           .from(workflowTable)
           .select("*")
           .eq("id", workflowId)
-          .single();
+          .single()
 
-        if (workflowError) throw workflowError;
-
-        // Load FAQs from appropriate table
-        const { data: faqData, error: faqError } = await supabase
-          .from(faqTable)
-          .select("*")
-          .eq("workflow_id", workflowId);
-
-        if (faqError) throw faqError;
-        setFaqs(faqData || []);
+        if (workflowError) throw workflowError
 
         if (workflowData) {
           setWorkflow({
             nodes: workflowData.nodes || [],
             edges: workflowData.edges || [],
-          });
-          setMessages([
-            {
-              type: "bot",
-              content:
-                "Hi 👋, I am Cora - Your very own chat assistant! How may I help you today?",
-              source: "llm",
-            },
-          ]);
-        } else {
-          throw new Error("Workflow not found");
+          })
+          workflowCache.setWorkflow(workflowData)
         }
-      } catch (error) {
-        console.error("Error loading:", error);
-        setMessages([
-          {
-            type: "bot",
-            content:
-              "Sorry, there was an error loading. Please try again later.",
-            source: "llm",
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    loadWorkflowAndFAQs();
-  }, [workflowId, supabase]);
+      // Try to get FAQs from cache first
+      const cachedFaqs = workflowCache.getPaginatedFAQs(workflowId, {
+        pagination: { page: faqPage, limit: FAQ_PAGE_SIZE }
+      })
+
+      if (cachedFaqs) {
+        setFaqs(prevFaqs => [...prevFaqs, ...cachedFaqs.data])
+        setHasMoreFaqs(cachedFaqs.total > faqPage * FAQ_PAGE_SIZE)
+      } else {
+        // Load FAQs from database with pagination
+        const { data: faqData, error: faqError } = await supabase
+          .from(faqTable)
+          .select("*", { count: 'exact' })
+          .eq("workflow_id", workflowId)
+          .range((faqPage - 1) * FAQ_PAGE_SIZE, faqPage * FAQ_PAGE_SIZE - 1)
+
+        if (faqError) throw faqError
+
+        if (faqData) {
+          setFaqs(prevFaqs => [...prevFaqs, ...faqData])
+          workflowCache.setPaginatedFAQs(workflowId, faqData, {
+            pagination: { offset: (faqPage - 1) * FAQ_PAGE_SIZE }
+          })
+          setHasMoreFaqs(faqData.length === FAQ_PAGE_SIZE)
+        }
+      }
+
+      // Set initial message
+      if (messages.length === 0) {
+        setMessages([{
+          type: "bot",
+          content: "Hi 👋, I am Cora - Your very own chat assistant! How may I help you today?",
+          source: "llm",
+        }])
+      }
+    } catch (error) {
+      console.error("Error loading:", error)
+      setMessages([{
+        type: "bot",
+        content: "Sorry, there was an error loading. Please try again later.",
+        source: "llm",
+      }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadMoreFaqs = () => {
+    if (!hasMoreFaqs || isLoading) return
+    setFaqPage(prev => prev + 1)
+  }
 
   useEffect(() => {
     const initializeChatSession = async () => {
@@ -211,7 +257,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     if (!currentInput.trim()) return;
 
     lastMessageTime.current = new Date();
+    setIsLoading(true);
 
+    // Optimistically add user message
     setMessages((prev) => [
       ...prev,
       {
@@ -220,8 +268,8 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
       },
     ]);
 
+    const userMessage = currentInput.trim();
     setCurrentInput("");
-    setIsLoading(true);
 
     try {
       // Get the session
@@ -231,11 +279,10 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          // Add the auth token to the request
           "Authorization": `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
-          message: currentInput.trim(),
+          message: userMessage,
           workflowId: workflowId,
           history: messages.map(msg => ({
             role: msg.type === "user" ? "user" : "assistant",
@@ -249,11 +296,14 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
       // Calculate response time
       const responseTime = new Date().getTime() - (lastMessageTime.current?.getTime() || 0);
       
-      // Update chat statistics
-      await updateChatStats(
-        responseTime / 1000,
-        data.success
-      );
+      // Optimistically update chat statistics before checking success
+      if (currentSession?.id) {
+        setCurrentSession(prev => prev ? {
+          ...prev,
+          message_count: prev.message_count + 1,
+          response_times: [...prev.response_times, responseTime / 1000]
+        } : null);
+      }
 
       if (data.success) {
         setMessages((prev) => [
@@ -264,6 +314,8 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
             source: data.source
           },
         ]);
+        // Update stats after confirmed success
+        await updateChatStats(responseTime / 1000, true);
       } else {
         throw new Error(data.message);
       }
@@ -274,6 +326,15 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
       if (lastMessageTime.current) {
         const responseTime = new Date().getTime() - lastMessageTime.current.getTime();
         await updateChatStats(responseTime / 1000, false);
+      }
+
+      // Revert optimistic session update on error
+      if (currentSession?.id) {
+        setCurrentSession(prev => prev ? {
+          ...prev,
+          message_count: Math.max(0, prev.message_count - 1),
+          response_times: prev.response_times.slice(0, -1)
+        } : null);
       }
 
       setMessages((prev) => [

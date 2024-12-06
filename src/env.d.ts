@@ -15,6 +15,8 @@ declare global {
       POSTGRES_DATABASE: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
       POSTGRES_HOST: string;
+      NEXT_PUBLIC_DEFAULT_USER_ID: string;
+      NEXT_PUBLIC_WIDGET_ID: string;
     }
   }
 }

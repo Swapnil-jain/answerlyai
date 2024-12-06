@@ -1,10 +1,52 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import Script from 'next/script';
+
+interface AnswerlyAIWidget {
+  init: (config: WidgetConfig) => void;
+  destroy?: () => void;
+}
+
+interface WidgetConfig {
+  name: string;
+  theme: string;
+  position: string;
+  userId: string;
+}
+
+declare global {
+  interface Window {
+    AnswerlyAIWidget?: AnswerlyAIWidget;
+  }
+}
 
 export default function ChatWidget() {
   const pathname = usePathname();
+
+  const cleanupWidget = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    // Remove all widget-related elements in one query
+    const elementsToRemove = document.querySelectorAll(`
+      script[src*="/api/widget/"],
+      script:not([src])[text*="AnswerlyAIWidgetReady"],
+      [id^="AnswerlyAIWidget"],
+      .widget-container,
+      [class*="widget"],
+      [style*="z-index: 1000"],
+      div[style*="box-shadow"][style*="position: fixed"][style*="z-index: 1000"]
+    `);
+
+    elementsToRemove.forEach(el => el.remove());
+
+    // Clean up global widget instance
+    if (window.AnswerlyAIWidget?.destroy) {
+      window.AnswerlyAIWidget.destroy();
+    }
+    delete window.AnswerlyAIWidget;
+  }, []);
 
   useEffect(() => {
     // Only initialize the widget on the homepage
@@ -13,67 +55,40 @@ export default function ChatWidget() {
     // Wait for document to be ready
     if (typeof window === 'undefined') return;
 
-    // Function to clean up widget resources
-    const cleanupWidget = () => {
-      // Remove widget scripts
-      document.querySelectorAll('script').forEach(script => {
-        if (script.src.includes('/api/widget/') || 
-            script.text.includes('AnswerlyAIWidgetReady')) {
-          script.remove();
-        }
-      });
-
-      // Remove all widget-related DOM elements
-      document.querySelectorAll('[id^="AnswerlyAIWidget"], .widget-container, [class*="widget"], [style*="z-index: 1000"]').forEach(el => {
-        el.remove();
-      });
-
-      // Remove any shadow overlays that might have been created
-      document.querySelectorAll('div[style*="box-shadow"]').forEach(el => {
-        if (el.style.position === 'fixed' && el.style.zIndex === '1000') {
-          el.remove();
-        }
-      });
-
-      // Clean up global widget instance
-      if (window.AnswerlyAIWidget) {
-        if (typeof window.AnswerlyAIWidget.destroy === 'function') {
-          window.AnswerlyAIWidget.destroy();
-        }
-        delete window.AnswerlyAIWidget;
-      }
-
-      // Remove event listeners
-      window.removeEventListener('AnswerlyAIWidgetReady', () => {});
-    };
-
     // Clean up any existing widgets before initializing
     cleanupWidget();
 
-    // Create and append the widget script
-    const widgetScript = document.createElement('script');
-    widgetScript.src = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/widget/1adac23a-9bd5-4091-ba9f-e7d30a6af70f`;
-    
-    widgetScript.onload = () => {
-      const initScript = document.createElement('script');
-      initScript.text = `
-        window.addEventListener('AnswerlyAIWidgetReady', function() {
-          window.AnswerlyAIWidget.init({
-            name: 'AnswerlyAI',
-            theme: 'blue',
-            position: 'bottom-right',
-            userId: '2866612c-8fd8-43e5-958a-2f4cd8515f3a'
-          });
-        });
-      `;
-      document.body.appendChild(initScript);
-    };
+    const widgetId = process.env.NEXT_PUBLIC_WIDGET_ID;
+    const userId = process.env.NEXT_PUBLIC_DEFAULT_USER_ID;
 
-    document.body.appendChild(widgetScript);
+    if (!widgetId || !userId) {
+      console.error('Missing required environment variables for widget');
+      return;
+    }
 
     // Return cleanup function
     return cleanupWidget;
-  }, [pathname]); // Re-run effect when pathname changes
+  }, [pathname, cleanupWidget]);
 
-  return null;
+  if (pathname !== '/') return null;
+
+  return (
+    <>
+      <Script
+        src={`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/widget/${process.env.NEXT_PUBLIC_WIDGET_ID}`}
+        strategy="lazyOnload"
+        onLoad={() => {
+          window.addEventListener('AnswerlyAIWidgetReady', function initWidget() {
+            window.AnswerlyAIWidget?.init({
+              name: 'AnswerlyAI',
+              theme: 'blue',
+              position: 'bottom-right',
+              userId: process.env.NEXT_PUBLIC_DEFAULT_USER_ID || ''
+            });
+            window.removeEventListener('AnswerlyAIWidgetReady', initWidget);
+          });
+        }}
+      />
+    </>
+  );
 }

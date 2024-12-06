@@ -40,7 +40,7 @@ export default function LoginPage() {
             <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <Sparkles className="w-3 h-3 text-blue-600" />
-              <span className="text-xs font-medium text-blue-600">Only What You Need.</span>
+              <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
             </div>
           </Link>
           <Link href="/">

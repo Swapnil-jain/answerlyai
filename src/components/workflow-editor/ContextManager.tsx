@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useSupabase } from '@/lib/supabase/provider'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { Loader2 } from 'lucide-react'
 import {
@@ -27,7 +27,7 @@ interface ContextManagerProps {
 
 export default function ContextManager({ workflowId, onSaveWorkflow }: ContextManagerProps) {
   const router = useRouter()
-  const { supabase } = useSupabase()
+  const { supabase, getUser } = useAuth()
   const [context, setContext] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -47,7 +47,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
   const loadContext = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
@@ -93,7 +93,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
     try {
       setIsSaving(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getUser()
       if (!user) throw new Error('Not authenticated')
 
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
