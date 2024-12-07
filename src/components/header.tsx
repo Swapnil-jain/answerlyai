@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useSmoothScroll } from "@/hooks/use-smooth-scroll";
 import { useSupabase } from "@/lib/supabase/provider";
-import { LogOut, LogIn, LayoutDashboard, Sparkles, Menu, X, ArrowRight } from "lucide-react";
+import { LogOut, LogIn, LayoutDashboard, Menu, X, ArrowRight } from "lucide-react";
 
 interface HeaderProps {
   className?: string;
@@ -117,7 +118,7 @@ export default function Header({ className = "" }: HeaderProps) {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-blue-600" />
+            <Image src="/logo.png" alt="AnswerlyAI Logo" width={40} height={40} />
             <span className="font-bold text-xl text-blue-600 hover:text-blue-700">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>

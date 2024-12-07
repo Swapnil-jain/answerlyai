@@ -3,12 +3,13 @@ import { Node, Edge } from "reactflow";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase/provider";
-import { MessageSquare, ArrowLeft, LayoutDashboard, Sparkles } from "lucide-react";
+import { MessageSquare, ArrowLeft, LayoutDashboard} from "lucide-react";
 import Link from "next/link";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { isAdmin } from '@/lib/utils/adminCheck'
 import { workflowCache } from "@/lib/cache/workflowCache";
 import ReactMarkdown from 'react-markdown';
+import Image from "next/image";
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -377,7 +378,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-blue-600" />
+                <Image src="/logo.png" alt="AnswerlyAI Logo" width={40} height={40} />
                 <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
               </Link>
               <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">

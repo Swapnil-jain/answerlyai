@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
           // Load React if not already present
           Promise.all([
             loadScript('https://unpkg.com/react@18/umd/react.production.min.js'),
-            loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js')
+            loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'),
+            loadScript('https://cdn.jsdelivr.net/npm/marked@11.1.0/lib/marked.umd.min.js')
           ]).then(initializeWidget)
             .catch(error => console.error('Error loading dependencies:', error));
         }
@@ -100,8 +101,14 @@ export async function GET(request: NextRequest) {
                 });
 
                 const data = await response.json();
+                
+                setIsLoading(false);
+
                 if (data.success) {
-                  setMessages(prev => [...prev, { type: 'bot', content: data.response }]);
+                  setMessages(prev => [...prev, {
+                    type: 'bot',
+                    content: data.response
+                  }]);
                 } else {
                   throw new Error(data.message);
                 }
@@ -116,7 +123,93 @@ export async function GET(request: NextRequest) {
               }
             };
 
+            // Create a scoped container for the widget
+            const widgetContainer = document.createElement('div');
+            widgetContainer.id = 'answerlyai-widget-root';
+            document.body.appendChild(widgetContainer);
+
+            // Add scoped styles
+            const styles = document.createElement('style');
+            styles.textContent = \`
+              #answerlyai-widget-root {
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                font-size: 17px;
+                line-height: 1.5;
+                color: #1f2937;
+              }
+              #answerlyai-widget-root * {
+                box-sizing: border-box;
+              }
+              #answerlyai-widget-root .widget-prose {
+                font-size: inherit;
+                line-height: 1.5;
+              }
+              #answerlyai-widget-root .widget-prose p {
+                margin: 0.5em 0;
+              }
+              #answerlyai-widget-root .widget-prose ul {
+                list-style-type: disc;
+                padding-left: 1.5em;
+                margin: 0.5em 0;
+              }
+              #answerlyai-widget-root .widget-prose ol {
+                list-style-type: decimal;
+                padding-left: 1.5em;
+                margin: 0.5em 0;
+              }
+              #answerlyai-widget-root .widget-prose strong {
+                font-weight: 600;
+              }
+              #answerlyai-widget-root .typing-indicator {
+                display: flex;
+                gap: 4px;
+              }
+              #answerlyai-widget-root .typing-dot {
+                width: 8px;
+                height: 8px;
+                background-color: #6b7280;
+                border-radius: 50%;
+                animation: bounce 1.4s infinite;
+              }
+              #answerlyai-widget-root .typing-dot:nth-child(2) { animation-delay: -1.1s; }
+              #answerlyai-widget-root .typing-dot:nth-child(3) { animation-delay: -0.8s; }
+              @keyframes bounce {
+                0%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-6px); }
+              }
+              #answerlyai-widget-root .bg-blue-500 { 
+                background-color: #3b82f6;
+                border-radius: 12px;
+                padding: 12px 16px;
+                margin: 4px 0;
+              }
+              #answerlyai-widget-root .bg-gray-100 { 
+                background-color: #f3f4f6;
+                border-radius: 12px;
+                padding: 12px 16px;
+                margin: 4px 0;
+              }
+              #answerlyai-widget-root .max-w-[80%] {
+                max-width: 80%;
+                border-radius: 12px;
+                overflow-wrap: break-word;
+                word-break: break-word;
+              }
+              #answerlyai-widget-root .text-white { 
+                color: #ffffff; 
+                font-size: 16px;
+                line-height: 1.5;
+              }
+              #answerlyai-widget-root .text-gray-800 { 
+                color: #1f2937;
+                font-size: 16px;
+                line-height: 1.5;
+              }
+            \`;
+            document.head.appendChild(styles);
+
             return React.createElement('div', {
+              id: 'answerlyai-widget-root',
               style: {
                 position: 'fixed',
                 ...(position === 'bottom-right' 
@@ -194,26 +287,64 @@ export async function GET(request: NextRequest) {
                   style: {
                     flex: 1,
                     overflowY: 'auto',
-                    padding: '1rem'
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem'
                   }
-                }, messages.map((msg, i) => 
+                }, messages.map((message, index) => {
+                  const messageContent = message.type === 'user' ? (
+                    message.content
+                  ) : (
+                    React.createElement('div', {
+                      className: 'widget-prose',
+                      dangerouslySetInnerHTML: {
+                        __html: window.marked.parse(message.content, {
+                          breaks: true,
+                          gfm: true
+                        })
+                      }
+                    })
+                  );
+
+                  return React.createElement('div', {
+                    key: index,
+                    style: {
+                      display: 'flex',
+                      justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start',
+                      marginBottom: '0.5rem'
+                    }
+                  },
+                    React.createElement('div', {
+                      className: \`max-w-[80%] rounded-lg px-4 py-2 \${
+                        message.type === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                      }\`
+                    }, messageContent)
+                  );
+                })),
+                
+                isLoading && React.createElement('div', {
+                  style: {
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    padding: '0.25rem 1rem',
+                    marginBottom: '0.5rem'
+                  }
+                },
                   React.createElement('div', {
-                    key: i,
-                    style: {
-                      marginBottom: '0.5rem',
-                      textAlign: msg.type === 'user' ? 'right' : 'left'
-                    }
-                  }, React.createElement('div', {
-                    style: {
-                      display: 'inline-block',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '1rem',
-                      maxWidth: '80%',
-                      backgroundColor: msg.type === 'user' ? '#2563eb' : '#f3f4f6',
-                      color: msg.type === 'user' ? '#ffffff' : '#1f2937'
-                    }
-                  }, msg.content))
-                )),
+                    className: 'bg-gray-100 rounded-lg px-4 py-2 text-gray-800'
+                  },
+                    React.createElement('div', {
+                      className: 'typing-indicator'
+                    },
+                      React.createElement('div', { className: 'typing-dot' }),
+                      React.createElement('div', { className: 'typing-dot' }),
+                      React.createElement('div', { className: 'typing-dot' })
+                    )
+                  )
+                ),
                 
                 React.createElement('div', {
                   style: {

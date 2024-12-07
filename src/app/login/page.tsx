@@ -4,6 +4,7 @@ import { useSupabase } from '@/lib/supabase/provider'
 import { Button } from '@/components/ui/button'
 import { Loader2, Sparkles, ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -37,7 +38,7 @@ export default function LoginPage() {
       <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-sm border-b z-50">
         <div className="container mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-blue-600" />
+            <Image src="/logo.png" alt="AnswerlyAI Logo" width={40} height={40} />
             <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>

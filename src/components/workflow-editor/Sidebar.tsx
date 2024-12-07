@@ -1,11 +1,8 @@
-import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle, MessageSquare, Settings, Sparkles } from 'lucide-react'
+import { PlusCircle, MessageSquare, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { useSupabase } from '@/lib/supabase/provider'
-import { workflowCache } from '@/lib/cache/workflowCache'
 import WebsiteCrawler from './WebsiteCrawler'
+import Image from 'next/image'
 
 interface SidebarProps {
   className?: string
@@ -21,33 +18,9 @@ interface SidebarProps {
 
 export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow, onChatbotClick, onWidgetClick, onFAQClick, onContextClick }: SidebarProps) {
   const router = useRouter()
-  const { supabase } = useSupabase()
-  
-  const isMac = typeof window !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
-
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType)
     event.dataTransfer.effectAllowed = 'move'
-  }
-
-  const handleNewWorkflow = () => {
-    router.push('/builder')
-  }
-
-  const handleFAQClick = () => {
-    if (!workflowId) {
-      console.error('No workflow ID available')
-      return
-    }
-    router.push(`/faq/${workflowId}`)
-  }
-
-  const handleContextClick = () => {
-    if (!workflowId) {
-      console.error('No workflow ID available')
-      return
-    }
-    router.push(`/context/${workflowId}`)
   }
 
   // Create a wrapper function that preserves the boolean return value
@@ -67,7 +40,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
             onClick={() => router.push('/')}
           >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-blue-600" />
+              <Image src="/logo.png" alt="AnswerlyAI Logo" width={38} height={38} />
               AnswerlyAI
             </div>
           </span>

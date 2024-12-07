@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Sparkles, Bot, Zap, MousePointer2 } from 'lucide-react'
+import { ArrowRight, Bot, Zap, MousePointer2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HeroSection() {
