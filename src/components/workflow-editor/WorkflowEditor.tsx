@@ -956,21 +956,12 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   }
 
   const handleLogout = () => {
-    if (hasUnsavedChanges) {
-      showAlert(
-        'Unsaved Changes',
-        'Would you like to save your changes before logging out?',
-        'success'
-      )
-      setPendingNavigation('logout')
-    } else {
-      showAlert(
-        'Confirm Logout',
-        'Are you sure you want to logout?',
-        'navigation'
-      )
-      setPendingNavigation('logout')
-    }
+    showAlert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      'navigation'
+    )
+    setPendingNavigation('logout')
   }
 
   const confirmLogout = async () => {

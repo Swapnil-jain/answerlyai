@@ -2,12 +2,11 @@ import { Code2, MousePointer2, BarChart3, Sparkles, Globe, LogIn, Zap } from 'lu
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="w-full py-24 bg-gradient-to-b from-white to-gray-50">
+    <section id="features" className="w-full py-20 bg-white">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-20">
+        <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-600">Only. Relevant. Features.</span>
+            <span className="text-sm font-medium text-blue-600">Only.Relevant.Features.</span>
           </div>
           <h2 className="text-4xl font-bold mb-6">Why Choose AnswerlyAI?</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
@@ -16,7 +15,7 @@ export default function FeaturesSection() {
           </p>
           <div className="bg-gray-50 p-6 rounded-2xl max-w-3xl mx-auto">
             <p className="text-lg text-gray-700 italic">
-              "Over 90% of users never touch 70% of features in typical tools—we’re different: AnswerlyAI offers only the most relevant, simple-to-use features you actually need."
+              "Over 95% of users never touch 80% of features in typical tools—we’re different: AnswerlyAI offers only the most relevant, simple-to-use features you actually need."
             </p>
           </div>
         </div>
@@ -89,8 +88,8 @@ export default function FeaturesSection() {
             </div>
             <h3 className="text-xl font-semibold mb-4">Instant Access</h3>
             <p className="text-gray-600">
-              Sign up with Google and start building immediately. No credit card required.
-              Try all features free and upgrade only when you're ready.
+              Sign up with Google and start building immediately. Create and deploy
+              your first chatbot in minutes.
             </p>
           </div>
         </div>
@@ -110,4 +109,3 @@ export default function FeaturesSection() {
     </section>
   )
 }
-

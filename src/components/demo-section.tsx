@@ -3,7 +3,7 @@ import { Play, MessageSquare, Bot, Users, ArrowRight } from 'lucide-react'
 
 export default function DemoSection() {
   return (
-    <section id="demo" className="w-full py-24 bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <section id="demo" className="w-full py-20 bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">

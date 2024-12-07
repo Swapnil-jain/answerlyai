@@ -21,7 +21,7 @@ const benefits = [
 
 export default function BenefitsSection() {
   return (
-    <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
+    <section className="w-full py-12 md:py-20 lg:py-32 bg-gray-100">
       <div className="container mx-auto px-4 md:px-6">
         <h2 className="text-3xl font-bold text-center mb-12">Why Choose AnswerlyAI?</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

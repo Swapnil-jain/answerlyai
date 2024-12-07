@@ -66,10 +66,12 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
             className="text-2xl font-bold text-blue-600 cursor-pointer hover:text-blue-700"
             onClick={() => router.push('/')}
           >
-            AnswerlyAI
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-blue-600" />
+              AnswerlyAI
+            </div>
           </span>
           <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-            <Sparkles className="w-3 h-3 text-blue-600" />
             <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
           </div>
         </div>
@@ -154,4 +156,3 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
     </div>
   )
 }
-

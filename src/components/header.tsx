@@ -120,7 +120,6 @@ export default function Header({ className = "" }: HeaderProps) {
             <Sparkles className="w-6 h-6 text-blue-600" />
             <span className="font-bold text-xl text-blue-600 hover:text-blue-700">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-              <Sparkles className="w-3 h-3 text-blue-600" />
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
             </div>
           </Link>

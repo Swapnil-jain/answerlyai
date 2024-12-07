@@ -3,11 +3,12 @@ import { Node, Edge } from "reactflow";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase/provider";
-import { MessageSquare, ArrowLeft, LayoutDashboard } from "lucide-react";
+import { MessageSquare, ArrowLeft, LayoutDashboard, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { isAdmin } from '@/lib/utils/adminCheck'
 import { workflowCache } from "@/lib/cache/workflowCache";
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -293,6 +294,9 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
 
       const data = await response.json();
       
+      // Set loading to false immediately after receiving response
+      setIsLoading(false);
+      
       // Calculate response time
       const responseTime = new Date().getTime() - (lastMessageTime.current?.getTime() || 0);
       
@@ -346,8 +350,6 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         },
       ]);
     }
-
-    setIsLoading(false);
   };
 
   const endChatSession = async (sessionId: string) => {
@@ -375,6 +377,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-blue-600" />
                 <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
               </Link>
               <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
@@ -424,20 +427,28 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    className={`max-w-[80%] rounded-lg px-4 py-2 text-base ${
                       message.type === "user"
                         ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-800"
+                        : "bg-gray-100 text-gray-800 prose prose-base max-w-none"
                     }`}
                   >
-                    {message.content}
+                    {message.type === "user" ? (
+                      message.content
+                    ) : (
+                      <ReactMarkdown>
+                        {message.content}
+                      </ReactMarkdown>
+                    )}
                   </div>
                 </div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-lg px-4 py-2 text-gray-800">
-                    Typing...
+                  <div className="bg-gray-100 rounded-lg px-4 py-2 text-gray-800 flex items-center gap-1">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
                   </div>
                 </div>
               )}
@@ -457,7 +468,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
                   }
                 }}
                 placeholder="Type your message..."
-                className="flex-1 border rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border rounded-md px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Button
                 onClick={handleUserInput}

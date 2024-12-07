@@ -2,13 +2,14 @@ import { Bot, Globe, PenLine, FileText, MousePointer } from 'lucide-react'
 
 export default function WorkflowEditorSection() {
   return (
-    <section className="w-full py-24 bg-white">
+    <section className="w-full py-20 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-6">Build Your Chatbot, Your Way</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Choose how you want to create your chatbot. Whether you prefer typing, 
             importing from your website, or drawing flowcharts - we've got you covered.
+            No more overwhelming the users with scary interfaces.
           </p>
         </div>
 

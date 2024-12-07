@@ -4,15 +4,14 @@ import Link from 'next/link'
 
 export default function HeroSection() {
   return (
-    <section className="w-full min-h-[90vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 sm:px-6">
+    <section className="w-full min-h-[80vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <div className="container mx-auto px-4 sm:px-6 py-12">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          <div className="text-left space-y-6 lg:space-y-8">
+          <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
                 <span className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only. Relevant. Features.</span>
+                  <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
                 </span>
               </div>
               <div className="inline-flex items-center justify-center">
@@ -23,38 +22,38 @@ export default function HeroSection() {
               </div>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
-              Your Customer Support,{' '}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-center sm:text-left">
+              The Simplest Chatbot Maker On The Planet,{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-                Simplified
+                Because your time matters
               </span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-gray-600 max-w-xl">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-xl text-center sm:text-left">
               Create powerful AI chatbots as easily as chatting with a friend. 
               Just drag, drop, and describe – no coding needed.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                <span className="text-sm text-gray-600">Drag & Drop Builder</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0">
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">Drag & Drop Builder</span>
               </div>
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                <span className="text-sm text-gray-600">Natural Language Setup</span>
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">Natural Language Setup</span>
               </div>
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                <span className="text-sm text-gray-600">Visual Flow Designer</span>
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">Visual Flow Designer</span>
               </div>
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                <span className="text-sm text-gray-600">One-Click Website Import</span>
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">One-Click Website Import</span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
               <Link href="/mobile-notice" className="sm:hidden w-full">
                 <Button 
                   size="lg" 
@@ -71,11 +70,11 @@ export default function HeroSection() {
                   Get Started <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
-              <p className="text-gray-500 flex items-center gap-2">
+              <p className="text-gray-500 flex items-center gap-2 h-[52px]">
                 <span className="bg-green-100 p-1 rounded-full">
                   <Zap className="w-4 h-4 text-green-600" />
                 </span>
-                No credit card required
+                So simple you will fall in love.
               </p>
             </div>
 
@@ -89,7 +88,7 @@ export default function HeroSection() {
                 <p className="text-xs sm:text-sm text-gray-600">Query Resolution</p>
               </div>
               <div>
-                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">50%</h4>
+                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">Upto 98%</h4>
                 <p className="text-xs sm:text-sm text-gray-600">Cost Reduction</p>
               </div>
             </div>

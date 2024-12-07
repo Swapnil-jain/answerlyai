@@ -37,9 +37,9 @@ export default function LoginPage() {
       <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-sm border-b z-50">
         <div className="container mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-blue-600" />
             <span className="text-2xl font-bold text-blue-600">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-              <Sparkles className="w-3 h-3 text-blue-600" />
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
             </div>
           </Link>
@@ -78,9 +78,9 @@ export default function LoginPage() {
                     <Sparkles className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900 mb-1">Start for Free</h3>
+                    <h3 className="font-medium text-gray-900 mb-1">Get Started Today</h3>
                     <p className="text-sm text-gray-600">
-                      No credit card required. Upgrade only when you're ready.
+                      Transform your customer support in minutes
                     </p>
                   </div>
                 </div>

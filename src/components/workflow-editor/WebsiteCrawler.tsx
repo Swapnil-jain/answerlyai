@@ -3,7 +3,7 @@ import { Globe, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/lib/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { isAdmin } from '@/lib/utils/adminCheck'
 

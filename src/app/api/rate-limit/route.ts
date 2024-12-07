@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { LIMITS, LimitType, TierType } from '@/lib/config/limits'
+import { LIMITS, LimitType, TierType } from '@/lib/constants/limits'
 
 export async function POST(request: Request) {
   try {

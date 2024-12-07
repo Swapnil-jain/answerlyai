@@ -1,5 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { Mail, MessageSquare, Phone } from 'lucide-react'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 export default function ContactSection() {
   return (
@@ -13,28 +19,71 @@ export default function ContactSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="bg-blue-50 p-8 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="h-6 w-6 text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          {/* Contact Information - Left Side */}
+          <div className="space-y-4 max-w-md">
+            <div className="bg-blue-50 p-6 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Mail className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Email Us</h3>
+              <p className="text-gray-600 mb-3 text-sm">We'll respond within 24 hours</p>
+              <a href="mailto:answerlyai.cloud@gmail.com" className="text-blue-600 hover:text-blue-700 text-sm">
+                answerlyai.cloud@gmail.com
+              </a>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Email Us</h3>
-            <p className="text-gray-600 mb-4">We'll respond within 24 hours</p>
-            <a href="mailto:answerlyai.cloud@gmail.com" className="text-blue-600 hover:text-blue-700">
-            answerlyai.cloud@gmail.com
-            </a>
+
+            <div className="bg-blue-50 p-6 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <MessageSquare className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Live Chatbot</h3>
+              <p className="text-gray-600 mb-3 text-sm">Available 24/7</p>
+            </div>
           </div>
 
-          <div className="bg-blue-50 p-8 rounded-xl text-center hover:shadow-lg transition-shadow duration-200">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageSquare className="h-6 w-6 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Live Chatbot</h3>
-            <p className="text-gray-600 mb-4">Available 24/7</p>
+          {/* FAQs - Right Side */}
+          <div className="bg-gray-50 p-6 rounded-xl max-w-md">
+            <h3 className="text-xl font-semibold mb-4">Frequently Asked Questions</h3>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger>What is AnswerlyAI?</AccordionTrigger>
+                <AccordionContent>
+                  AnswerlyAI is an advanced AI-powered platform that helps businesses automate customer support and enhance user engagement through intelligent chatbot solutions.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-2">
+                <AccordionTrigger>How does the pricing work?</AccordionTrigger>
+                <AccordionContent>
+                  We offer flexible pricing plans based on your business needs. Contact us for a customized quote that fits your requirements.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-3">
+                <AccordionTrigger>How quickly can I get started?</AccordionTrigger>
+                <AccordionContent>
+                  You can get started immediately after signing up. Our intuitive platform allows you to create and deploy your first chatbot within minutes.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-4">
+                <AccordionTrigger>How long does implementation take?</AccordionTrigger>
+                <AccordionContent>
+                  Implementation typically takes 1-2 days, depending on your specific requirements and integration needs.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-5">
+                <AccordionTrigger>Do you offer technical support?</AccordionTrigger>
+                <AccordionContent>
+                  Yes, we provide 24/7 technical support to ensure your chatbot runs smoothly and efficiently.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
       </div>
     </section>
   )
 }
-

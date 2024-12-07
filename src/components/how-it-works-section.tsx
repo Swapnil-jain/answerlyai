@@ -19,7 +19,7 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32 bg-white">
+    <section id="how-it-works" className="w-full py-12 md:py-20 lg:py-32 bg-white">
       <div className="container mx-auto px-4 md:px-6">
         <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-6 max-w-5xl mx-auto">

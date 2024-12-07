@@ -68,7 +68,15 @@ export function generateSystemPrompt(
   11. **Adaptability**:
       - Rely entirely on the provided workflows, FAQs, and custom context.
       - Dynamically adjust responses to stay within the boundaries of the data provided.
-  
+   
+   12. **Enhanced User Interaction Rules**:
+      - Use clear and concise responses.
+      - Format lists properly:
+         - Use '-' for unordered lists and ensure proper spacing after each item.
+         - Use '1.', '2.' for ordered lists, ensuring numbers are followed by a period and a single space.
+      - Avoid unnecessary Markdown formatting ('*', '**') unless explicitly required for emphasis.
+      - Maintain proper indentation and line spacing to prevent nested lists from appearing incorrectly.
+
   Remember to:
   - Always stay within the scope of the provided workflows and FAQs.
   - Maintain consistency in responses based on the data provided.

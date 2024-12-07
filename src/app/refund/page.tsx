@@ -7,20 +7,20 @@ export default function RefundPolicy() {
           <section>
             <p className="text-gray-600 mb-6">
               At AnswerlyAI, we believe in transparency and fairness in our billing practices. 
-              Since we offer a comprehensive free trial that allows you to fully evaluate our service 
-              before making a purchase, we maintain a no-refund policy on all purchases.
+              We maintain a no-refund policy on all purchases to ensure consistent service quality 
+              and resource allocation for all our customers.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">1. Subscription Cancellation</h2>
+            <h2 className="text-2xl font-semibold mb-4">1. Subscription Management</h2>
             <p className="text-gray-600 mb-4">
               While we don't offer refunds, you have the flexibility to:
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2">
               <li>Cancel your subscription at any time</li>
               <li>Continue using the service until the end of your current billing period</li>
-              <li>Switch to our free tier after your paid period ends</li>
+              <li>Upgrade or downgrade your plan as your needs change</li>
             </ul>
           </section>
 
@@ -34,11 +34,11 @@ export default function RefundPolicy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">3. Free Trial</h2>
+            <h2 className="text-2xl font-semibold mb-4">3. Service Commitment</h2>
             <p className="text-gray-600">
-              We encourage all potential customers to take advantage of our free trial period 
-              to ensure our service meets your needs before making a purchase. This allows you 
-              to make an informed decision about your subscription.
+              We are committed to providing high-quality service and ensuring your success with our platform. 
+              Our support team is available to help you make the most of your subscription and address 
+              any concerns you may have.
             </p>
           </section>
 

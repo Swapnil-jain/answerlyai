@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { useAuth } from '@/lib/hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { logger } from '@/lib/utils/logger'
 import AuthGuard from '@/components/auth/AuthGuard'
