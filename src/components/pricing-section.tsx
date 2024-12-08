@@ -37,14 +37,15 @@ export default function PricingSection() {
               </span>
             </div>
             <h3 className="text-2xl font-bold mb-4 mt-4">Hobbyist</h3>
-            <p className="text-4xl font-bold mb-6">$6.90<span className="text-lg font-normal">/month</span></p>
+            <p className="text-4xl font-bold mb-6">$9.90<span className="text-lg font-normal">/month</span></p>
             <ul className="space-y-4 mb-8 flex-grow">
               <li>✓ 1 Chatbot</li>
               <li>✓ Basic Analytics</li>
               <li>✓ Standard Support</li>
-              <li>✓ Basic Customization</li>
               <li>✓ 100,000 tokens/day</li>
               <li>✓ Embed on 1 website</li>
+              <li>✗ AnswerlyAI watermark</li>
+              <li>✗ No Customization</li>
             </ul>
             <div>
               <Button 
@@ -69,9 +70,10 @@ export default function PricingSection() {
               <li>✓ 3 Chatbots</li>
               <li>✓ Advanced Analytics</li>
               <li>✓ Priority Support</li>
-              <li>✓ Full Customization</li>
               <li>✓ 500,000 tokens/day</li>
               <li>✓ Embed on unlimited websites</li>
+              <li>✓ Watermark removed</li>
+              <li>✓ Full Customization</li>
             </ul>
             <div>
               <Button 
@@ -97,7 +99,7 @@ export default function PricingSection() {
               <p className="text-lg text-gray-600">Contact us for pricing</p>
             </div>
             <ul className="space-y-4 mb-8 flex-grow">
-              <li>✓ Everything in Business</li>
+              <li>✓ Everything in Enthusiast</li>
               <li>✓ Dedicated Support</li>
               <li>✓ Customised limits</li>
               <li>✓ SLA Agreement</li>

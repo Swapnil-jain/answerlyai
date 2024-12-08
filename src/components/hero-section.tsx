@@ -6,9 +6,9 @@ export default function HeroSection() {
   return (
     <section className="w-full min-h-[80vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-4 sm:px-6 py-12">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center">
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
-            <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+            <div className="flex flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
                 <span className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
                   <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
@@ -34,7 +34,7 @@ export default function HeroSection() {
               Just drag, drop, and describe – no coding needed.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0">
               <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
                 <span className="text-md text-gray-600">Drag & Drop Builder</span>
@@ -94,30 +94,19 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <div className="relative hidden lg:block">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent rounded-3xl transform rotate-6"></div>
-            <div className="relative bg-white p-8 rounded-3xl shadow-xl">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 bg-gray-100 rounded-2xl p-4">
-                  <p className="text-gray-600">Hi! I'm your AI assistant. How can I help you today?</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 mb-6">
-                <div className="flex-1 bg-blue-50 rounded-2xl p-4 ml-14">
-                  <p className="text-gray-600">I need help with my order status.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 bg-gray-100 rounded-2xl p-4">
-                  <p className="text-gray-600">I can help you with that! Could you please provide your order number?</p>
-                </div>
-              </div>
+          <div className="relative block mt-8 lg:mt-0">
+            <div className="relative rounded-3xl shadow-xl overflow-hidden w-[90vw] h-[50.625vw] sm:w-[70vw] sm:h-[39.375vw] md:w-[60vw] md:h-[33.75vw] lg:w-[40vw] lg:h-[22.5vw] xl:w-[40vw] xl:h-[22.5vw] 2xl:w-[45vw] 2xl:h-[25.3125vw] mx-auto">
+              <video 
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                playsInline
+                controls
+                controlsList="nodownload"
+              >
+                <source src="/FinalDemo.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </div>

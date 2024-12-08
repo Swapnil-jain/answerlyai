@@ -77,8 +77,14 @@ export function generateSystemPrompt(
       - Avoid unnecessary Markdown formatting ('*', '**') unless explicitly required for emphasis.
       - Maintain proper indentation and line spacing to prevent nested lists from appearing incorrectly.
 
+   13. **Saving Token**:
+      - Always answer using as few words as possible and to-the-point only to save tokens.
+      - Save tokens by using shorter sentences, avoid long paragraphs.
+      - Use bullet points to avoid long paragraphs and save tokens.
+
   Remember to:
   - Always stay within the scope of the provided workflows and FAQs.
   - Maintain consistency in responses based on the data provided.
-  - Follow up to ensure the user’s satisfaction with the interaction.`;
+  - Follow up to ensure the user’s satisfaction with the interaction.
+  - Save tokens by using shorter sentences, less words, avoiding long paragraphs etc.`;
   }  

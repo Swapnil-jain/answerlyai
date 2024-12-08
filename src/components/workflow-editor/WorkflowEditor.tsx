@@ -19,7 +19,7 @@ import ReactFlow, {
   NodeChange,
 } from 'reactflow'
 import { useRouter } from 'next/navigation'
-import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, BookOpen } from 'lucide-react'
+import { Save, MessageSquare, Code, Maximize2, LayoutDashboard, Home, LogOut, BookOpen, PlayCircle } from 'lucide-react'
 import { useSupabase } from '@/lib/supabase/provider'
 import AuthGuard from '@/components/auth/AuthGuard'
 import {
@@ -47,6 +47,7 @@ import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
 import { eventEmitter } from '@/lib/utils/events'
 import { SAMPLE_WORKFLOW_ID } from '@/lib/utils/adminCheck'
+import VideoModal from './VideoModal'
 
 // Move this to the top, after imports and before any other code
 const generateUniqueId = (nodeType: string) => {
@@ -1276,6 +1277,8 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     }
   }
 
+  const [isVideoOpen, setIsVideoOpen] = useState(false)
+
   return (
     <div className="flex flex-col h-screen">
       {isAdminMode && (
@@ -1324,6 +1327,15 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     Sample Workflow
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsVideoOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  Demo
+                </Button>
                 <Button
                   onClick={() => handleNavigationWithCheck('/dashboard')}
                   variant="ghost"
@@ -1515,6 +1527,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <VideoModal isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
     </div>
   )
 }
