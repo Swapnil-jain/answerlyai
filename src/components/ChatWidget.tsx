@@ -62,7 +62,6 @@ export default function ChatWidget() {
     const userId = process.env.NEXT_PUBLIC_DEFAULT_USER_ID;
 
     if (!widgetId || !userId) {
-      console.error('Missing required environment variables for widget');
       return;
     }
 

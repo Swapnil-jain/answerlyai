@@ -183,7 +183,6 @@ export async function POST(req: NextRequest) {
       throw error;
     }
   } catch (error) {
-    console.error('Chat API Error:', error);
     return new NextResponse(
       JSON.stringify({ 
         success: false, 

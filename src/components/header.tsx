@@ -62,7 +62,6 @@ export default function Header({ className = "" }: HeaderProps) {
       await supabase.auth.signOut();
       router.push("/");
     } catch (error) {
-      console.error("Error logging out:", error);
     } finally {
       setAlertOpen(false);
     }

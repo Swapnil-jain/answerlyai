@@ -24,7 +24,6 @@ export async function GET() {
       }))
     })
   } catch (error) {
-    console.error('Error listing workflows:', error)
     return NextResponse.json(
       { 
         success: false, 

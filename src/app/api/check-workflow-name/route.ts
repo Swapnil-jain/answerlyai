@@ -28,7 +28,6 @@ export async function POST(request: Request) {
       exists: data.length > 0
     })
   } catch (error) {
-    console.error('Error checking workflow name:', error)
     return NextResponse.json(
       { 
         success: false, 

@@ -74,7 +74,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ allowed: true })
   } catch (error) {
-    console.error('Rate limit check error:', error)
     return NextResponse.json(
       { error: 'Failed to check rate limit' },
       { status: 500 }

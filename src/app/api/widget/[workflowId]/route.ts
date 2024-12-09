@@ -10,18 +10,13 @@ export async function GET(request: NextRequest) {
       throw new Error('workflowId is missing in the URL.');
     }
     
-    console.log('Serving widget for workflow:', workflowId);
-    
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
       `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}`;
 
     const widgetScript = `
-      console.log('Widget script loaded for workflow:', '${workflowId}');
       (function() {
         // Add initial message when chat opens - moved into the ChatWidget component
         // to support dynamic name
-
-        console.log('Widget IIFE executing');
         
         // Initialize widget immediately if React is already loaded
         if (window.React && window.ReactDOM) {
@@ -46,9 +41,7 @@ export async function GET(request: NextRequest) {
           });
         }
 
-        function initializeWidget() {
-          console.log('Initializing widget...');
-          
+        function initializeWidget() {          
           function ChatWidget({ workflowId, theme = 'light', position = 'bottom-right', userId, name = 'Cora' }) {
             // Get theme color based on theme name
             const getThemeColor = (theme) => {
@@ -113,7 +106,6 @@ export async function GET(request: NextRequest) {
                   throw new Error(data.message);
                 }
               } catch (error) {
-                console.error('Chat error:', error);
                 setMessages(prev => [...prev, { 
                   type: 'bot', 
                   content: 'Sorry, I encountered an error. Please try again.' 
@@ -377,7 +369,6 @@ export async function GET(request: NextRequest) {
 
           window.AnswerlyAIWidget = {
             init: function(config) {
-              console.log('Widget init called with config:', config);
               const container = document.createElement('div');
               container.id = 'answerly-ai-widget';
               document.body.appendChild(container);
@@ -404,7 +395,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Widget script error:', error);
     return new NextResponse(
       'console.error("Failed to load widget script");',
       { 

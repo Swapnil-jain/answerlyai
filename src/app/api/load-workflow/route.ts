@@ -34,7 +34,6 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Error loading workflow:', error)
     return NextResponse.json(
       { 
         success: false, 

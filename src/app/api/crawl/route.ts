@@ -105,7 +105,6 @@ ${cleanContent}
 
     } catch (error) {
       clearTimeout(timeoutId)
-      console.error('Crawler Error:', error)
       return NextResponse.json(
         { 
           success: false, 
@@ -115,7 +114,6 @@ ${cleanContent}
       )
     }
   } catch (error) {
-    console.error('Crawler Error:', error)
     return NextResponse.json(
       { success: false, message: 'Failed to crawl website' },
       { status: 500 }
