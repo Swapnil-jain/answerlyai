@@ -45,7 +45,7 @@ export default function PricingSection() {
               <li>✓ 100,000 tokens/day</li>
               <li>✓ Embed on 1 website</li>
               <li>✗ AnswerlyAI watermark</li>
-              <li>✗ No Customization</li>
+              <li>✗ Customization</li>
             </ul>
             <div>
               <Button 

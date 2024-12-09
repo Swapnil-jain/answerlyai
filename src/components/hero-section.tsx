@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default function HeroSection() {
   return (
     <section className="w-full min-h-[80vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 sm:px-6 py-12">
+      <div className="container mx-auto px-4 sm:px-6 py-12 max-[391px]:px-1">
         <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center">
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
@@ -34,7 +34,7 @@ export default function HeroSection() {
               Just drag, drop, and describe – no coding needed.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0 max-[391px]:px-3">
               <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
                 <span className="text-md text-gray-600">Drag & Drop Builder</span>
@@ -53,7 +53,7 @@ export default function HeroSection() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-center max-[391px]:px-4">
               <Link href="/mobile-notice" className="sm:hidden w-full">
                 <Button 
                   size="lg" 
@@ -78,7 +78,7 @@ export default function HeroSection() {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 sm:gap-6 pt-8 border-t">
+            <div className="grid grid-cols-3 gap-4 sm:gap-6 pt-8 border-t max-[391px]:px-5">
               <div>
                 <h4 className="text-xl sm:text-2xl font-bold text-gray-900">24/7</h4>
                 <p className="text-xs sm:text-sm text-gray-600">Always Available</p>
