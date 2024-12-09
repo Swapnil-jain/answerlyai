@@ -76,7 +76,7 @@ export default function VideoModal({ isOpen, onClose }: VideoModalProps) {
           <video
             ref={videoRef}
             className="w-full aspect-video object-cover"
-            src="/Tutorial.mp4"
+            src="/tutorial.mp4"
             loop
             playsInline
             muted={isMuted}
