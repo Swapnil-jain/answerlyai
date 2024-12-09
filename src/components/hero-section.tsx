@@ -10,12 +10,12 @@ export default function HeroSection() {
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
+                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full">
                   <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
                 </span>
               </div>
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+                <span className="inline-flex items-center gap-2 bg-[#e6f5ea] px-4 py-2 rounded-full">
                   <MousePointer2 className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-green-600 whitespace-nowrap">No-Code Required</span>
                 </span>
@@ -31,7 +31,7 @@ export default function HeroSection() {
             
             <p className="text-lg sm:text-xl text-gray-600 max-w-xl text-center sm:text-left">
               Create powerful AI chatbots as easily as chatting with a friend. 
-              Just drag, drop, and describe – no coding needed.
+              Just drag, drop, and describe – no coding experience needed.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0 max-[391px]:px-3">
@@ -41,15 +41,15 @@ export default function HeroSection() {
               </div>
               <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">Natural Language Setup</span>
-              </div>
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">Visual Flow Designer</span>
-              </div>
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
                 <span className="text-md text-gray-600">One-Click Website Import</span>
+              </div>
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">No More Cluttered UIs</span>
+              </div>
+              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
+                <span className="text-md text-gray-600">No More Useless Features</span>
               </div>
             </div>
 

@@ -53,7 +53,7 @@ export default function DemoSection() {
           <h2 className="text-4xl font-bold mb-6">Experience the Magic</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             See how AnswerlyAI transforms customer interactions into meaningful conversations.
-            Try our demo to experience the simplicity and power firsthand.
+            Watch our demo to experience the simplicity and power firsthand.
           </p>
         </div>
 

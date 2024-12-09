@@ -9,7 +9,7 @@ export default function WorkflowEditorSection() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Choose how you want to create your chatbot. Whether you prefer typing, 
             importing from your website, or drawing flowcharts - we've got you covered.
-            No more overwhelming the users with scary interfaces.
+            No more overwhelming the users with scary interfaces and unncessary features.
           </p>
         </div>
 
@@ -32,11 +32,11 @@ export default function WorkflowEditorSection() {
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                  <span className="text-gray-600">Smart FAQ generation</span>
+                  <span className="text-gray-600">All pages included</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                  <span className="text-gray-600">Regular content updates</span>
+                  <span className="text-gray-600">Auto content updates</span>
                 </li>
               </ul>
             </div>
@@ -110,13 +110,13 @@ export default function WorkflowEditorSection() {
         </div>
 
         {/* Bottom Preview */}
-        <div className="mt-20 text-center">
-          <div className="bg-gray-50 p-8 rounded-2xl max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <Bot className="w-8 h-8 text-blue-600" />
-              <h3 className="text-2xl font-semibold">Your Chatbot, Ready to Go</h3>
+        <div className="mt-16 sm:mt-20 text-center px-4 sm:px-0">
+          <div className="bg-gray-50 p-6 sm:p-8 rounded-2xl max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+              <h3 className="text-lg sm:text-2xl font-semibold whitespace-nowrap">Your Chatbot, Ready to Go</h3>
             </div>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
               No matter which method you choose, your chatbot will be smart, responsive,
               and ready to help your customers 24/7. Mix and match methods to create
               the perfect solution for your business.

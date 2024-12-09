@@ -68,16 +68,16 @@ export default function ContactSection() {
               </AccordionItem>
 
               <AccordionItem value="item-4">
-                <AccordionTrigger>How long does implementation take?</AccordionTrigger>
+                <AccordionTrigger>How long does making a chatbot take?</AccordionTrigger>
                 <AccordionContent>
-                  Implementation typically takes 1-2 days, depending on your specific requirements and integration needs.
+                  It is something completely upto you and can take minutes, hours or days, depending on the complexity of the chatbot.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-5">
                 <AccordionTrigger>Do you offer technical support?</AccordionTrigger>
                 <AccordionContent>
-                  Yes, we provide 24/7 technical support to ensure your chatbot runs smoothly and efficiently.
+                  Yes, we provide 24/7 technical support to ensure your chatbot runs smoothly and efficiently. Please use the email provided or use our chatbot to get in touch.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

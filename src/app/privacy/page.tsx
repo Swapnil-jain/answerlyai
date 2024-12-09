@@ -14,7 +14,6 @@ export default function PrivacyPolicy() {
               <li>Account credentials</li>
               <li>Payment information</li>
               <li>Communication preferences</li>
-              <li>Chat logs and interaction data</li>
             </ul>
           </section>
 
@@ -46,7 +45,7 @@ export default function PrivacyPolicy() {
             <p className="text-gray-600">
               We retain your personal information for as long as necessary to fulfill the
               purposes outlined in this Privacy Policy, unless a longer retention period is
-              required by law.
+              required by law. Your chatbot data is not read by us or any third party.
             </p>
           </section>
 

@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+    platform: linux/amd64
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
