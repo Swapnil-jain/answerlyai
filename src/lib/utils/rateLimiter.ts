@@ -39,7 +39,7 @@ class RateLimiterClass {
 
       return await response.json()
     } catch (error) {
-      console.error('RateLimiter: Error checking rate limit:', error)
+      
       return {
         allowed: false,
         reason: 'Rate limit check failed. Please try again later.'
@@ -70,7 +70,7 @@ class RateLimiterClass {
         throw new Error('Failed to record token usage')
       }
     } catch (error) {
-      console.error('RateLimiter: Error recording token usage:', error)
+      
     }
   }
 }

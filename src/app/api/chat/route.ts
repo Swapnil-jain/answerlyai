@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      
       throw new Error('Authentication required')
     }
 
@@ -41,13 +41,13 @@ export async function POST(req: Request) {
       history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0)
 
     // Log the estimated token count
-    console.log('Estimated token count:', estimatedTokens)
+    
 
-    console.log('Rate limit check for:', {
-      userId: user.id,
-      type: 'chatting',
-      estimatedTokens: Math.ceil(estimatedTokens)
-    })
+    // console.log('Rate limit check for:', {
+    //   userId: user.id,
+    //   type: 'chatting',
+    //   estimatedTokens: Math.ceil(estimatedTokens)
+    // })
 
     // Check rate limits
     const rateLimitCheck = await RateLimiter.checkRateLimit(
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       Math.ceil(estimatedTokens)
     )
 
-    console.log('Rate limit response:', rateLimitCheck)
+    
 
     if (!rateLimitCheck.allowed) {
       return NextResponse.json(
@@ -178,10 +178,10 @@ export async function POST(req: Request) {
       throw error;
     }
   } catch (error) {
-    console.error('Chat API Error:', error instanceof Error ? {
-      message: error.message,
-      stack: error.stack
-    } : error)
+    // console.error('Chat API Error:', error instanceof Error ? {
+    //   message: error.message,
+    //   stack: error.stack
+    // } : error)
     return NextResponse.json(
       { 
         success: false, 

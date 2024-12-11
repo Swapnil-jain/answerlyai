@@ -11,7 +11,7 @@ export async function upgradeTier(supabase: any, userId: string, newTier: 'hobby
     if (error) throw error
     return { success: true }
   } catch (error) {
-    console.error('Error upgrading tier:', error)
+    
     return { success: false, error }
   }
 }
@@ -46,7 +46,7 @@ export async function ensureUserTier(supabase: any, userId: string) {
 
     return { success: true }
   } catch (error) {
-    console.error('Error ensuring user tier:', error)
+    
     return { success: false, error }
   }
 } 

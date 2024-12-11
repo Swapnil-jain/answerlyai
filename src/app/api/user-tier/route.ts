@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error checking user tier:', error);
+    
     return NextResponse.json({ tier: 'hobbyist' }, { 
       status: 500,
       headers: {

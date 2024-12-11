@@ -42,7 +42,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (workflowError) {
-        console.error('Workflow access check error:', workflowError)
+        
         throw new Error('Unable to access workflow')
       }
 
@@ -53,7 +53,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (contextError) {
-        console.error('Context fetch error:', contextError)
+        
         throw contextError
       }
 
@@ -106,7 +106,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         })
       }
 
-      console.log('Updating context with:', { table, workflowId, updateData })
+      
 
       const { data: result, error: updateError } = await supabase
         .from(table)
@@ -115,16 +115,16 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .select()
 
       if (updateError) {
-        console.error('Context update error:', {
-          error: updateError,
-          details: {
-            table,
-            workflowId,
-            userId: user.id,
-            isAdmin: isAdmin(user.id),
-            updateData
-          }
-        })
+        // console.error('Context update error:', {
+        //   error: updateError,
+        //   details: {
+        //     table,
+        //     workflowId,
+        //     userId: user.id,
+        //     isAdmin: isAdmin(user.id),
+        //     updateData
+        //   }
+        // })
         throw new Error(`Failed to update context: ${updateError.message}`)
       }
 
@@ -144,15 +144,15 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         setProgress('')
       }, 2000)
     } catch (error: unknown) {
-      console.error('Crawl error:', {
-        error,
-        details: {
-          url,
-          workflowId,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        }
-      })
+      // console.error('Crawl error:', {
+      //   error,
+      //   details: {
+      //     url,
+      //     workflowId,
+      //     message: error instanceof Error ? error.message : 'Unknown error',
+      //     stack: error instanceof Error ? error.stack : undefined
+      //   }
+      // })
       setError(error instanceof Error ? error.message : 'Failed to crawl website')
       setProgress('')
     } finally {

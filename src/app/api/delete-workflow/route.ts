@@ -27,7 +27,7 @@ export async function DELETE(request: Request) {
       message: 'Workflow deleted successfully.'
     })
   } catch (error) {
-    console.error('Error deleting workflow:', error)
+    
     return NextResponse.json(
       { 
         success: false, 

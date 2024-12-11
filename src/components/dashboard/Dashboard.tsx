@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
-import { logger } from '@/lib/utils/logger'
+
 import AuthGuard from '@/components/auth/AuthGuard'
 import Header from '@/components/header'
 import { Bot, BarChart2 } from 'lucide-react'
@@ -113,12 +113,12 @@ function DashboardContent() {
       try {
         workflowCache.setDashboardStats(newStats)
       } catch (cacheError) {
-        logger.log('warn', 'cache', 'Failed to cache dashboard stats')
+        
       }
 
-      logger.log('info', 'database', 'Dashboard stats fetched successfully')
+      
     } catch (error) {
-      console.error('Dashboard stats error:', error)
+      
       setError('Failed to load dashboard data. Please try again later.')
     } finally {
       setIsLoading(false)
@@ -174,7 +174,7 @@ function DashboardContent() {
             : 0
         }
       } catch (error) {
-        console.warn('Chat statistics not available:', error)
+        
       }
 
       const newStats = {
@@ -193,7 +193,7 @@ function DashboardContent() {
         workflowCache.setDashboardStats(newStats)
       }
     } catch (error) {
-      console.warn('Background validation failed:', error)
+      
     }
   }
 

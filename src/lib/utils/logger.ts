@@ -32,7 +32,7 @@ export const logger = {
     try {
       localStorage.setItem(LOGS_KEY, JSON.stringify(this.logs))
     } catch (error) {
-      console.warn('Failed to save logs to localStorage')
+      
     }
 
     // Also log to console with appropriate styling
@@ -59,7 +59,7 @@ export const logger = {
         this.logs = JSON.parse(savedLogs)
       }
     } catch (error) {
-      console.warn('Failed to load logs from localStorage')
+      
     }
     return this.logs
   },
@@ -69,7 +69,7 @@ export const logger = {
     try {
       localStorage.removeItem(LOGS_KEY)
     } catch (error) {
-      console.warn('Failed to clear logs from localStorage')
+      
     }
   }
 } 
