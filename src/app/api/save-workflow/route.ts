@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       message: 'Workflow saved successfully'
     })
   } catch (error) {
-    console.error('Error saving workflow:', error)
+    
     return NextResponse.json(
       { 
         success: false, 
