@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'AnswerlyAI',
   description: 'AI chatbot widget helping you convert visitors into paying users',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

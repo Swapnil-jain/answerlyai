@@ -23,15 +23,14 @@ export default function HeroSection() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-center sm:text-left">
-              The Simplest Chatbot Maker On The Planet,{' '}
+              The Simplest Chatbot Maker{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-                Because your time matters
+              On The Planet
               </span>
             </h1>
             
             <p className="text-lg sm:text-xl text-gray-600 max-w-xl text-center sm:text-left">
-              Create powerful AI chatbots as easily as chatting with a friend. 
-              Just drag, drop, and describe – no coding experience needed.
+              Just drag, drop, or describe – no coding needed.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0 max-[391px]:px-3">
@@ -103,6 +102,7 @@ export default function HeroSection() {
                 playsInline
                 controls
                 controlsList="nodownload"
+                muted
               >
                 <source src="/FinalDemo.mp4" type="video/mp4" />
                 Your browser does not support the video tag.

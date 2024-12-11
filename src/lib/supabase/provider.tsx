@@ -35,8 +35,8 @@ export default function SupabaseProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: "INITIAL_SESSION" | "PASSWORD_RECOVERY" | "TOKEN_REFRESHED" | "USER_UPDATED" | "MFA_CHALLENGE_VERIFIED" | "SIGNED_OUT" | "SIGNED_IN" | "USER_DELETED", session) => {
       console.log('Auth state changed:', _event)
-      // Clear all caches when auth state changes
-      if (_event === 'SIGNED_OUT' || _event === 'SIGNED_IN' || _event === 'USER_DELETED') {
+      // Only clear caches when user signs out or is deleted
+      if (_event === 'SIGNED_OUT' || _event === 'USER_DELETED') {
         console.log('Clearing caches due to auth state change')
         workflowCache.clearCache()
         authCache.clearCache()

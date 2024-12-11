@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 export default function PricingSection() {
   const { supabase, getUser } = useAuth()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isAnnual, setIsAnnual] = useState(false)
+  const [isAnnual, setIsAnnual] = useState(true)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -105,12 +105,12 @@ export default function PricingSection() {
                 <span>Embed on 1 website</span>
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-red-500">✗</span>
-                <span>AnswerlyAI watermark</span>
+                <span className="text-blue-500">✓</span>
+                <span>Basic Customization</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-red-500">✗</span>
-                <span>Customization</span>
+                <span>AnswerlyAI watermark</span>
               </li>
             </ul>
             <Button 
@@ -167,11 +167,11 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                <span>Watermark removed</span>
+                <span>Full Customization</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-blue-500">✓</span>
-                <span>Full Customization</span>
+                <span>Watermark removed</span>
               </li>
             </ul>
             <Button 
