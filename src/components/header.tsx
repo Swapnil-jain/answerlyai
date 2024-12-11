@@ -62,6 +62,7 @@ export default function Header({ className = "" }: HeaderProps) {
       await supabase.auth.signOut();
       router.push("/");
     } catch (error) {
+      
     } finally {
       setAlertOpen(false);
     }

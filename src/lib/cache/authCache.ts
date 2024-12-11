@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
+
 const CACHE_KEY = 'auth_user'
 const CACHE_DURATION = 1000 * 60 * 5 // 5 minutes
 
@@ -40,6 +41,7 @@ class AuthCache {
 
       return parsedCache
     } catch (error) {
+      
       return null
     }
   }
@@ -53,6 +55,7 @@ class AuthCache {
       }
       localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
     } catch (error) {
+      
     }
   }
 
@@ -91,6 +94,7 @@ class AuthCache {
         error: userResponse.error || sessionResponse.error 
       }
     } catch (error) {
+      
       return { data: { user: null, session: null }, error }
     }
   }

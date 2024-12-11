@@ -10,7 +10,7 @@ export default function HeroSection() {
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full">
+                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full max-[391px]:px-0.5">
                   <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
                 </span>
               </div>
@@ -23,16 +23,20 @@ export default function HeroSection() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-center sm:text-left">
-              The Simplest Chatbot Maker On The Planet,{' '}
+              The Simplest Chatbot Maker{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-                Because your time matters
+              On The Planet
               </span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-gray-600 max-w-xl text-center sm:text-left">
-              Create powerful AI chatbots as easily as chatting with a friend. 
-              Just drag, drop, and describe – no coding experience needed.
-            </p>
+            <div className="space-y-2 max-[391px]:px-2">
+              <p className="text-lg sm:text-xl text-gray-500 max-w-xl text-center sm:text-left">
+                95% of users never touch most features in typical tools.
+              </p>
+              <p className="text-lg sm:text-xl text-gray-600 font-medium max-w-xl text-center sm:text-left">
+                We deliver simple, powerful & intuitive features you'll love.
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0 max-[391px]:px-3">
               <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
@@ -103,6 +107,7 @@ export default function HeroSection() {
                 playsInline
                 controls
                 controlsList="nodownload"
+                muted
               >
                 <source src="/FinalDemo.mp4" type="video/mp4" />
                 Your browser does not support the video tag.

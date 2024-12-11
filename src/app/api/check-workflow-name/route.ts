@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       exists: data.length > 0
     })
   } catch (error) {
+    
     return NextResponse.json(
       { 
         success: false, 

@@ -70,7 +70,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         .single()
 
       if (error) {
-        // Database error
+        
         throw error
       }
 
@@ -79,7 +79,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         workflowCache.updateWorkflowContext(workflowId, data.context)
       }
     } catch (error) {
-      // Error loading context
+      
       // Invalidate cache on error
       workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to load context', 'error')
@@ -124,7 +124,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         .eq('id', workflowId)
 
       if (error) {
-        // Save error
+        
         throw error
       }
 
@@ -140,7 +140,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       // Record token usage after successful save
       await RateLimiter.recordTokenUsage(user.id, 'training', estimateTokens.text(context))
     } catch (error) {
-      // Error saving context
+      
       // Invalidate cache on error to ensure consistency
       workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to save context', 'error')
@@ -198,7 +198,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         workflowCache.updateWorkflowContext(workflowId, data.context || '')
       }
     } catch (error) {
-      // Cache validation error
+      
       // On validation error, invalidate cache
       workflowCache.removeWorkflow(workflowId)
     }

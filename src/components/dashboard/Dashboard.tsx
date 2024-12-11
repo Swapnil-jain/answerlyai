@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { workflowCache } from '@/lib/cache/workflowCache'
+
 import AuthGuard from '@/components/auth/AuthGuard'
 import Header from '@/components/header'
 import { Bot, BarChart2 } from 'lucide-react'
@@ -112,8 +113,12 @@ function DashboardContent() {
       try {
         workflowCache.setDashboardStats(newStats)
       } catch (cacheError) {
+        
       }
+
+      
     } catch (error) {
+      
       setError('Failed to load dashboard data. Please try again later.')
     } finally {
       setIsLoading(false)
@@ -169,6 +174,7 @@ function DashboardContent() {
             : 0
         }
       } catch (error) {
+        
       }
 
       const newStats = {
@@ -187,6 +193,7 @@ function DashboardContent() {
         workflowCache.setDashboardStats(newStats)
       }
     } catch (error) {
+      
     }
   }
 

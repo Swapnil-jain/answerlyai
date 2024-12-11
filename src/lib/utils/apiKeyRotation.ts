@@ -12,6 +12,7 @@ class ApiKeyRotation {
 
     const apiKeys = process.env.GROQ_API_KEYS;
     if (!apiKeys) {
+      
       // Fallback to single key for backward compatibility
       if (process.env.GROQ_API_KEY) {
         this.keys = [process.env.GROQ_API_KEY];
@@ -27,6 +28,7 @@ class ApiKeyRotation {
     }
 
     this.isInitialized = true;
+    
   }
 
   static getNextClient(): Groq {
@@ -60,10 +62,12 @@ class ApiKeyRotation {
 
       // If all keys are in cooldown, use the first available one anyway
       this.currentIndex = (startIndex + 1) % this.keys.length;
+      
       return new Groq({
         apiKey: this.keys[startIndex],
       });
     } catch (error) {
+      
       // Fallback to first key if something goes wrong
       return new Groq({
         apiKey: this.keys[0],
@@ -73,6 +77,7 @@ class ApiKeyRotation {
 
   static markKeyAsFailed(apiKey: string) {
     this.lastUsedTime[apiKey] = Date.now();
+    // console.log(`Marked API key as failed: ${apiKey.substring(0, 8)}...`);
   }
 }
 

@@ -26,6 +26,7 @@ export default function LoginPage() {
         }
       })
     } catch (error) {
+      
     } finally {
       setIsLoading(false)
     }

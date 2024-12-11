@@ -1,3 +1,5 @@
+
+
 interface CachedWorkflow {
   id: string
   name: string
@@ -102,7 +104,7 @@ export const workflowCache = {
         })
       )
     } catch (error) {
-      // Failed to save cache metadata
+      
     }
   },
 
@@ -143,7 +145,7 @@ export const workflowCache = {
 
       return false // Couldn't free enough space
     } catch (error) {
-      // Failed to cleanup cache
+      
       return false
     }
   },
@@ -160,10 +162,10 @@ export const workflowCache = {
       const cached = localStorage.getItem(`${CACHE_PREFIX}${id}`)
       if (!cached) return null
 
-      // Cache hit for workflow ${id}
+      
       return JSON.parse(cached).data
     } catch (error) {
-      // Failed to read workflow cache
+      
       return null
     }
   },
@@ -179,15 +181,15 @@ export const workflowCache = {
       const size = data.length
       
       if (!workflowCache.cleanupCache(size)) {
-        // Insufficient storage space for workflow ${workflow.id}
+        
         return
       }
 
       localStorage.setItem(`${CACHE_PREFIX}${workflow.id}`, data)
       workflowCache.setMetadata(workflow.id, size)
-      // Cached workflow ${workflow.id} (${size} bytes)
+      // logger.log('info', 'cache', `Cached workflow ${workflow.id} (${size} bytes)`)
     } catch (error) {
-      // Failed to cache workflow ${workflow.id}
+      
     }
   },
 
@@ -203,10 +205,10 @@ export const workflowCache = {
       const cached = localStorage.getItem(LIST_CACHE_KEY)
       if (!cached) return null
 
-      // Cache hit for workflow list
+      
       return JSON.parse(cached).data
     } catch (error) {
-      // Failed to read workflow list cache
+      
       return null
     }
   },
@@ -223,14 +225,14 @@ export const workflowCache = {
 
       // Check if we need to clean up space
       if (!workflowCache.cleanupCache(size)) {
-        // Could not cache workflow list: insufficient storage space
+        
         return
       }
 
       localStorage.setItem(LIST_CACHE_KEY, data)
       workflowCache.setMetadata('list', size)
     } catch (error) {
-      // Failed to cache workflow list
+      
     }
   },
 
@@ -247,7 +249,7 @@ export const workflowCache = {
         workflowCache.setWorkflowList(updatedList)
       }
     } catch (error) {
-      // Failed to remove workflow from cache
+      
     }
   },
 
@@ -266,7 +268,7 @@ export const workflowCache = {
         }
       }
     } catch (error) {
-      // Failed to clear cache
+      
     }
   },
 
@@ -284,9 +286,9 @@ export const workflowCache = {
 
       localStorage.setItem(cacheKey, JSON.stringify(cacheData))
       this.setMetadata(`faq_${workflowId}`, JSON.stringify(cacheData).length)
-      // Cached ${faqs.length} FAQs for workflow ${workflowId}
+      
     } catch (error) {
-      // Failed to cache FAQs: ${error}
+      
     }
   },
 
@@ -306,10 +308,10 @@ export const workflowCache = {
       const cached = localStorage.getItem(cacheKey)
       if (!cached) return null
 
-      // Cache hit for FAQs of workflow ${workflowId}
+      
       return JSON.parse(cached).data
     } catch (error) {
-      // Failed to read FAQ cache: ${error}
+      
       return null
     }
   },
@@ -323,9 +325,9 @@ export const workflowCache = {
 
       localStorage.removeItem(cacheKey)
       localStorage.removeItem(`${METADATA_KEY}faq_${workflowId}`)
-      // Removed FAQs for workflow ${workflowId} from cache
+      
     } catch (error) {
-      // Failed to remove FAQs from cache: ${error}
+      
     }
   },
 
@@ -341,10 +343,10 @@ export const workflowCache = {
         return null
       }
 
-      // Cache hit for dashboard stats
+      
       return stats
     } catch (error) {
-      // Failed to read dashboard stats cache: ${error}
+      
       return null
     }
   },
@@ -360,15 +362,15 @@ export const workflowCache = {
       const size = JSON.stringify(data).length
       
       if (!workflowCache.cleanupCache(size)) {
-        // Insufficient storage space for dashboard stats
+        
         return
       }
 
       localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data))
       workflowCache.setMetadata('dashboard', size)
-      // Cached dashboard stats (${size} bytes)
+      // logger.log('info', 'cache', `Cached dashboard stats (${size} bytes)`)
     } catch (error) {
-      // Failed to cache dashboard stats
+      
     }
   },
 
@@ -378,7 +380,7 @@ export const workflowCache = {
       const workflow = workflowCache.getWorkflow(workflowId)
       return workflow?.context || null
     } catch (error) {
-      // Error getting workflow context from cache
+      
       return null
     }
   },
@@ -392,7 +394,7 @@ export const workflowCache = {
         workflowCache.setWorkflow(workflow)
       }
     } catch (error) {
-      // Error updating workflow context in cache
+      
     }
   },
 
@@ -411,7 +413,7 @@ export const workflowCache = {
         total: cached.length
       }
     } catch (error) {
-      // Failed to get paginated workflows: ${error}
+      
       return null
     }
   },
@@ -431,7 +433,7 @@ export const workflowCache = {
         total: cached.length
       }
     } catch (error) {
-      // Failed to get paginated FAQs: ${error}
+      
       return null
     }
   },
@@ -450,9 +452,9 @@ export const workflowCache = {
       ]
 
       this.setWorkflowList(updated)
-      // Updated paginated workflows at offset ${offset}
+      
     } catch (error) {
-      // Failed to set paginated workflows: ${error}
+      
     }
   },
 
@@ -470,9 +472,9 @@ export const workflowCache = {
       ]
 
       this.setFAQs(workflowId, updated, { batchKey: options?.batchKey })
-      // Updated paginated FAQs at offset ${offset}
+      
     } catch (error) {
-      // Failed to set paginated FAQs: ${error}
+      
     }
   }
 } 

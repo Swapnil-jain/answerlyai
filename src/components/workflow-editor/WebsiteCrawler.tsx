@@ -42,7 +42,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (workflowError) {
-        // Workflow access check error
+        
         throw new Error('Unable to access workflow')
       }
 
@@ -53,7 +53,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (contextError) {
-        // Context fetch error
+        
         throw contextError
       }
 
@@ -106,6 +106,8 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         })
       }
 
+      
+
       const { data: result, error: updateError } = await supabase
         .from(table)
         .update(updateData)
@@ -113,7 +115,16 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .select()
 
       if (updateError) {
-        // Context update error
+        // console.error('Context update error:', {
+        //   error: updateError,
+        //   details: {
+        //     table,
+        //     workflowId,
+        //     userId: user.id,
+        //     isAdmin: isAdmin(user.id),
+        //     updateData
+        //   }
+        // })
         throw new Error(`Failed to update context: ${updateError.message}`)
       }
 
@@ -133,7 +144,15 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         setProgress('')
       }, 2000)
     } catch (error: unknown) {
-      // Crawl error
+      // console.error('Crawl error:', {
+      //   error,
+      //   details: {
+      //     url,
+      //     workflowId,
+      //     message: error instanceof Error ? error.message : 'Unknown error',
+      //     stack: error instanceof Error ? error.stack : undefined
+      //   }
+      // })
       setError(error instanceof Error ? error.message : 'Failed to crawl website')
       setProgress('')
     } finally {
