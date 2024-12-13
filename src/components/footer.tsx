@@ -8,7 +8,10 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">AnswerlyAI</h3>
-            <p className="text-sm text-gray-500">AI-powered customer support solutions</p>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-500">AI-powered customer support solutions</li>
+              <li className="text-sm text-gray-500">$1 = ₹85</li>
+            </ul>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Quick Links</h3>
