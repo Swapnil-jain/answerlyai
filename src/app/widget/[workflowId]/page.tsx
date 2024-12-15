@@ -86,7 +86,6 @@ export default function WidgetPage() {
       <Tabs defaultValue="customize" className="mb-8">
         <TabsList>
           <TabsTrigger value="customize">Customization</TabsTrigger>
-          <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
         
@@ -106,30 +105,17 @@ export default function WidgetPage() {
                   <li>'yellow' - <span className="w-3 h-3 inline-block bg-yellow-500 rounded-full"></span></li>
                   <li>'orange' - <span className="w-3 h-3 inline-block bg-orange-500 rounded-full"></span></li>
                   <li>'red' - <span className="w-3 h-3 inline-block bg-red-600 rounded-full"></span></li>
-                  <li>'light' - <span className="w-3 h-3 inline-block bg-gray-800 rounded-full"></span></li>
+                  <li>'dark' - <span className="w-3 h-3 inline-block bg-gray-800 rounded-full"></span></li>
                 </ul>
               </li>
               <li><code>position</code>: 'bottom-right' (default) or 'bottom-left'</li>
-              <li><code>userId</code>: Automatically set to your account ID for rate limiting</li>
             </ul>
             <div className="mt-4 p-4 bg-blue-50 rounded-md">
               <p className="text-sm text-blue-800">
                 <strong>Note:</strong> The widget supports VIBGYOR color themes (Violet, Indigo, Blue, Green, Yellow, Orange, Red) 
-                plus a 'light' theme. Choose the color that best matches your website's design.
+                plus a 'dark' theme. Choose the color that best matches your website's design.
               </p>
             </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="options">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Additional Options</h3>
-            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-4">
-              <li>The widget is responsive and works on all devices</li>
-              <li>Supports both light and dark mode</li>
-              <li>Automatically handles chat history</li>
-              <li>Maintains conversation context</li>
-            </ul>
           </div>
         </TabsContent>
         
@@ -150,11 +136,12 @@ export default function WidgetPage() {
       <div className="bg-blue-50 p-6 rounded-lg">
         <h2 className="font-semibold mb-4">Important Notes:</h2>
         <ul className="list-disc list-inside space-y-3 text-sm text-gray-600">
-          <li>The chat widget appears as a floating button in the corner of your website</li>
-          <li>The widget connects securely to our servers to process messages</li>
-          <li>Your workflow configuration and FAQs are automatically loaded</li>
-          <li>Keep your workflow ID private and secure</li>
-          <li>The widget automatically adapts to your website's layout</li>
+          <li>The chat widget appears as a floating button in the corner of your website.</li>
+          <li>The widget connects securely to our servers to process messages.</li>
+          <li>All the confiugrations are automatically loaded. You do not need to do anything.</li>
+          <li>Keep your workflow ID & userId private and secure.</li>
+          <li>The widget automatically adapts to your website's layout across devices.</li>
+          <li>Do not edit the userId/workflow ID as widget will immediately stop working.</li>
         </ul>
       </div>
     </div>

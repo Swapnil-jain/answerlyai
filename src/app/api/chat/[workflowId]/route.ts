@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts'
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { isAdmin } from '@/lib/utils/adminCheck'
-import ApiKeyRotation from '@/lib/utils/apiKeyRotation'
 
 //API Route which is used by the snippet which will be used by the client website.
 
@@ -33,15 +32,21 @@ export async function POST(req: NextRequest) {
 
     const { message, history = [] } = await req.json();
 
-    // Estimate token count
-    const estimatedTokens = message.length / 4 + 
-      history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0);
+    // Estimate token count with overhead for system prompts and special tokens
+    const CHARS_PER_TOKEN = 4
+    const SYSTEM_PROMPT_OVERHEAD = 200 // tokens for system prompt, formatting
+    
+    const estimatedTokens = Math.ceil(
+      (message.length / CHARS_PER_TOKEN) + // current message
+      (history.reduce((acc: number, msg: any) => acc + msg.content.length, 0) / CHARS_PER_TOKEN) + // history
+      SYSTEM_PROMPT_OVERHEAD // overhead for system prompts and formatting
+    )
 
+    // Check rate limits
     const rateLimitCheck = await RateLimiter.checkRateLimit(
       userId,
-      'chatting',
-      Math.ceil(estimatedTokens)
-    );
+      estimatedTokens
+    )
 
     if (!rateLimitCheck.allowed) {
       return new NextResponse(
@@ -133,40 +138,45 @@ export async function POST(req: NextRequest) {
     // Get assistant name from header or use default
     const assistantName = req.headers.get('X-Assistant-Name') || 'Cora';
 
-    // Get the next available Groq client
-    const groq = ApiKeyRotation.getNextClient();
-
     try {
-      const completion = await groq.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: generateSystemPrompt(workflow.context, decisionFlows, faqData, assistantName)
-          },
-          ...history,
-          { role: 'user', content: message }
-        ],
-        model: 'llama-3.1-8b-instant',
-        temperature: 0,
-        max_tokens: 1024,
-        top_p: 1,
-        stream: false,
+      const completion = await fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPINFRA_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+          temperature: 0,
+          max_tokens: 1024,
+          messages: [
+            {
+              role: 'system',
+              content: generateSystemPrompt(workflow.context, decisionFlows, faqData, assistantName)
+            },
+            ...history,
+            { role: 'user', content: message }
+          ]
+        })
       });
+
+      const response = await completion.json();
+      console.log('LLM Response:', response.usage);
 
       // Record token usage
       await RateLimiter.recordTokenUsage(
         userId,
-        'chatting',
-        completion.usage?.total_tokens || Math.ceil(estimatedTokens)
+        response.usage.total_tokens
       );
 
       return new NextResponse(
         JSON.stringify({
           success: true,
-          response: completion.choices[0]?.message?.content || 'No response generated',
+          response: response.choices[0].message.content || 'No response generated',
           source: 'llm'
         }),
         {
+          status: 200,
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -176,10 +186,7 @@ export async function POST(req: NextRequest) {
         }
       );
     } catch (error: any) {
-      // If the error is related to the API key, mark it as failed
-      if (error?.status === 401 || error?.message?.includes('api_key')) {
-        ApiKeyRotation.markKeyAsFailed(groq.apiKey);
-      }
+      console.error('LLM API Error:', error);
       throw error;
     }
   } catch (error) {

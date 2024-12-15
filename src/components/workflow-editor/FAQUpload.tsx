@@ -17,8 +17,6 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { RateLimiter } from '@/lib/utils/rateLimiter'
-import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface FAQ {
@@ -240,27 +238,6 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
           }
         })
 
-      // Only check rate limits for non-admin users
-      const totalTokens = validFaqs.reduce((acc, faq) => 
-        acc + estimateTokens.faq(faq.question, faq.answer), 0)
-      if (!isAdminUser) {
-        // Check rate limit
-        const rateLimitCheck = await RateLimiter.checkRateLimit(
-          user.id,
-          'training',
-          totalTokens
-        )
-
-        if (!rateLimitCheck.allowed) {
-          setAlertMessage({
-            title: 'Rate Limit Exceeded',
-            description: rateLimitCheck.reason || 'Rate limit exceeded'
-          })
-          setAlertOpen(true)
-          return
-        }
-      }
-
       // Batch operations
       const BATCH_SIZE = 50
       const results: FAQ[] = []
@@ -317,9 +294,6 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         if (onSaveWorkflow) {
           await onSaveWorkflow()
         }
-
-        // Record token usage after successful save
-        await RateLimiter.recordTokenUsage(user.id, 'training', totalTokens)
       }
 
     } catch (error) {

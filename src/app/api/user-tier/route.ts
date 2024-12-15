@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { userId } = await request.json();
 
     if (!userId) {
-      return NextResponse.json({ tier: 'hobbyist' }, {
+      return NextResponse.json({ tier: 'free' }, {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     return NextResponse.json({ 
-      tier: tierData?.pricing_tier || 'hobbyist'
+      tier: tierData?.pricing_tier || 'free'
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error checking user tier:', error);
-    return NextResponse.json({ tier: 'hobbyist' }, { 
+    return NextResponse.json({ tier: 'free' }, { 
       status: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',

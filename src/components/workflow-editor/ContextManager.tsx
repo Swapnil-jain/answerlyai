@@ -16,8 +16,6 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { RateLimiter } from '@/lib/utils/rateLimiter'
-import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
 
 interface ContextManagerProps {
@@ -97,23 +95,6 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       if (!user) throw new Error('Not authenticated')
 
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
-      // Only check rate limits for non-admin users
-      if (!isAdmin(user.id)) {
-        const rateLimitCheck = await RateLimiter.checkRateLimit(
-          user.id,
-          'training',
-          estimateTokens.text(context)
-        )
-
-        if (!rateLimitCheck.allowed) {
-          showAlert(
-            'Rate Limit Exceeded',
-            rateLimitCheck.reason || 'Rate limit exceeded',
-            'error'
-          )
-          return
-        }
-      }
 
       const { error } = await supabase
         .from(table)
@@ -138,7 +119,6 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       }
 
       // Record token usage after successful save
-      await RateLimiter.recordTokenUsage(user.id, 'training', estimateTokens.text(context))
     } catch (error) {
       console.error('Error saving context:', error)
       // Invalidate cache on error to ensure consistency

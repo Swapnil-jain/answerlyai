@@ -28,7 +28,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
   const [initialLoading, setInitialLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const router = useRouter()
-  const currentWorkflowId = useRef<string | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [workflowToDelete, setWorkflowToDelete] = useState<string | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
@@ -179,11 +178,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     onWorkflowSelect(workflowId)
   }
 
-  const showAlert = (title: string, description: string, onClose?: () => void) => {
-    setAlertMessage({ title, description, onClose })
-    setAlertOpen(true)
-  }
-
   const handleDeleteWorkflow = async (id: string) => {
     try {
       setIsDeleting(id)
@@ -288,17 +282,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
             </span>
           </div>
           <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/chat/${workflow.id}`)
-              }}
-              className="h-8 w-8 text-blue-600 hover:text-blue-800"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="sm"

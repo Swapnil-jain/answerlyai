@@ -80,6 +80,12 @@ export default function ContactSection() {
                   Yes, we provide 24/7 technical support to ensure your chatbot runs smoothly and efficiently. Please use the email provided or use our chatbot to get in touch.
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="item-6">
+                <AccordionTrigger>What if I am finding it too complicated/have custom requirements ?</AccordionTrigger>
+                <AccordionContent>
+                  Please mail us at answerlyai.cloud@gmail.com and we can have an engineer assist you.
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </div>
         </div>

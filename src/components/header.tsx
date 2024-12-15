@@ -206,7 +206,7 @@ export default function Header({ className = "" }: HeaderProps) {
                   onClick={handleNavigation} 
                   className="hidden sm:block"
                 >
-                  <Button className="gap-2">
+                  <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                     Get Started
                     {/* <ArrowRight className="w-4 h-4" /> */}
                   </Button>
@@ -270,7 +270,7 @@ export default function Header({ className = "" }: HeaderProps) {
                     </Button>
                   </Link>
                   <Link href="#" onClick={handleNavigation} className="sm:hidden w-full">
-                    <Button className="w-full gap-2 flex items-center justify-center">
+                    <Button className="w-full gap-2 bg-blue-600 text-white flex items-center justify-center">
                       Get Started
                       <ArrowRight className="w-4 h-4" />
                     </Button>

@@ -322,6 +322,12 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         // Update stats after confirmed success
         await updateChatStats(responseTime / 1000, true);
       } else {
+        if (data.message?.includes('word limit')) {
+          showAlert(
+            'Word Limit Exceeded',
+            'You have exceeded your daily word limit (1,000,000 words). Please try again tomorrow.'
+          );
+        }
         throw new Error(data.message);
       }
     } catch (error) {

@@ -38,6 +38,7 @@ interface DashboardStats {
   responseRate: number
   pricingTier: string
   workflowLimit: number
+  wordsRemaining: number
   timestamp: number
 }
 

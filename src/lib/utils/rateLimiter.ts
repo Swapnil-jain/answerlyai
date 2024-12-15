@@ -14,73 +14,105 @@ class RateLimiterClass {
     return RateLimiterClass.instance
   }
 
+  private getBaseUrl(): string {
+    // For client-side requests, we can use relative URLs
+    if (!this.isServer) {
+      return '';
+    }
+    // For server-side requests, we need the full URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl) {
+      throw new Error('NEXT_PUBLIC_APP_URL is not set in environment variables');
+    }
+    return baseUrl;
+  }
+
   public async checkRateLimit(
     userId: string, 
-    type: 'training' | 'chatting',
-    tokenCount: number
-  ): Promise<{ allowed: boolean; reason?: string }> {
+    tokenCount: number,
+  ): Promise<{ allowed: boolean; reason?: string; remainingTokens?: number }> {
     try {
-      const baseUrl = this.isServer ? process.env.NEXT_PUBLIC_APP_URL : '';
-      const response = await fetch(`${baseUrl}/api/rate-limit`, {
+      const baseUrl = this.getBaseUrl();
+      const url = `${baseUrl}/api/rate-limit`;
+      
+      console.log('RateLimiter checkRateLimit:', { userId, tokenCount, url });
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          type,
-          tokenCount
+          tokenCount,
+          recordOnly: false
         })
-      })
+      });
 
+      const data = await response.json();
+      console.log('RateLimiter response:', data);
+      
       if (!response.ok) {
-        throw new Error('Rate limit check failed')
+        const errorMessage = data.error || 'Rate limit check failed';
+        console.error('RateLimiter: Server error:', { status: response.status, error: errorMessage });
+        return {
+          allowed: false,
+          reason: errorMessage,
+          remainingTokens: 0
+        };
       }
 
-      return await response.json()
+      return data;
     } catch (error) {
-      console.error('RateLimiter: Error checking rate limit:', error)
+      console.error('RateLimiter: Error checking rate limit:', error);
       return {
         allowed: false,
-        reason: 'Rate limit check failed. Please try again later.'
-      }
+        reason: 'Rate limit check failed. Please try again later.',
+        remainingTokens: 0
+      };
     }
   }
 
   public async recordTokenUsage(
     userId: string,
-    type: 'training' | 'chatting',
     tokenCount: number
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
-      const baseUrl = this.isServer ? process.env.NEXT_PUBLIC_APP_URL : '';
-      const response = await fetch(`${baseUrl}/api/rate-limit/record`, {
+      const baseUrl = this.getBaseUrl();
+      const url = `${baseUrl}/api/rate-limit`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          type,
-          tokenCount
+          tokenCount,
+          recordOnly: true
         })
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to record token usage')
+        const data = await response.json();
+        console.error('RateLimiter: Failed to record token usage:', data.error);
+        return false;
       }
+
+      return true;
     } catch (error) {
-      console.error('RateLimiter: Error recording token usage:', error)
+      console.error('RateLimiter: Error recording token usage:', error);
+      return false;
     }
   }
 }
 
 // Export singleton instance
 export const RateLimiter = {
-  checkRateLimit: async (userId: string, type: 'training' | 'chatting', tokenCount: number) => {
-    return await RateLimiterClass.getInstance().checkRateLimit(userId, type, tokenCount)
+  async checkRateLimit(userId: string, tokenCount: number) {
+    return RateLimiterClass.getInstance().checkRateLimit(userId, tokenCount);
   },
-  recordTokenUsage: async (userId: string, type: 'training' | 'chatting', tokenCount: number) => {
-    await RateLimiterClass.getInstance().recordTokenUsage(userId, type, tokenCount)
+  async recordTokenUsage(userId: string, tokenCount: number) {
+    return RateLimiterClass.getInstance().recordTokenUsage(userId, tokenCount);
   }
-} 
+}

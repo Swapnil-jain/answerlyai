@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { isAdmin } from '@/lib/utils/adminCheck'
-import ApiKeyRotation from '@/lib/utils/apiKeyRotation'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,24 +35,20 @@ export async function POST(req: Request) {
 
     const { message, workflowId, history } = await req.json()
 
-    // Estimate token count (rough estimation)
-    const estimatedTokens = message.length / 4 + 
-      history.reduce((acc: number, msg: any) => acc + msg.content.length / 4, 0)
-
-    // Log the estimated token count
-    console.log('Estimated token count:', estimatedTokens)
-
-    console.log('Rate limit check for:', {
-      userId: user.id,
-      type: 'chatting',
-      estimatedTokens: Math.ceil(estimatedTokens)
-    })
+    // Estimate token count with overhead for system prompts and special tokens
+    const CHARS_PER_TOKEN = 4
+    const SYSTEM_PROMPT_OVERHEAD = 200 // tokens for system prompt, formatting
+    
+    const estimatedTokens = Math.ceil(
+      (message.length / CHARS_PER_TOKEN) + // current message
+      (history.reduce((acc: number, msg: any) => acc + msg.content.length, 0) / CHARS_PER_TOKEN) + // history
+      SYSTEM_PROMPT_OVERHEAD // overhead for system prompts and formatting
+    )
 
     // Check rate limits
     const rateLimitCheck = await RateLimiter.checkRateLimit(
       user.id,
-      'chatting',
-      Math.ceil(estimatedTokens)
+      estimatedTokens
     )
 
     console.log('Rate limit response:', rateLimitCheck)
@@ -138,44 +133,59 @@ export async function POST(req: Request) {
       })
       .flat()
 
-    // Get the next available Groq client
-    const groq = ApiKeyRotation.getNextClient();
-
     try {
-      const completion = await groq.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
-          },
-          ...history,
-          { role: 'user', content: message }
-        ],
-        model: 'llama-3.1-8b-instant',
-        temperature: 0,
-        max_tokens: 1024,
-        top_p: 1,
-        stream: false,
-      })
+      const completion = await fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPINFRA_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+          temperature: 0,
+          max_tokens: 1024,
+          messages: [
+            {
+              role: 'system',
+              content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
+            },
+            ...history,
+            { role: 'user', content: message }
+          ]
+        })
+      });
 
-      // Record token usage after successful completion
+      if (!completion.ok) {
+        const error = await completion.text()
+        console.error('LLM API Error:', error)
+        return NextResponse.json(
+          { success: false, message: 'Failed to generate response' },
+          { status: 500 }
+        )
+      }
+
+      const response = await completion.json();
+
+      // Record token usage
+      const tokenCount = response.usage.total_tokens;
+      console.log('Recording token usage:', { userId: user.id, tokenCount });
+      
       await RateLimiter.recordTokenUsage(
         user.id,
-        'chatting',
-        completion.usage?.total_tokens || Math.ceil(estimatedTokens)
-      )
+        tokenCount
+      );
 
       return NextResponse.json({
         success: true,
-        response: completion.choices[0]?.message?.content || 'No response generated',
+        response: response.choices[0]?.message?.content || 'No response generated',
         source: 'llm'
-      })
+      });
     } catch (error: any) {
-      // If the error is related to the API key, mark it as failed
-      if (error?.status === 401 || error?.message?.includes('api_key')) {
-        ApiKeyRotation.markKeyAsFailed(groq.apiKey);
-      }
-      throw error;
+      console.error('LLM API Error:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to generate response' },
+        { status: 500 }
+      )
     }
   } catch (error) {
     console.error('Chat API Error:', error instanceof Error ? {
@@ -185,8 +195,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         success: false, 
-        message: error instanceof Error ? error.message : 'Failed to process chat message',
-        debug: process.env.NODE_ENV === 'development' ? error : undefined
+        message: error instanceof Error ? error.message : 'Failed to process chat message'
       },
       { status: 500 }
     )
