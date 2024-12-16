@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { generateSystemPrompt } from '@/lib/utils/chatPrompts';
 import { RateLimiter } from '@/lib/utils/rateLimiter'
 import { isAdmin } from '@/lib/utils/adminCheck'
+import { chunkText, findRelevantChunks } from '@/lib/utils/textChunker'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,6 +73,18 @@ export async function POST(req: Request) {
       .single()
 
     if (workflowError) throw workflowError
+
+    // Calculate total tokens for the context
+    const MAX_CONTEXT_TOKENS = 6000  // leaving room for system prompt and chat history
+    const contextTokens = Math.ceil((workflowData.context?.length || 0) / CHARS_PER_TOKEN)
+
+    // Only use chunking if context is too large
+    let contextToUse = workflowData.context || ''
+    if (contextTokens > MAX_CONTEXT_TOKENS) {
+      console.log('Context too large, using chunking...')
+      const contextChunks = chunkText(workflowData.context || '')
+      contextToUse = findRelevantChunks(contextChunks, message)
+    }
 
     // Get FAQs from appropriate table
     const { data: faqData, error: faqError } = await supabase
@@ -147,7 +160,7 @@ export async function POST(req: Request) {
           messages: [
             {
               role: 'system',
-              content: generateSystemPrompt(workflowData.context, decisionFlows, faqData)
+              content: generateSystemPrompt(contextToUse, decisionFlows, faqData)
             },
             ...history,
             { role: 'user', content: message }
