@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   try {
@@ -6,10 +7,51 @@ export async function GET(request: NextRequest) {
     const { pathname } = new URL(request.url);
     const workflowId = pathname.split('/').pop();
 
-    if (!workflowId) {
-      throw new Error('workflowId is missing in the URL.');
+    if (!workflowId) throw new Error('workflowId is missing in the URL.');
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Get allowed domains for this workflow
+    const { data: allowedDomains } = await supabase
+      .from('allowed_domains')
+      .select('domain')
+      .eq('workflow_id', workflowId);
+
+    // If there are allowed domains specified, validate the origin
+    if (allowedDomains && allowedDomains.length > 0) {
+      const origin = request.headers.get('origin');
+      console.log('Origin:', origin);
+      
+      // Allow requests with no origin during development
+      if (!origin) {
+        console.warn('No origin header - allowing request during development');
+      } else if (origin === 'answerlyai.cloud' || origin === 'https://answerlyai.cloud') {
+        console.log('Origin header is main domain');
+      }
+      else {
+        const hostname = new URL(origin).hostname;
+        
+        const isAllowed = allowedDomains.some(({ domain }) => {
+          // Convert both to lowercase for case-insensitive comparison
+          const allowedDomain = domain.toLowerCase();
+          const requestDomain = hostname.toLowerCase();
+          
+          // Check if the domain matches exactly or is a subdomain
+          return requestDomain === allowedDomain || 
+                  requestDomain.endsWith('.' + allowedDomain);
+        });
+
+        if (!isAllowed) {
+          console.error('Unauthorized domain:', hostname);
+          throw new Error('Unauthorized domain');
+        }
+      }
     }
-    
+
     console.log('Serving widget for workflow:', workflowId);
     
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
@@ -118,7 +160,7 @@ export async function GET(request: NextRequest) {
             try {
               window.AnswerlyAIWidget.init({
                 workflowId: '${workflowId}',
-                theme: 'light',
+                theme: 'blue',
                 position: 'bottom-right',
                 userId: null,
                 name: 'Cora'
@@ -142,11 +184,12 @@ export async function GET(request: NextRequest) {
               case 'blue': return '#2563eb';
               case 'red': return '#dc2626';
               case 'green': return '#16a34a';
-              case 'purple': return '#7c3aed';
+              case 'violet': return '#7c3aed';
               case 'indigo': return '#4f46e5';
               case 'pink': return '#db2777';
+              case 'yellow': return '#ca8a04';
               case 'orange': return '#ea580c';
-              case 'light': return '#1f2937';
+              case 'dark': return '#1f2937';
               default: return '#2563eb'; // default blue
             }
           };
@@ -507,28 +550,33 @@ export async function GET(request: NextRequest) {
       })();
     `;
 
-    return new NextResponse(widgetScript, {
+    const response = new NextResponse(widgetScript, {
       headers: {
         'Content-Type': 'application/javascript',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400', // 24 hours
       },
     });
+
+    return response;
   } catch (error) {
     console.error('Widget script error:', error);
-    return new NextResponse(
+    const response = new NextResponse(
       'console.error("Failed to load widget script");',
       { 
         status: 500,
         headers: {
           'Content-Type': 'application/javascript',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400', // 24 hours
         }
       }
     );
+    return response;
   }
 }
 
@@ -536,8 +584,18 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400', // 24 hours
     },
   });
-} 
+}
+
+// Helper function to add CORS headers to any response
+function addCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+  return response;
+}

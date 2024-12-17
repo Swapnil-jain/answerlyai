@@ -48,102 +48,144 @@ export default function WidgetPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-8">
-      <div className="mb-6">
-        <Link href={`/builder/${workflowId}`}>
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Editor
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold">Embed Your Chat Widget</h1>
-      </div>
-      
-      <div className="mb-8">
-        <p className="text-gray-600 mb-4">
-          Add this code to your website to embed the chat widget. Place it just before the closing <code>&lt;/body&gt;</code> tag:
-        </p>
-        
-        <div className="relative">
-          <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg mb-4 overflow-x-auto">
+    <div className="container mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-12">
+          <Link href={`/builder/${workflowId}`}>
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Editor
+            </Button>
+          </Link>
+          <h1 className="text-4xl font-bold mb-4">Widget Configuration</h1>
+          <p className="text-xl text-gray-600">
+            Add a powerful AI chat widget to your website in minutes.
+          </p>
+        </div>
+
+        <div className="bg-blue-50 p-8 rounded-2xl mb-12">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Installation Code</h2>
+              <p className="text-gray-600">Add this code to your website just before the closing <code>&lt;/body&gt;</code> tag</p>
+            </div>
+            <Button
+              onClick={copyToClipboard}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {copied ? (
+                <><CheckIcon className="h-4 w-4" /> Copied!</>
+              ) : (
+                <><CopyIcon className="h-4 w-4" /> Copy Code</>
+              )}
+            </Button>
+          </div>
+          <pre className="bg-white border rounded-xl p-6 overflow-x-auto">
             <code className="text-sm">{widgetCode}</code>
           </pre>
-          
-          <Button 
-            onClick={copyToClipboard}
-            className="absolute top-4 right-4 bg-gray-800 hover:bg-gray-700"
-            size="sm"
-          >
-            {copied ? (
-              <><CheckIcon className="h-4 w-4 mr-2" /> Copied!</>
-            ) : (
-              <><CopyIcon className="h-4 w-4 mr-2" /> Copy Code</>
-            )}
-          </Button>
         </div>
-      </div>
 
-      <Tabs defaultValue="customize" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="customize">Customization</TabsTrigger>
-          <TabsTrigger value="testing">Testing</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="customize">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Customization Options</h3>
-            <p className="text-gray-600">You can customize the widget by passing options to the init function:</p>
-            <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 ml-4">
-              <li><code>name</code>: Assistant name (defaults to 'Cora')</li>
-              <li>
-                <code>theme</code>: Color theme for the widget button (defaults to 'blue')
-                <ul className="list-disc list-inside ml-6 mt-2 text-gray-500">
-                  <li>'violet' - <span className="w-3 h-3 inline-block bg-violet-600 rounded-full"></span></li>
-                  <li>'indigo' - <span className="w-3 h-3 inline-block bg-indigo-600 rounded-full"></span></li>
-                  <li>'blue' - <span className="w-3 h-3 inline-block bg-blue-600 rounded-full"></span></li>
-                  <li>'green' - <span className="w-3 h-3 inline-block bg-green-600 rounded-full"></span></li>
-                  <li>'yellow' - <span className="w-3 h-3 inline-block bg-yellow-500 rounded-full"></span></li>
-                  <li>'orange' - <span className="w-3 h-3 inline-block bg-orange-500 rounded-full"></span></li>
-                  <li>'red' - <span className="w-3 h-3 inline-block bg-red-600 rounded-full"></span></li>
-                  <li>'dark' - <span className="w-3 h-3 inline-block bg-gray-800 rounded-full"></span></li>
-                </ul>
-              </li>
-              <li><code>position</code>: 'bottom-right' (default) or 'bottom-left'</li>
-            </ul>
-            <div className="mt-4 p-4 bg-blue-50 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> The widget supports VIBGYOR color themes (Violet, Indigo, Blue, Green, Yellow, Orange, Red) 
-                plus a 'dark' theme. Choose the color that best matches your website's design.
-              </p>
+        <div className="space-y-12">
+          <div>
+            <h2 className="text-2xl font-semibold mb-6">Customize Your Widget</h2>
+            <div className="bg-white p-6 rounded-xl border">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Available Options</h3>
+                  <p className="text-gray-600 mb-4">
+                    Customize your widget by passing these options to the init function:
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <code className="text-sm bg-gray-50 px-2 py-1 rounded">name</code>
+                      <p className="mt-1 text-gray-600">Assistant name (defaults to 'Cora')</p>
+                    </div>
+                    <div>
+                      <code className="text-sm bg-gray-50 px-2 py-1 rounded">theme</code>
+                      <p className="mt-1 text-gray-600">Color theme for the widget button (defaults to 'blue')</p>
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                          { name: 'violet', color: '#7c3aed' },
+                          { name: 'indigo', color: '#4f46e5' },
+                          { name: 'blue', color: '#2563eb' },
+                          { name: 'green', color: '#16a34a' },
+                          { name: 'yellow', color: '#ca8a04' },
+                          { name: 'orange', color: '#ea580c' },
+                          { name: 'red', color: '#dc2626' },
+                          { name: 'dark', color: '#1f2937' }
+                        ].map(({ name, color }) => (
+                          <div key={name} className="flex items-center gap-2">
+                            <span 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: color }}
+                            />
+                            <code className="text-sm text-gray-600">{name}</code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <code className="text-sm bg-gray-50 px-2 py-1 rounded">position</code>
+                      <p className="mt-1 text-gray-600">Widget position on the page</p>
+                      <ul className="mt-2 space-y-1 text-gray-600">
+                        <li><code className="text-sm">bottom-right</code> (default)</li>
+                        <li><code className="text-sm">bottom-left</code></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-900">
+                    <strong>Example:</strong>
+                  </p>
+                  <pre className="mt-2 text-sm bg-white p-3 rounded border overflow-x-auto">
+                    <code>{`window.AnswerlyAIWidget.init({
+  name: 'Support Bot',
+  theme: 'violet',
+  position: 'bottom-right'
+});`}</code>
+                  </pre>
+                </div>
+              </div>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="testing">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Testing Your Widget</h3>
-            <p className="text-gray-600">To test the widget locally:</p>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-4">
-              <li>Create a new HTML file</li>
-              <li>Paste the widget code before the closing body tag</li>
-              <li>Open the file in a web browser</li>
-              <li>You should see the chat button in the bottom-right corner</li>
-            </ol>
-          </div>
-        </TabsContent>
-      </Tabs>
 
-      <div className="bg-blue-50 p-6 rounded-lg">
-        <h2 className="font-semibold mb-4">Important Notes:</h2>
-        <ul className="list-disc list-inside space-y-3 text-sm text-gray-600">
-          <li>The chat widget appears as a floating button in the corner of your website.</li>
-          <li>The widget connects securely to our servers to process messages.</li>
-          <li>All the confiugrations are automatically loaded. You do not need to do anything.</li>
-          <li>Keep your workflow ID & userId private and secure.</li>
-          <li>The widget automatically adapts to your website's layout across devices.</li>
-          <li>Do not edit the userId/workflow ID as widget will immediately stop working.</li>
-        </ul>
+          <div>
+            <h2 className="text-2xl font-semibold mb-6">Security Settings</h2>
+            <div className="bg-white p-6 rounded-xl border">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-medium mb-1">Domain Access Control</h3>
+                  <p className="text-gray-600">Manage which websites can use your widget</p>
+                </div>
+                <Link href={`/widget/${workflowId}/domains`}>
+                  <Button>Manage Domains</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6 border">
+            <h2 className="font-semibold mb-4">Important Notes:</h2>
+            <ul className="grid gap-3 text-sm text-gray-600">
+              <li className="flex items-start gap-3">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2"></span>
+                <span>The widget connects securely to our servers to process messages.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2"></span>
+                <span>All the configurations are automatically loaded. You do not need to do anything. </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2"></span>
+                <span>The chat widget appears as a floating button in the corner of your website and adapts to all layouts across devices.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
-} 
+}
