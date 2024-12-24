@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/utils/logger'
 
 const CACHE_KEY = 'auth_user'
-const CACHE_DURATION = 1000 * 60 * 5 // 5 minutes
+const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes for auth (security)
 
 interface CachedUser {
   user: any // Using any to match Supabase user type

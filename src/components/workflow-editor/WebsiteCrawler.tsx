@@ -24,7 +24,7 @@ interface WebsiteCrawlerProps {
   workflowId: string
   disabled?: boolean
   title?: string
-  onSaveWorkflow?: () => Promise<void>
+  onSaveWorkflow?: () => Promise<boolean | void>
 }
 
 export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWorkflow }: WebsiteCrawlerProps) {
@@ -84,7 +84,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       const data = await response.json()
       setDiscoveredUrls(data.urls.map((url: string) => ({
         url,
-        selected: true,
+        selected: false,
         title: url
       })))
       setStep('select')

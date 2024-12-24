@@ -105,13 +105,13 @@ export default function PricingSection() {
               <p className="font-semibold text-blue-600">Current plan: {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</p>
               <p className="text-sm mt-2 text-gray-600">
                 {isAnnual ? (
-                  currentInterval === 'year' ? 
-                    "You're on annual billing 🎉" :
-                    "You're on monthly billing - switch to annual for 20% savings! 💫"
+                  currentInterval === 'month' ? 
+                    "You're on annual billing - best value! 🌟" :
+                    "You're on monthly billing - switch to annual for 40% savings! 💫"
                 ) : (
-                  currentInterval === 'month' ?
-                    "You're on monthly billing" :
-                    "You're on annual billing - best value! 🌟"
+                  currentInterval === 'year' ?
+                    "You're on annual billing - best value! 🌟" :
+                    "You're on monthly billing - switch to annual for 40% savings! 💫"
                 )}
               </p>
             </div>

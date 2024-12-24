@@ -1,3 +1,12 @@
+interface TokenUsage {
+  systemPrompt: number;
+  faqs: number;
+  workflow: number;
+  context: number;
+  message: number;
+  total: number;
+}
+
 class RateLimiterClass {
   private static instance: RateLimiterClass;
   private isServer: boolean;
@@ -73,9 +82,9 @@ class RateLimiterClass {
     }
   }
 
-  public async recordTokenUsage(
+  public async recordDetailedTokenUsage(
     userId: string,
-    tokenCount: number
+    usage: TokenUsage
   ): Promise<boolean> {
     try {
       const baseUrl = this.getBaseUrl();
@@ -88,7 +97,14 @@ class RateLimiterClass {
         },
         body: JSON.stringify({
           userId,
-          tokenCount,
+          tokenCount: usage.total,
+          usage: {
+            systemPrompt: usage.systemPrompt,
+            faqs: usage.faqs,
+            workflow: usage.workflow,
+            context: usage.context,
+            message: usage.message
+          },
           recordOnly: true
         })
       });
@@ -105,6 +121,29 @@ class RateLimiterClass {
       return false;
     }
   }
+
+  public async estimateTokenUsage(
+    message: string,
+    history: any[],
+    systemPromptLength: number,
+    faqsLength: number,
+    workflowLength: number,
+    contextLength: number
+  ): Promise<TokenUsage> {
+    const CHARS_PER_TOKEN = 4;
+    
+    return {
+      systemPrompt: Math.ceil(systemPromptLength / CHARS_PER_TOKEN),
+      faqs: Math.ceil(faqsLength / CHARS_PER_TOKEN),
+      workflow: Math.ceil(workflowLength / CHARS_PER_TOKEN),
+      context: Math.ceil(contextLength / CHARS_PER_TOKEN),
+      message: Math.ceil(message.length / CHARS_PER_TOKEN),
+      total: Math.ceil(
+        (systemPromptLength + faqsLength + workflowLength + 
+         contextLength + message.length) / CHARS_PER_TOKEN
+      )
+    };
+  }
 }
 
 // Export singleton instance
@@ -112,7 +151,20 @@ export const RateLimiter = {
   async checkRateLimit(userId: string, tokenCount: number) {
     return RateLimiterClass.getInstance().checkRateLimit(userId, tokenCount);
   },
-  async recordTokenUsage(userId: string, tokenCount: number) {
-    return RateLimiterClass.getInstance().recordTokenUsage(userId, tokenCount);
+  async recordDetailedTokenUsage(userId: string, usage: TokenUsage) {
+    return RateLimiterClass.getInstance().recordDetailedTokenUsage(userId, usage);
+  },
+  async estimateTokenUsage(
+    message: string,
+    history: any[],
+    systemPromptLength: number,
+    faqsLength: number,
+    workflowLength: number,
+    contextLength: number
+  ) {
+    return RateLimiterClass.getInstance().estimateTokenUsage(
+      message, history, systemPromptLength, faqsLength, 
+      workflowLength, contextLength
+    );
   }
 }

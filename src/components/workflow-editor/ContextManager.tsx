@@ -17,6 +17,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
 import { isAdmin } from '@/lib/utils/adminCheck'
+import { WarningMessage } from '../ui/warning-message'
 
 interface ContextManagerProps {
   workflowId: string
@@ -194,7 +195,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
   return (
     <div className="flex-1 max-w-6xl mx-auto p-8 pt-20">
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Header Section */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
@@ -206,10 +207,32 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
               « Back to Workflow Editor
             </Button>
           </div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600">
             Add any additional context or instructions that your chatbot should know about.
           </p>
         </div>
+
+        {/* Warning Message */}
+        <WarningMessage title="Optimize Context for Better Performance">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">
+              Optimize your context to minimise your daily word limit usage:
+            </p>
+            <div className="flex gap-6 text-sm">
+              <ul className="space-y-1 list-none">
+                <li>• Keep content focused and concise</li>
+                <li>• Remove redundant information</li>
+              </ul>
+              <ul className="space-y-1 list-none">
+                <li>• Include only essential policies</li>
+                <li>• Trim crawled content carefully</li>
+              </ul>
+            </div>
+            <p className="text-xs text-yellow-600 pt-1">
+              💡 Pro tip: Organize content into sections (shipping, returns, etc.) for better efficiency
+            </p>
+          </div>
+        </WarningMessage>
 
         {/* Context Editor Section */}
         <div className="bg-white rounded-lg shadow p-6">

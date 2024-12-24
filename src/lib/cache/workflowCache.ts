@@ -56,11 +56,11 @@ interface CacheOptions {
 const CACHE_PREFIX = 'workflow_'
 const LIST_CACHE_KEY = 'workflow_list'
 const METADATA_KEY = 'workflow_metadata_'
-const CACHE_DURATION = 1000 * 60 * 60 * 24 // 24 hours for workflows and FAQs
-const MAX_CACHE_SIZE = 10 * 1024 * 1024 // Increase to 10MB since modern browsers support larger localStorage
+const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 7 days for workflows
+const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB
 const FAQ_CACHE_PREFIX = 'faq_'
 const DASHBOARD_CACHE_KEY = 'dashboard_stats'
-const DASHBOARD_CACHE_DURATION = 1000 * 60 * 15 // 15 minutes for dashboard stats (needs to be fresher)
+const DASHBOARD_CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
 
 export const workflowCache = {
   // Check if cache is expired

@@ -10,6 +10,7 @@ import { Bot, BarChart2 } from 'lucide-react'
 import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
 import { LIMITS } from '@/lib/constants/limits'
+import { EmailPreferencesForm } from '@/components/email-preferences/email-preferences-form'
 
 interface DashboardStats {
   activeChatbots: number
@@ -244,7 +245,21 @@ function DashboardContent() {
         </div>
       </div>
 
+      {/* Email Preferences Section */}
+      <div className="mt-8 max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-5 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Email Preferences</h2>
+            <p className="mt-1 text-sm text-gray-500">Manage your email notification settings and preferences</p>
+          </div>
+          <div className="px-6 py-5">
+            <EmailPreferencesForm />
+          </div>
+        </div>
+      </div>
+
       {/* Minimalist Quote */}
+      <div className="mb-8"></div>
       <div className="text-center max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
           <span className="text-sm font-medium text-blue-600">Minimalism at Core</span>
