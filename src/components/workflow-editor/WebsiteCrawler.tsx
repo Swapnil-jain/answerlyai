@@ -11,6 +11,7 @@ interface DiscoveredUrl {
   url: string
   selected: boolean
   title?: string
+  alreadyCrawled?: boolean
 }
 
 interface CrawlResult {
@@ -38,6 +39,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
   const [discoveredUrls, setDiscoveredUrls] = useState<DiscoveredUrl[]>([])
   const [isDiscovering, setIsDiscovering] = useState(false)
   const [step, setStep] = useState<'input' | 'select' | 'crawling'>('input')
+  const MAX_URLS = 15
 
   const normalizeUrl = (inputUrl: string): string => {
     try {
@@ -58,6 +60,25 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
     if (!url) return
 
     try {
+      const { data: { user } } = await getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Get workflow data
+      const { data: workflowData, error: workflowError } = await supabase
+        .from(isAdmin(user.id) ? 'sample_workflows' : 'workflows')
+        .select('context, website_url')
+        .eq('id', workflowId)
+        .single()
+
+      if (workflowError) {
+        console.error('Error fetching workflow:', workflowError)
+        throw new Error('Failed to fetch workflow data')
+      }
+
+      if (!workflowData) {
+        throw new Error('Workflow not found')
+      }
+
       const normalized = normalizeUrl(url)
       if (!normalized) {
         throw new Error('Invalid URL format. Please enter a valid URL')
@@ -82,15 +103,22 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       }
 
       const data = await response.json()
-      setDiscoveredUrls(data.urls.map((url: string) => ({
-        url,
-        selected: false,
-        title: url
-      })))
+      
+      const discoveredUrlsWithStatus = data.urls.map((url: string) => {
+        const pageMarker = `[Page: ${url}]`
+        const isAlreadyCrawled = workflowData.context?.includes(pageMarker) ?? false
+        return {
+          url,
+          selected: false,
+          title: url,
+          alreadyCrawled: isAlreadyCrawled
+        }
+      })
+      setDiscoveredUrls(discoveredUrlsWithStatus)
       setStep('select')
       setProgress('')
     } catch (error) {
-      console.error('URL discovery error:', error)
+      console.error('Discovery error:', error)
       setError(error instanceof Error ? error.message : 'Failed to discover pages')
     } finally {
       setIsDiscovering(false)
@@ -99,9 +127,20 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
   }
 
   const toggleUrlSelection = (url: string) => {
-    setDiscoveredUrls(prev => prev.map(item => 
-      item.url === url ? { ...item, selected: !item.selected } : item
-    ))
+    setDiscoveredUrls(prev => {
+      const selectedCount = prev.filter(item => item.selected).length
+      const urlItem = prev.find(item => item.url === url)
+      
+      if (!urlItem?.selected && selectedCount >= MAX_URLS) {
+        setError(`You can only select up to ${MAX_URLS} URLs at once`)
+        return prev
+      }
+      
+      setError('')
+      return prev.map(item => 
+        item.url === url ? { ...item, selected: !item.selected } : item
+      )
+    })
   }
 
   const crawlWebsite = async () => {
@@ -306,7 +345,12 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
 
           {discoveredUrls.length > 0 && step === 'select' && (
             <div className="space-y-2 max-h-[300px] overflow-y-auto border rounded-md p-4">
-              <div className="font-medium">Discovered Pages:</div>
+              <div className="font-medium flex justify-between items-center">
+                <span>Discovered Pages:</span>
+                <span className="text-sm text-muted-foreground">
+                  Selected: {discoveredUrls.filter(url => url.selected).length}/{MAX_URLS}
+                </span>
+              </div>
               {discoveredUrls.map((item, index) => (
                 <div key={index} className="flex items-start space-x-2">
                   <Checkbox
@@ -315,8 +359,13 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
                     disabled={isCrawling}
                     className="mt-1"
                   />
-                  <span className="text-sm break-all">
+                  <span className={`text-sm break-all ${item.alreadyCrawled ? 'text-orange-500' : ''}`}>
                     {item.url}
+                    {item.alreadyCrawled && (
+                      <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                        Previously crawled
+                      </span>
+                    )}
                   </span>
                 </div>
               ))}

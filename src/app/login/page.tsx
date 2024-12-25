@@ -3,13 +3,42 @@
 import { useSupabase } from '@/lib/supabase/provider'
 import { Button } from '@/components/ui/button'
 import { Loader2, Sparkles, ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkDevice = () => {
+      if (typeof window !== 'undefined') {
+        const isMobile = window.innerWidth < 640
+        if (isMobile) {
+          router.replace('/mobile-notice')
+        } else {
+          setIsDesktop(true)
+        }
+      }
+    }
+
+    checkDevice()
+    window.addEventListener('resize', checkDevice)
+    return () => window.removeEventListener('resize', checkDevice)
+  }, [router])
+
+  // If not confirmed as desktop yet, show loading state
+  if (!isDesktop) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
 
   const handleGoogleLogin = async () => {
     try {

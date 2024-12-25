@@ -1,4 +1,4 @@
-export type TierType = 'free' | 'hobbyist' | 'enthusiast' | 'enterprise'
+export type TierType = 'free' | 'hobbyist' | 'growth' | 'startup' | 'enterprise'
 
 export type UserTier = {
   user_id: string;
@@ -10,6 +10,7 @@ export type UserTier = {
   subscription_status: 'active' | 'cancelled' | null;
   subscription_interval: 'month' | 'year' | null;
   subscription_amount: number | null;
+  next_billing_date: string | null;
 }
 
 export async function upgradeTier(supabase: any, userId: string, newTier: TierType) {
@@ -95,7 +96,8 @@ export async function checkUserSubscription(supabase: any, userId: string) {
           tier: 'free',
           subscription: null,
           interval: null,
-          amount: null
+          amount: null,
+          next_billing_date: null
         }
       }
       throw tierResult.error
@@ -107,7 +109,8 @@ export async function checkUserSubscription(supabase: any, userId: string) {
         tier: 'free',
         subscription: null,
         interval: null,
-        amount: null
+        amount: null,
+        next_billing_date: null
       }
     }
 
@@ -119,10 +122,12 @@ export async function checkUserSubscription(supabase: any, userId: string) {
         id: tierResult.data.dodo_subscription_id,
         status: tierResult.data.subscription_status,
         interval: tierResult.data.subscription_interval,
-        amount: tierResult.data.subscription_amount
+        amount: tierResult.data.subscription_amount,
+        next_billing_date: tierResult.data.next_billing_date
       },
       interval: tierResult.data.subscription_interval,
-      amount: tierResult.data.subscription_amount
+      amount: tierResult.data.subscription_amount,
+      next_billing_date: tierResult.data.next_billing_date
     }
     console.log('Returning subscription data:', result)
     return result
@@ -139,7 +144,8 @@ export async function checkUserSubscription(supabase: any, userId: string) {
       tier: 'free',
       subscription: null,
       interval: null,
-      amount: null
+      amount: null,
+      next_billing_date: null
     }
   }
 }

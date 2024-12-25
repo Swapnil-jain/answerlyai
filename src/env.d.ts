@@ -1,22 +1,36 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      GROQ_API_KEYS: string; // Comma-separated list of API keys
-      NEXT_PUBLIC_APP_URL: string;
-      POSTGRES_URL: string;
-      POSTGRES_PRISMA_URL: string;
-      SUPABASE_URL: string;
+      // API
+      DEEPINFRA_KEY: string;
+
+      // Supabase
       NEXT_PUBLIC_SUPABASE_URL: string;
-      POSTGRES_URL_NON_POOLING: string;
-      SUPABASE_JWT_SECRET: string;
-      POSTGRES_USER: string;
       NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-      POSTGRES_PASSWORD: string;
-      POSTGRES_DATABASE: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
-      POSTGRES_HOST: string;
+
+      // Widget
+      NEXT_PUBLIC_APP_URL: string;
       NEXT_PUBLIC_DEFAULT_USER_ID: string;
       NEXT_PUBLIC_WIDGET_ID: string;
+
+      // Dodo
+      DODO_SECRET_KEY: string;
+      DODO_API_URL: string;
+      NEXT_PUBLIC_DODO_HOBBYIST_MONTHLY: string;
+      NEXT_PUBLIC_DODO_HOBBYIST_ANNUAL: string;
+      NEXT_PUBLIC_DODO_GROWTH_MONTHLY: string;
+      NEXT_PUBLIC_DODO_GROWTH_ANNUAL: string;
+      NEXT_PUBLIC_DODO_STARTUP_MONTHLY: string;
+      NEXT_PUBLIC_DODO_STARTUP_ANNUAL: string;
+
+      // Google
+      GMAIL_USER: string;
+      GMAIL_APP_PASSWORD: string;
+      NEXT_PUBLIC_GTAG: string;
+
+      // Node
+      NODE_ENV: string;
     }
   }
 }

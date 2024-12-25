@@ -10,7 +10,7 @@ import Image from 'next/image'
 interface PaymentDialogProps {
   isOpen: boolean
   onClose: () => void
-  tier: 'hobbyist' | 'enthusiast'
+  tier: 'hobbyist' | 'growth' | 'startup'
   interval: 'monthly' | 'annual'
   productId: string
   userId: string

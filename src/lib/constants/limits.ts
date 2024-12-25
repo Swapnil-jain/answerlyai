@@ -1,8 +1,11 @@
 export const LIMITS = {
   hobbyist: {
-    tokensPerDay: 399000,  // ~300,000 words * 1.33
+    tokensPerDay: 199500,  // ~150,000 words * 1.33
   },
-  enthusiast: {
+  growth: {
+    tokensPerDay: 532000,  // ~400,000 words * 1.33
+  },
+  startup: {
     tokensPerDay: 1330000,  // ~1,000,000 words * 1.33
   },
   enterprise: {

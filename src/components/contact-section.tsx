@@ -54,36 +54,29 @@ export default function ContactSection() {
               </AccordionItem>
 
               <AccordionItem value="item-2">
-                <AccordionTrigger>How does the pricing work?</AccordionTrigger>
-                <AccordionContent>
-                  We offer flexible pricing plans based on your business needs. Contact us for a customized quote that fits your requirements.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
                 <AccordionTrigger>How quickly can I get started?</AccordionTrigger>
                 <AccordionContent>
                   You can get started immediately after signing up. Our intuitive platform allows you to create and deploy your first chatbot within minutes.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-4">
+              <AccordionItem value="item-3">
                 <AccordionTrigger>How long does making a chatbot take?</AccordionTrigger>
                 <AccordionContent>
                   It is something completely upto you and can take minutes, hours or days, depending on the complexity of the chatbot.
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="item-5">
+              <AccordionItem value="item-4">
                 <AccordionTrigger>Do you offer technical support?</AccordionTrigger>
                 <AccordionContent>
                   Yes, we provide 24/7 technical support to ensure your chatbot runs smoothly and efficiently. Please use the email provided or use our chatbot to get in touch.
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-6">
+              <AccordionItem value="item-5">
                 <AccordionTrigger>What if I am finding it too complicated/have custom requirements ?</AccordionTrigger>
                 <AccordionContent>
-                  Please mail us at answerlyai.cloud@gmail.com and we can have an engineer assist you.
+                  Please mail us at answerlyai.cloud@gmail.com
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

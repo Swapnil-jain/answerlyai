@@ -12,22 +12,24 @@ import { useEffect, useState } from 'react'
 export function SubscriptionManagement() {
   const { supabase, getUser } = useAuth()
   const router = useRouter()
-  const [currentTier, setCurrentTier] = useState<'free' | 'hobbyist' | 'enthusiast' | 'enterprise' | null>(null)
+  const [currentTier, setCurrentTier] = useState<'free' | 'hobbyist' | 'growth' | 'startup' | 'enterprise' | null>(null)
   const [subscriptionInterval, setSubscriptionInterval] = useState<'month' | 'year' | null>(null)
   const [subscriptionAmount, setSubscriptionAmount] = useState<number | null>(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelConfirmText, setCancelConfirmText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null)
 
   useEffect(() => {
     const checkTier = async () => {
       const { data: { session } } = await getUser()
       if (session && 'user' in session && session.user.id) {
-        const { tier, interval, amount } = await checkUserSubscription(supabase, session.user.id)
+        const { tier, interval, amount, next_billing_date } = await checkUserSubscription(supabase, session.user.id)
         setCurrentTier(tier)
         setSubscriptionInterval(interval)
         setSubscriptionAmount(amount)
+        setNextBillingDate(next_billing_date)
       }
     }
     checkTier()
@@ -102,24 +104,32 @@ export function SubscriptionManagement() {
       case 'hobbyist':
         return {
           name: 'Hobbyist Plan',
-          description: 'Advanced features for growing businesses',
-          limits: ['1 Chatbot', '100,000 words/day', '1 website'],
-          monthlyPrice: 9.90,
-          yearlyPrice: 99.90
-        }
-      case 'enthusiast':
-        return {
-          name: 'Enthusiast Plan',
-          description: 'Premium features for power users',
-          limits: ['3 Chatbots', '300,000 words/day', '3 websites'],
-          monthlyPrice: 14.90,
+          description: 'Perfect for small solo projects',
+          limits: ['1 Chatbot', '150,000 words/day', '1 website', 'Basic Intelligence bot'],
+          monthlyPrice: 19.90,
           yearlyPrice: 149.90
+        }
+      case 'growth':
+        return {
+          name: 'Growth Plan',
+          description: 'Advanced features for growing businesses',
+          limits: ['3 Chatbots', '400,000 words/day', '3 websites', 'Moderate intelligence bots'],
+          monthlyPrice: 39.90,
+          yearlyPrice: 299.90
+        }
+      case 'startup':
+        return {
+          name: 'Startup Plan',
+          description: 'Premium features with best models',
+          limits: ['Unlimited Chatbots', '1,000,000 words/day', 'Unlimited websites', 'Most intelligent bots'],
+          monthlyPrice: 79.90,
+          yearlyPrice: 599.90
         }
       case 'enterprise':
         return {
           name: 'Enterprise Plan',
           description: 'Custom features for large businesses',
-          limits: ['Unlimited Chatbots', 'Unlimited words/day', 'Unlimited websites'],
+          limits: ['Unlimited Chatbots', 'Unlimited words/day', 'Unlimited websites', 'Custom Integration'],
         }
       default:
         return {
@@ -151,6 +161,15 @@ export function SubscriptionManagement() {
                   </span>
                 )}
               </p>
+              {nextBillingDate && currentTier !== 'free' && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Next billing date: {new Date(nextBillingDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Plan Limits:</h4>
@@ -164,16 +183,16 @@ export function SubscriptionManagement() {
         </CardContent>
         <CardFooter className="flex justify-between">
           <div className="flex gap-4">
-            {subscriptionInterval === 'month' && (currentTier === 'hobbyist' || currentTier === 'enthusiast') && 
+            {subscriptionInterval === 'month' && (currentTier === 'hobbyist' || currentTier === 'growth' || currentTier === 'startup') && 
              tierDetails.monthlyPrice !== undefined && tierDetails.yearlyPrice !== undefined && (
               <Button onClick={handleUpgrade} className="gap-2">
                 Switch to Yearly (Save ${((tierDetails.monthlyPrice * 12) - tierDetails.yearlyPrice).toFixed(2)}/year)
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}
-            {currentTier === 'hobbyist' && (
+            {(currentTier === 'hobbyist' || currentTier === 'growth') && (
               <Button onClick={() => router.push('/pricing')} className="gap-2">
-                Upgrade to Enthusiast
+                Upgrade Tier
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}

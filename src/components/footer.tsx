@@ -29,7 +29,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-2">Connect</h3>
             <div className="flex items-center space-x-4">
-              <Link href="https://x.com/SJ_Swapnil_Jain" className="text-gray-500 hover:text-blue-600 flex items-center gap-2">
+              <Link href="https://x.com/AnswerlyAI" className="text-gray-500 hover:text-blue-600 flex items-center gap-2">
               <span className="text-sm">Follow us on</span>
                 <Image 
                   src="/X-icon.svg"

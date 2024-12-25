@@ -1,21 +1,23 @@
 import { Code2, MousePointer2, BarChart3, Sparkles, Globe, LogIn, Zap } from 'lucide-react'
+import Script from 'next/script'
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="w-full py-20 bg-white">
+    <section id="features" className="w-full py-20 bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
             <span className="text-sm font-medium text-blue-600">Only.Relevant.Features.</span>
           </div>
           <h2 className="text-4xl font-bold mb-6">Why Choose AnswerlyAI?</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Building chatbots shouldn't be rocket science. We've simplified everything
-            while keeping all the power you need.
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Imagine having an AI-powered team member that never sleeps, never takes breaks, 
+            and delights your customers 24/7. Join the future of customer support.
           </p>
           <div className="bg-gray-50 p-6 rounded-2xl max-w-3xl mx-auto">
-            <p className="text-lg text-gray-700 italic">
-              "Over 95% of users never touch 80% of features in typical tools—we’re different: AnswerlyAI offers only the most relevant, simple-to-use features you actually need."
+            <p className="text-base sm:text-lg text-gray-700 italic">
+              "Over 95% of users never touch 80% of features in typical tools—we're different: 
+              AnswerlyAI offers only the most relevant, simple-to-use features you actually need."
             </p>
           </div>
         </div>
@@ -104,6 +106,22 @@ export default function FeaturesSection() {
             Join dozens of businesses already using AnswerlyAI to transform their
             customer support experience.
           </p>
+        </div>
+        <div className="mt-12 mb-4">
+          <div className="max-w-8xl mx-auto">
+            <div
+              className="senja-embed"
+              data-id="04fbb1cb-45cb-4c66-a9ff-fdb52ce4f487"
+              data-mode="shadow"
+              data-lazyload="false"
+              style={{ minHeight: '200px', maxHeight: '200px' }}
+            />
+            <Script
+              async
+              type="text/javascript"
+              src="https://static.senja.io/dist/platform.js"
+            />
+          </div>
         </div>
       </div>
     </section>

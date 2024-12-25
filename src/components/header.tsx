@@ -13,7 +13,6 @@ import {
   AlertDialogDescription, 
   AlertDialogFooter 
 } from "@/components/ui/alert-dialog";
-import { useSmoothScroll } from "@/hooks/use-smooth-scroll";
 import { useSupabase } from "@/lib/supabase/provider";
 import { LogOut, LogIn, LayoutDashboard, Menu, X, ArrowRight } from "lucide-react";
 
@@ -24,7 +23,6 @@ interface HeaderProps {
 export default function Header({ className = "" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { scrollToSection } = useSmoothScroll();
   const { supabase, session } = useSupabase();
   const router = useRouter();
   const pathname = usePathname();
@@ -90,7 +88,6 @@ export default function Header({ className = "" }: HeaderProps) {
 
   const mobileLink = "/mobile-notice";
   const dashboardLink = session ? "/dashboard" : "/login";
-  const loginLink = window.innerWidth < 640 ? mobileLink : "/login";
 
   const handleNavigation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -140,16 +137,16 @@ export default function Header({ className = "" }: HeaderProps) {
           {/* Desktop navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             <button
+                onClick={() => handleNavClick('features')}
+                className="text-gray-600 hover:text-gray-900"
+            >
+              Features
+            </button>
+            <button
                 onClick={() => handleNavClick('demo')}
                 className="text-gray-600 hover:text-gray-900"
               >
               Watch
-            </button>
-            <button
-              onClick={() => handleNavClick('features')}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Features
             </button>
             <button
               onClick={() => handleNavClick('pricing')}
@@ -221,16 +218,16 @@ export default function Header({ className = "" }: HeaderProps) {
           <div className="lg:hidden fixed inset-x-0 top-[73px] bg-white border-t shadow-lg">
             <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
               <button
-                onClick={() => handleNavClick('demo')}
-                className="text-gray-600 hover:text-gray-900 py-2"
-              >
-                Watch
-              </button>
-              <button
                 onClick={() => handleNavClick('features')}
                 className="text-gray-600 hover:text-gray-900 py-2"
               >
                 Features
+              </button>
+              <button
+                onClick={() => handleNavClick('demo')}
+                className="text-gray-600 hover:text-gray-900 py-2"
+              >
+                Watch
               </button>
               <button
                 onClick={() => handleNavClick('pricing')}

@@ -340,19 +340,6 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       // Skip rate limits and tier checks for admin users
       if (!isAdmin(user.id)) {
-        // Keep existing duplicate name check
-        const { data: existingWorkflow } = await supabase
-          .from('workflows')
-          .select('id, name')
-          .eq('user_id', user.id)
-          .eq('name', workflowName)
-          .neq('id', currentWorkflowId || '')
-          .single()
-
-        if (existingWorkflow) {
-          throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
-        }
-
         // Keep existing tier checks
         await ensureUserTier(supabase, user.id)
         const { data: tierData, error: tierError } = await supabase

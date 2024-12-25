@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { cancelSubscription } from '@/lib/dodo'
+import { PRODUCT_DETAILS } from '@/lib/constants/tiers'
 
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
-
-// Product details mapping
-const PRODUCT_DETAILS = {
-  'pdt_j8zGkS4LBOGTnswjFWcjQ': { tier: 'hobbyist', interval: 'month', amount: 9.90 }, // hobbyist monthly
-  'pdt_BCwxXtHWbOqSEQyNLsBiF': { tier: 'hobbyist', interval: 'year', amount: 99.90 }, // hobbyist annual
-  'pdt_T77aoYppIbtiTModg8Btl': { tier: 'enthusiast', interval: 'month', amount: 14.90 }, // enthusiast monthly
-  'pdt_jb5xw6ui4QtVyHQbev9k5': { tier: 'enthusiast', interval: 'year', amount: 149.90 }, // enthusiast annual
-} as const
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,6 +81,7 @@ export async function POST(req: NextRequest) {
         const subscriptionId = payload.data.subscription_id
         const productId = payload.data.product_id
         const customerId = payload.data.customer.customer_id
+        const nextBillingDate = payload.data.next_billing_date
 
         if (!subscriptionId || !productId || !customerId) {
           console.log('Missing required data:', { subscriptionId, productId, customerId })
@@ -147,7 +141,10 @@ export async function POST(req: NextRequest) {
         // Update user's subscription tier
         const { error: updateError } = await supabase
           .from('user_tiers')
-          .upsert(tierUpdate)
+          .upsert({
+            ...tierUpdate,
+            next_billing_date: nextBillingDate,
+          })
 
         if (updateError) {
           console.error('Error updating user tier:', updateError)

@@ -43,8 +43,8 @@ export default function DemoSection() {
   };
 
   return (
-    <section id="demo" className="w-full py-20 bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-6">
+    <section id="demo" className="w-full py-20 bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+      <div className="container mx-auto px-6 2xl:max-w-[1600px]">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
             <Play className="w-4 h-4 text-blue-600" />
@@ -52,8 +52,9 @@ export default function DemoSection() {
           </div>
           <h2 className="text-4xl font-bold mb-6">Experience the Magic</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            See how AnswerlyAI transforms customer interactions into meaningful conversations.
-            Watch our demo to experience the simplicity and power firsthand.
+            Imagine your competitors still making customers wait while your AI handles 
+            hundreds of conversations simultaneously - This is the future of customer 
+            interaction.
           </p>
         </div>
 
@@ -139,7 +140,10 @@ export default function DemoSection() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Smart Conversations</h3>
-                  <p className="text-gray-600">Watch how our AI understands context and provides relevant responses, just like a human customer service agent.</p>
+                  <p className="text-gray-600">
+                    Your customers won't believe they're talking to an AI. Experience human-like 
+                    conversations that build trust and loyalty.
+                  </p>
                 </div>
               </div>
 

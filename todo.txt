@@ -1,84 +1,60 @@
 Order of doing things:
-1. Refine the meeting scheduling mechanism for appointments/meetings/feedback and support.
-2. Modify LLM instructions to make it ignore any corrections given from user. It should not modify its input.
-3. Show next billing date in dashboard.
-4. All the good reviews given by reddit users/twitter users should be on homepage, scrolling animation.
-5. Update the new pricing model.
-6. Update the answerlyAI main chatbot with latest data.
-7. Merge the 'Build your own chatbot, your own way' and 'Why Choose AnswerlyAI?' into one.
-8. Remove the rupee dollar conversion thing in footer.
-9. Sell emotions. Do you have the dream of saying you have AI integrated in your website?
-10. Put a limit of the max number of links that can be crawled.
-11. Avoid duplicate link crawling somehow.
-12. Change models.
-13. Prevent navigation from dashboard without saving email changes.
-14. Put some sort of warning that longer
-15. Firewalls for the VPS
+6. Remove the rupee dollar conversion thing in footer.
+12. Prevent navigation from dashboard without saving email changes.
+14. Actually make sure respective tiers have upper limits for chatbots, embedding limits.
+15. Next billing date bug.
+12. Handle the cases where word limit gets over. 1.90$ = 100,000 extra words?
 
 In later version:
-1. Make the chatbot multilingual. Ask what language the user wants to use in widget for the greeting.
-2. Actually implement the one website allowed the for hobbyist tier widget embedding mechanism.
-3. Offer a PRO tier and the main highlight of that should be using the 70B parameter model.
-4. Referral system for companies.
-5. Integration with websites, messaging apps (WhatsApp, Facebook Messenger).
+1. Add paypal as alternative payment method.
+2. Try to remove 'use client' directive wherever possible
+1. Change models if needed for highest tier.
+2. Firewalls for the VPS
+3. Make the chatbot multilingual. Ask what language the user wants to use in widget for the greeting.
+6. Referral system for companies.
+7. Integration with websites, messaging apps (WhatsApp, Facebook Messenger).
    - Some sort of handoff mechanism for real human when human fails.
-6. Pre-designed templates for common industries (e.g., e-commerce, SaaS, healthcare).
-7. The mobile version has too much text and too large text.
-8. Provide some sort of solution for customers to hire me if they want to integrate the chatbot with their backend.
-9. Add discord
-10. Handle the cases where word limit gets over. 1$ = 100,000 extra words?
-11. Handle the good reviews given by reddit users/twitter users.
-12. 'Total Conversations' in dashboard show be separated into 2 parts.
-13. Downloadable dashboard reports in CSV/PDF.
-14. Make the chat history persist for the answerlyAI main chatbot.
-15. Further optimise db calls if possible.
-16. Add some sort of interactive tutorial for first time users.
-17. Some sort of testimonial section where customers are saying 'Even a 5 year old can use this'
-18. Work on SEO optimisation.
-19. Fix the bug that entering long text in decision node causes it to spill out.
-20. A dark mode?
-21. Changes in website are automatically reflected in the chatbot.
-22. A mechanism to track user is embedding widget on how many websites.
-23. Remove the useless columns from rate_limit after it is live in prod.
-24. Dashboard is not optimised for 'enterprise'.
-    - Cancel subscription buttons should be disabled.
-    - Get Started button should be disabled in pricing-section for 'enterprise'.
-25. Somehow find a way to integrate the chatbot with the backend:
+8. Pre-designed templates for common industries (e.g., e-commerce, SaaS, healthcare).
+10. Provide some sort of solution for customers to hire me if they want to integrate the chatbot with their backend.
+11. Add discord
+14. 'Total Conversations' in dashboard show be separated into 2 parts (maybe)
+15. Downloadable dashboard reports in CSV/PDF.
+16. Make the chat history persist for the answerlyAI main chatbot.
+17. Further optimise db calls if possible.
+18. Add some sort of interactive tutorial for first time users.
+20. Work on SEO optimisation.
+21. Fix the bug that entering long text in decision node causes it to spill out.
+22. A dark mode?
+23. Changes in website are automatically reflected in the chatbot.
+27. Somehow find a way to integrate the chatbot with the backend:
     - Dynamic updates: AI keeps the bot's knowledge up-to-date when changes are made to the database.
     - I will add a pre-trained bot with a database ready so customers can try things on that.
-26. Some sort of rolling carousel showing all brands I have worked with.
-27. Options for quick customization of greeting messages, colours, tone in the widget area.
-28. Use CDN for latest content.
+28. Some sort of rolling carousel showing all brands I have worked with.
+29. Options for quick customization of greeting messages, colours, tone in the widget area.
+30. Use CDN for latest content.
 
 Things to do in prod:
-1. Delete useless columns from supabase.
+1. Delete useless columns from supabase rate_limit/user_tier tables.
 2. Correct webhook link in dodopayments.
 3. Live dodopayments link enabled.
 4. Correct product IDs for live payments (different from .env.local)
 5. Correct URLs.
 6. npx playwright install MIGHT need to be run, check first if web crawler is working.
 7. Top up credits in deepinfra.
+8. Update the answerlyAI main chatbot with latest data.
+
+
 
 Cost of running:
 Per user:
-- 1,000,000 words/day for 30 days = $3.2
-- 300,000 words/day for 30 days = $0.96
-
-
-Potential new cost:
-- 1,000,000 words/day for 30 days = $21.15 (70 b model)
-- 100,000 words/day for 30 days = $0.32 (8 b model)
-
-Potential new pricing strategy:
-Hobbyist tier: 150,000 words/day = 19.90 bucks monthly, 149.90 bucks yearly (32b model)
-Growth tier: 500,000 words/day = 39.90 bucks monthly, 299.90 bucks yearly (32b model)
-Startup tier: 1,000,000 words/day = 69.90 bucks monthly, 599.90 bucks yearly (70B model)
+- 1,000,000 words/day for 30 days = $10.37
+- 400,000 words/day for 30 days = $4.14
+- 150,000 words/day for 30 days = $1.55
 
 Shared:
 - Hosting per month = $1.2
 - Domain name = $0.5
 - X premium = $6.4/month
-
 Total shared = $8.1
 
 New models:
@@ -87,17 +63,10 @@ Qwen/Qwen2.5-Coder-32B-Instruct = $10.37
 google/gemma-2-27b-it = $10.77
 meta-llama/Llama-3.3-70B-Instruct-Turbo = $21.15
 
-For 500,000 words/day for 30 days:
-mistralai/Mistral-Nemo-Instruct-2407 = $5.90
-Qwen/Qwen2.5-Coder-32B-Instruct = $5.18
-google/gemma-2-27b-it = $5.38
-meta-llama/Llama-3.3-70B-Instruct-Turbo = $10.57
-
-For 300,000 words/day for 30 days:
-mistralai/Mistral-Nemo-Instruct-2407 = $1.38
-Qwen/Qwen2.5-Coder-32B-Instruct = $3.11
-google/gemma-2-27b-it = $3.23
-meta-llama/Llama-3.3-70B-Instruct-Turbo = $10.57
+For 400,000 words/day for 30 days:
+Qwen/Qwen2.5-Coder-32B-Instruct = $4.14
+google/gemma-2-27b-it = $4.30
+meta-llama/Llama-3.3-70B-Instruct-Turbo = $8.46
 
 For 200,000 words/day for 30 days:
 mistralai/Mistral-Nemo-Instruct-2407 = $1.38
@@ -108,11 +77,6 @@ For 150,000 words/day for 30 days:
 mistralai/Mistral-Nemo-Instruct-2407 = $1.03
 Qwen/Qwen2.5-Coder-32B-Instruct = $1.55
 google/gemma-2-27b-it = $1.58
-
-For 100,000 words/day for 30 days:
-mistralai/Mistral-Nemo-Instruct-2407 = $0.46
-Qwen/Qwen2.5-Coder-32B-Instruct = $1.04
-google/gemma-2-27b-it = $1.08
 
 
 How to market the chatbot:
