@@ -22,6 +22,9 @@ interface DashboardStats {
   wordsRemaining: number
 }
 
+const CHAT_SESSION_RETENTION_DAYS = 30;
+const CLEANUP_INTERVAL_DAYS = 7; // Only run cleanup weekly
+
 function DashboardContent() {
   const { supabase } = useSupabase()
   const { getUser } = useAuth()
@@ -36,6 +39,37 @@ function DashboardContent() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const cleanupOldChatSessions = async () => {
+    try {
+      const { data: { user } } = await getUser();
+      if (!user) return;
+
+      // Check if cleanup was run recently using localStorage
+      const lastCleanup = localStorage.getItem('lastChatSessionCleanup');
+      if (lastCleanup) {
+        const daysSinceLastCleanup = (Date.now() - Number(lastCleanup)) / (1000 * 60 * 60 * 24);
+        if (daysSinceLastCleanup < CLEANUP_INTERVAL_DAYS) {
+          return; // Skip cleanup if run recently
+        }
+      }
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - CHAT_SESSION_RETENTION_DAYS);
+
+      await supabase
+        .from('chat_sessions')
+        .delete()
+        .eq('user_id', user.id)
+        .lt('started_at', cutoffDate.toISOString());
+
+      // Record cleanup time
+      localStorage.setItem('lastChatSessionCleanup', Date.now().toString());
+
+    } catch (error) {
+      console.error('Error cleaning up chat sessions:', error);
+    }
+  };
 
   // Fetch dashboard stats
   const fetchDashboardStats = useCallback(async () => {
@@ -62,6 +96,9 @@ function DashboardContent() {
       if (!user) {
         throw new Error('User not found')
       }
+
+      // Run cleanup before fetching stats
+      await cleanupOldChatSessions();
 
       // Ensure user has a tier entry
       await ensureUserTier(supabase, user.id)

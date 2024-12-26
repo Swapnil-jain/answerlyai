@@ -19,17 +19,29 @@ export function SubscriptionManagement() {
   const [cancelConfirmText, setCancelConfirmText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null)
+  const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null)
 
   useEffect(() => {
     const checkTier = async () => {
       const { data: { session } } = await getUser()
       if (session && 'user' in session && session.user.id) {
-        const { tier, interval, amount, next_billing_date } = await checkUserSubscription(supabase, session.user.id)
+        const { tier, interval, amount, subscription } = await checkUserSubscription(supabase, session.user.id)
         setCurrentTier(tier)
         setSubscriptionInterval(interval)
         setSubscriptionAmount(amount)
-        setNextBillingDate(next_billing_date)
+        
+        // If there's an active subscription, fetch its details
+        if (subscription?.id && subscription.status === 'active') {
+          try {
+            const response = await fetch(`/api/subscription/details?subscriptionId=${subscription.id}`)
+            if (response.ok) {
+              const details = await response.json()
+              setSubscriptionDetails(details)
+            }
+          } catch (error) {
+            console.error('Error fetching subscription details:', error)
+          }
+        }
       }
     }
     checkTier()
@@ -161,9 +173,9 @@ export function SubscriptionManagement() {
                   </span>
                 )}
               </p>
-              {nextBillingDate && currentTier !== 'free' && (
+              {subscriptionDetails?.next_billing_date && currentTier !== 'free' && (
                 <p className="text-sm text-gray-600 mt-2">
-                  Next billing date: {new Date(nextBillingDate).toLocaleDateString('en-US', {
+                  Next billing date: {new Date(subscriptionDetails.next_billing_date).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'

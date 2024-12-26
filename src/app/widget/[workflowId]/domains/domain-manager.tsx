@@ -1,43 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { useSupabase } from '@/lib/supabase/provider';
+import { useAuth } from '@/hooks/useAuth';
+import { TierType } from '@/lib/utils/subscription';
+import { TIER_LIMITS } from '@/lib/constants/tiers';
 
 interface DomainManagerProps {
   workflowId: string;
   initialDomains: string[];
+  userTier: TierType;
 }
 
-export default function DomainManager({ workflowId, initialDomains }: DomainManagerProps) {
+export default function DomainManager({ workflowId, initialDomains, userTier }: DomainManagerProps) {
   const [domains, setDomains] = useState<string[]>(initialDomains);
   const [newDomain, setNewDomain] = useState('');
   const [isAddingDomain, setIsAddingDomain] = useState(false);
   const [deletingDomains, setDeletingDomains] = useState<Set<string>>(new Set());
-  const { supabase } = useSupabase();
-  const [session, setSession] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        setSession(session.access_token);
-      }
-    };
-    getSession();
-  }, [supabase.auth]);
+  const { getUser } = useAuth();
+  const tierLimit = TIER_LIMITS[userTier];
 
   const addDomain = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDomain.trim() || !session) return;
+    if (!newDomain.trim()) return;
 
     setIsAddingDomain(true);
     try {
+      const { data: { session } } = await getUser();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const response = await fetch(`/api/workflow/${workflowId}/domains`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ domain: newDomain.trim() }),
       });
@@ -58,15 +54,16 @@ export default function DomainManager({ workflowId, initialDomains }: DomainMana
   };
 
   const removeDomain = async (domain: string) => {
-    if (!session) return;
-    
     setDeletingDomains(prev => new Set([...prev, domain]));
     try {
+      const { data: { session } } = await getUser();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
       const response = await fetch(`/api/workflow/${workflowId}/domains`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ domain }),
       });
@@ -99,16 +96,26 @@ export default function DomainManager({ workflowId, initialDomains }: DomainMana
             onChange={(e) => setNewDomain(e.target.value)}
             placeholder="Enter domain (e.g., example.com)"
             className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            disabled={isAddingDomain}
+            disabled={isAddingDomain || domains.length >= tierLimit}
           />
           <button
             type="submit"
-            disabled={isAddingDomain || !newDomain.trim()}
+            disabled={isAddingDomain || !newDomain.trim() || domains.length >= tierLimit}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isAddingDomain ? 'Adding...' : 'Add Domain'}
           </button>
         </div>
+        {domains.length >= tierLimit && (
+          <p className="text-sm text-amber-600">
+            You've reached the maximum number of domains for your {userTier} plan. 
+            {userTier !== 'startup' && userTier !== 'enterprise' && (
+              <a href="/pricing" className="ml-1 text-blue-600 hover:underline">
+                Upgrade to add more domains
+              </a>
+            )}
+          </p>
+        )}
       </form>
 
       <div className="space-y-4">

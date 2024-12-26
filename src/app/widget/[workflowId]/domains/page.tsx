@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import DomainManager from './domain-manager';
 import Link from 'next/link';
 import { ArrowLeft, Globe } from 'lucide-react';
+import { TierType } from '@/lib/utils/subscription';
 
 interface PageProps {
   params: Promise<{ workflowId: string }>;
@@ -15,7 +16,21 @@ export default async function DomainsPage({ params }: PageProps) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch initial domains
+  // Get workflow's user_id
+  const { data: workflow } = await supabase
+    .from('workflows')
+    .select('user_id')
+    .eq('id', workflowId)
+    .single();
+
+  // Get user's tier
+  const { data: userTier } = await supabase
+    .from('user_tiers')
+    .select('pricing_tier')
+    .eq('user_id', workflow?.user_id)
+    .single();
+
+  // Fetch domains
   const { data: domains } = await supabase
     .from('allowed_domains')
     .select('domain')
@@ -68,6 +83,7 @@ export default async function DomainsPage({ params }: PageProps) {
             <DomainManager 
               workflowId={workflowId}
               initialDomains={domains?.map(d => d.domain) || []}
+              userTier={(userTier?.pricing_tier || 'free') as TierType}
             />
           </div>
         </div>

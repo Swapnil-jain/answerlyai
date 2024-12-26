@@ -37,10 +37,9 @@ export default function PricingSection() {
   useEffect(() => {
     // Handle URL parameters for interval and tier
     const interval = searchParams.get('interval')
-    if (interval === 'yearly') {
-      setIsAnnual(true)
-    } else if (interval === 'monthly') {
-      setIsAnnual(false)
+    // Only update if interval parameter exists
+    if (interval) {
+      setIsAnnual(interval === 'yearly')
     }
   }, [searchParams])
 
@@ -157,19 +156,14 @@ export default function PricingSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-6">Simple, Transparent Pricing</h2>
-          {currentTier && currentInterval && (
+          {currentTier && currentInterval && currentTier !== 'free' && (
             <div className="text-lg mb-4 p-4 bg-gradient-to-r from-blue-50 via-white to-blue-50 rounded-lg shadow-sm inline-block">
               <p className="font-semibold text-blue-600">Current plan: {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</p>
               <p className="text-sm mt-2 text-gray-600">
-                {isAnnual ? (
-                  currentInterval === 'month' ? 
-                    "You're on monthly billing - switch to annual for 40% savings! 💫" :
-                    "You're on annual billing - best value! 🌟"
-                ) : (
-                  currentInterval === 'year' ?
-                    "You're on monthly billing - switch to annual for 40% savings! 💫" :
-                    "You're on annual billing - best value! 🌟"
-                )}
+                {currentInterval === 'year' 
+                  ? "You're currently on annual billing - best value! 🌟"
+                  : "You're on monthly billing - select a plan above to switch to annual for 40% savings! 💫"
+                }
               </p>
             </div>
           )}
@@ -209,7 +203,7 @@ export default function PricingSection() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${hobbyistPrice.yearly} yearly</span>
                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                      Save ${hobbyistPrice.savings}/y
+                      Save $90/y
                     </span>
                   </div>
                 )}
@@ -276,7 +270,7 @@ export default function PricingSection() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${growthPrice.yearly} yearly</span>
                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                      Save ${growthPrice.savings}/y
+                    Save $180/y
                     </span>
                   </div>
                 )}
@@ -351,7 +345,7 @@ export default function PricingSection() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-blue-100">Billed ${startupPrice.yearly} yearly</span>
                     <span className="inline-flex items-center rounded-full bg-blue-200 px-2 py-0.5 text-xs font-medium text-blue-800">
-                      Save ${startupPrice.savings}/y
+                      Save $360/y
                     </span>
                   </div>
                 )}

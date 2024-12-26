@@ -1,37 +1,46 @@
 Order of doing things:
-6. Remove the rupee dollar conversion thing in footer.
-12. Prevent navigation from dashboard without saving email changes.
-14. Actually make sure respective tiers have upper limits for chatbots, embedding limits.
-15. Next billing date bug.
-12. Handle the cases where word limit gets over. 1.90$ = 100,000 extra words?
+1. Fix bugs
+2. Work on SEO optimisation.
+  - Add subdomain for blog posts.
+  - Add Backlinks
+  - Fix all bugs reported by google console
+
 
 In later version:
-1. Add paypal as alternative payment method.
-2. Try to remove 'use client' directive wherever possible
-1. Change models if needed for highest tier.
-2. Firewalls for the VPS
-3. Make the chatbot multilingual. Ask what language the user wants to use in widget for the greeting.
-6. Referral system for companies.
-7. Integration with websites, messaging apps (WhatsApp, Facebook Messenger).
+1. A new demo and intro video.
+
+2. Referral system for companies.
+3. Integration with websites, messaging apps (WhatsApp, Facebook Messenger, Telegram).
    - Some sort of handoff mechanism for real human when human fails.
-8. Pre-designed templates for common industries (e.g., e-commerce, SaaS, healthcare).
-10. Provide some sort of solution for customers to hire me if they want to integrate the chatbot with their backend.
-11. Add discord
-14. 'Total Conversations' in dashboard show be separated into 2 parts (maybe)
+4. Add paypal as alternative payment method.
+5. Firewalls for the VPS
+6. Try to remove 'use client' directive wherever possible
+7. Implement appropriate RLS policies in supabase.
+8. Refresh work limit if someone upgrades to a higher tier.
+9. Handle the cases where word limit gets over. 1.90$ = 100,000 extra words?
+  - Might need some sort of carryforward mechanism.
+11. Enforce that the respective tiers have different analytics and customisations.
+12. Prevent navigation from dashboard without saving email changes.
+
+
+Lot later version:
+22. A dark mode.
+4. Change models if needed for highest tier.
+6. Make the chatbot/website multilingual. Ask what language the user wants to use in widget for the greeting.
+9. Pre-designed templates for common industries (e.g., e-commerce, SaaS, healthcare).
+14. 'Total Conversations' in dashboard show be separated into 2 parts: widget and workfloweditor area chatbot (maybe)
 15. Downloadable dashboard reports in CSV/PDF.
-16. Make the chat history persist for the answerlyAI main chatbot.
+16. Make the chat history persist for the answerlyAI main chatbot if possible.
 17. Further optimise db calls if possible.
 18. Add some sort of interactive tutorial for first time users.
-20. Work on SEO optimisation.
 21. Fix the bug that entering long text in decision node causes it to spill out.
-22. A dark mode?
-23. Changes in website are automatically reflected in the chatbot.
-27. Somehow find a way to integrate the chatbot with the backend:
+27. Somehow find a way to integrate the chatbot with the backend (might be discarded):
     - Dynamic updates: AI keeps the bot's knowledge up-to-date when changes are made to the database.
     - I will add a pre-trained bot with a database ready so customers can try things on that.
+    - Some sort of solution for customers to hire me if they want to integrate the chatbot with their backend.
 28. Some sort of rolling carousel showing all brands I have worked with.
-29. Options for quick customization of greeting messages, colours, tone in the widget area.
 30. Use CDN for latest content.
+
 
 Things to do in prod:
 1. Delete useless columns from supabase rate_limit/user_tier tables.
@@ -42,7 +51,9 @@ Things to do in prod:
 6. npx playwright install MIGHT need to be run, check first if web crawler is working.
 7. Top up credits in deepinfra.
 8. Update the answerlyAI main chatbot with latest data.
-
+9. Remove the rupee dollar conversion thing in footer.
+10. Test if the domain restriction is working as expected.
+11. Demote all current hobbyist users to free tier.
 
 
 Cost of running:

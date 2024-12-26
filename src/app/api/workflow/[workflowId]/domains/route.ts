@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { TIER_LIMITS } from '@/lib/constants/tiers';
+import { TierType } from '@/lib/utils/subscription';
 
 interface RouteContext {
   params: Promise<{ workflowId: string }>;
@@ -76,26 +78,41 @@ export async function POST(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get the authorization header
+    // Get auth token from header
     const authHeader = request.headers.get('authorization');
-    if (!authHeader) throw new Error('Not authenticated');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const token = authHeader.split(' ')[1];
 
-    // Verify user has access to this workflow
-    const { data: workflow, error: workflowError } = await supabase
-      .from('workflows')
-      .select('id')
-      .eq('id', workflowId)
+    // Get user from token
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's tier
+    const { data: userTier } = await supabase
+      .from('user_tiers')
+      .select('pricing_tier')
+      .eq('user_id', user.id)
       .single();
 
-    if (workflowError) throw workflowError;
+    const tier = (userTier?.pricing_tier || 'free') as TierType;
+    const tierLimit = TIER_LIMITS[tier];
 
-    if (!workflow) {
-      return NextResponse.json(
-        { error: 'Workflow not found or access denied' },
-        { status: 404 }
-      );
+    // Count existing domains
+    const { count: domainCount } = await supabase
+      .from('allowed_domains')
+      .select('*', { count: 'exact' })
+      .eq('workflow_id', workflowId);
+
+    if (typeof domainCount === 'number' && domainCount >= tierLimit) {
+      return NextResponse.json({
+        error: `Your ${tier} plan is limited to ${tierLimit} domain${tierLimit === 1 ? '' : 's'}. Please upgrade to add more domains.`
+      }, { status: 403 });
     }
-    
+
     const { error: domainError } = await supabase
       .from('allowed_domains')
       .insert({
@@ -104,7 +121,7 @@ export async function POST(
       });
 
     if (domainError) {
-      if (domainError.code === '23505') { // Unique violation
+      if (domainError.code === '23505') {
         return NextResponse.json(
           { error: 'Domain already exists for this workflow' },
           { status: 409 }

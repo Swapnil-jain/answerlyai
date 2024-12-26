@@ -142,8 +142,7 @@ export async function POST(req: NextRequest) {
         const { error: updateError } = await supabase
           .from('user_tiers')
           .upsert({
-            ...tierUpdate,
-            next_billing_date: nextBillingDate,
+            ...tierUpdate
           })
 
         if (updateError) {

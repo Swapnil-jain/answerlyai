@@ -100,8 +100,10 @@ export function EmailPreferencesForm() {
 
   if (isInitializing) {
     return (
-      <div className="flex justify-center py-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
       </div>
     )
   }
@@ -179,18 +181,22 @@ export function EmailPreferencesForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        className="w-full bg-gray-900 text-white hover:bg-gray-800 relative h-10"
-        disabled={isLoading}
-      >
-        <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isLoading ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-        </div>
-        <span className={`transition-opacity ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
-          Save Preferences
-        </span>
-      </Button>
+      <div className="flex justify-center">
+        <Button
+          type="submit"
+          className="bg-gray-900 text-white hover:bg-gray-800 h-9 text-sm px-8"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+              Saving...
+            </>
+          ) : (
+            'Save Preferences'
+          )}
+        </Button>
+      </div>
     </form>
   )
 }
