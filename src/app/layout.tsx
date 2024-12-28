@@ -5,7 +5,7 @@ import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'AnswerlyAI',
-  description: 'No-code, inexpensive AI chatbot builder.',
+  description: 'No-code, inexpensive AI Agent builder.',
   icons: {
     icon: '/favicon.png',
   },

@@ -33,17 +33,6 @@ interface ChatSession {
   response_times: number[];
 }
 
-interface CachedWorkflow {
-  id: string;
-  nodes: Node[];
-  edges: Edge[];
-}
-
-interface PaginationOptions {
-  page: number;
-  limit: number;
-}
-
 export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const router = useRouter();
   const { supabase } = useSupabase();

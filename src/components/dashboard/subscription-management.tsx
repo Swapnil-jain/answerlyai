@@ -111,37 +111,37 @@ export function SubscriptionManagement() {
         return {
           name: 'Free Plan',
           description: 'Basic features for personal use',
-          limits: ['1 Chatbot', '10,000 words/day', '1 website']
+          limits: ['0 Agent', '0 words/day', '0 websites']
         }
       case 'hobbyist':
         return {
           name: 'Hobbyist Plan',
           description: 'Perfect for small solo projects',
-          limits: ['1 Chatbot', '150,000 words/day', '1 website', 'Basic Intelligence bot'],
-          monthlyPrice: 19.90,
-          yearlyPrice: 149.90
+          limits: ['1 Agent', '150,000 words/day', '1 website', 'Basic Intelligence bot'],
+          monthlyPrice: 29.90,
+          yearlyPrice: 239.90
         }
       case 'growth':
         return {
           name: 'Growth Plan',
           description: 'Advanced features for growing businesses',
-          limits: ['3 Chatbots', '400,000 words/day', '3 websites', 'Moderate intelligence bots'],
-          monthlyPrice: 39.90,
-          yearlyPrice: 299.90
+          limits: ['3 Agents', '400,000 words/day', '3 websites', 'Moderate intelligence bots'],
+          monthlyPrice: 59.90,
+          yearlyPrice: 479.90
         }
       case 'startup':
         return {
           name: 'Startup Plan',
           description: 'Premium features with best models',
-          limits: ['Unlimited Chatbots', '1,000,000 words/day', 'Unlimited websites', 'Most intelligent bots'],
-          monthlyPrice: 79.90,
-          yearlyPrice: 599.90
+          limits: ['Unlimited Agents', '1,000,000 words/day', 'Unlimited websites', 'Most intelligent bots'],
+          monthlyPrice: 99.90,
+          yearlyPrice: 839.90
         }
       case 'enterprise':
         return {
           name: 'Enterprise Plan',
           description: 'Custom features for large businesses',
-          limits: ['Unlimited Chatbots', 'Unlimited words/day', 'Unlimited websites', 'Custom Integration'],
+          limits: ['Unlimited Agents', 'Unlimited words/day', 'Unlimited websites', 'Custom Integration'],
         }
       default:
         return {
@@ -231,7 +231,7 @@ export function SubscriptionManagement() {
                     <li className="pr-4">Will IMMEDIATELY downgrade your account to Free tier</li>
                     <li className="pr-4">Will IMMEDIATELY remove access to all premium features</li>
                     <li className="pr-4">Will IMMEDIATELY reduce your daily word and request limits</li>
-                    <li className="pr-4">Will IMMEDIATELY disrupt your active chatbots</li>
+                    <li className="pr-4">Will IMMEDIATELY disrupt your active agents</li>
                     <li className="pr-4">Cannot be reversed without starting a new subscription</li>
                   </ul>
                 </DialogHeader>

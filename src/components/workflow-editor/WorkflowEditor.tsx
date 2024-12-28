@@ -1449,7 +1449,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    See Live Chatbot
+                    See Live Agent
                   </Button>
                     <Button
                       onClick={handleWidgetClick}

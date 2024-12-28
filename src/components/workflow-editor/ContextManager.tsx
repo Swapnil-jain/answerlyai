@@ -199,7 +199,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         {/* Header Section */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Chatbot Context Management</h2>
+            <h2 className="text-2xl font-bold">Agent Context Management</h2>
             <Button
               onClick={handleBack}
               className="flex items-center gap-2"
@@ -208,7 +208,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
             </Button>
           </div>
           <p className="text-gray-600">
-            Add any additional context or instructions that your chatbot should know about.
+            Add any additional context or instructions that your agent should know about.
           </p>
         </div>
 

@@ -338,8 +338,8 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
               </Button>
             </div>
             <p className="text-gray-600 mb-4">
-              Add FAQs to your chatbot either by uploading a CSV file or manually entering them below. 
-              These FAQs will be used to enhance your chatbot's responses with custom knowledge.
+              Add FAQs to your agent either by uploading a CSV file or manually entering them below. 
+              These FAQs will be used to enhance your agent's responses with custom knowledge.
             </p>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">

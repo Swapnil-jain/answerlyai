@@ -165,7 +165,7 @@ export default function DemoSection() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Customer Satisfaction</h3>
-                  <p className="text-gray-600">Experience how our chatbot handles customer queries efficiently, leading to higher satisfaction rates.</p>
+                  <p className="text-gray-600">Experience how our AI Agent handles customer queries efficiently, leading to higher satisfaction rates.</p>
                 </div>
               </div>
             </div>

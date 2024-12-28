@@ -236,7 +236,7 @@ function DashboardContent() {
 
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">Active Chatbots</h3>
+            <h3 className="text-sm font-medium text-gray-600">Active Agents</h3>
             <Bot className="h-5 w-5 text-blue-500 opacity-75" />
           </div>
           <div className="text-3xl font-bold text-gray-900">{stats.activeChatbots}</div>
@@ -269,7 +269,7 @@ function DashboardContent() {
             <BarChart2 className="h-5 w-5 text-blue-500 opacity-75" />
           </div>
           <div className="text-3xl font-bold text-gray-900">{stats.totalChats}</div>
-          <p className="text-sm text-gray-500 mt-1">across all chatbots</p>
+          <p className="text-sm text-gray-500 mt-1">across all agents</p>
         </div>
 
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">

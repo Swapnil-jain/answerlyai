@@ -45,8 +45,8 @@ export default function PricingSection() {
 
   const getPrice = (monthly: number) => {
     if (isAnnual) {
-      let yearlyPrice = monthly === 19.90 ? 149.90 : 
-                        monthly === 39.90 ? 299.90 : 599.90;
+      let yearlyPrice = monthly === 29.90 ? 239.90 : 
+                        monthly === 59.90 ? 479.90 : 839.90;
       let monthlyPrice = yearlyPrice / 12;
       return {
         original: monthly.toFixed(2),
@@ -63,9 +63,9 @@ export default function PricingSection() {
     }
   }
 
-  const hobbyistPrice = getPrice(19.90)
-  const growthPrice = getPrice(39.90)
-  const startupPrice = getPrice(79.90)
+  const hobbyistPrice = getPrice(29.90)
+  const growthPrice = getPrice(59.90)
+  const startupPrice = getPrice(99.90)
 
   // Product IDs for different tiers
   const productIds = {
@@ -162,7 +162,7 @@ export default function PricingSection() {
               <p className="text-sm mt-2 text-gray-600">
                 {currentInterval === 'year' 
                   ? "You're currently on annual billing - best value! 🌟"
-                  : "You're on monthly billing - select a plan above to switch to annual for 40% savings! 💫"
+                  : "You're on monthly billing - select a plan above to switch to annual for 33% savings! 💫"
                 }
               </p>
             </div>
@@ -179,7 +179,7 @@ export default function PricingSection() {
             </button>
             <span className={`text-sm font-medium ${isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>Annually</span>
             <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-              Save 40%
+              Save 33%
             </span>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function PricingSection() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${hobbyistPrice.yearly} yearly</span>
                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                      Save $90/y
+                      Save $120/y
                     </span>
                   </div>
                 )}
@@ -223,7 +223,7 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
-                <span>1 Chatbot</span>
+                <span>1 Agent</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
@@ -270,7 +270,7 @@ export default function PricingSection() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${growthPrice.yearly} yearly</span>
                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                    Save $180/y
+                    Save $240/y
                     </span>
                   </div>
                 )}
@@ -290,7 +290,7 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
-                <span>3 Chatbots</span>
+                <span>3 Agents</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
@@ -365,7 +365,7 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full text-blue-600 text-sm">✓</span>
-                <span>Unlimited Chatbots</span>
+                <span>Unlimited Agents</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full text-blue-600 text-sm">✓</span>

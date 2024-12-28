@@ -45,7 +45,7 @@ export default function PrivacyPolicy() {
             <p className="text-gray-600">
               We retain your personal information for as long as necessary to fulfill the
               purposes outlined in this Privacy Policy, unless a longer retention period is
-              required by law. Your chatbot data is not read by us or any third party.
+              required by law. Your AI Agent data is not read by us or any third party.
             </p>
           </section>
 

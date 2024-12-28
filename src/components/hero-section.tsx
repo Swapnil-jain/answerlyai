@@ -23,7 +23,7 @@ export default function HeroSection() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-center sm:text-left">
-              The Simplest Chatbot Maker{' '}
+              The Simplest AI Agent Maker{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
               On The Planet
               </span>

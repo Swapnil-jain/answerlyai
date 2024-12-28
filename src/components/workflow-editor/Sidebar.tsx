@@ -16,7 +16,7 @@ interface SidebarProps {
   onContextClick: () => void
 }
 
-export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow, onChatbotClick, onWidgetClick, onFAQClick, onContextClick }: SidebarProps) {
+export default function Sidebar({ className = '', workflowId, onNewWorkflow, isCreating, onSaveWorkflow, onFAQClick, onContextClick }: SidebarProps) {
   const router = useRouter()
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType)
@@ -88,7 +88,7 @@ export default function Sidebar({ className = '', workflowId, onNewWorkflow, isC
           title={!workflowId ? "Save your workflow first to set context" : ""}
         >
           <Settings className="h-4 w-4" />
-          {!workflowId ? "Save First to Set Context" : "Chatbot Context"}
+          {!workflowId ? "Save First to Set Context" : "Agent Context"}
         </Button>
         <WebsiteCrawler 
           workflowId={workflowId || ''}

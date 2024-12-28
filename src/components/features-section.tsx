@@ -54,7 +54,7 @@ export default function FeaturesSection() {
             </div>
             <h3 className="text-xl font-semibold mb-4">Real-Time Analytics</h3>
             <p className="text-gray-600">
-              Watch your chatbot perform in real-time. Track user interactions,
+              Watch your AI agent perform in real-time. Track user interactions,
               satisfaction rates, and identify areas for improvement instantly.
             </p>
           </div>
@@ -78,7 +78,7 @@ export default function FeaturesSection() {
             </div>
             <h3 className="text-xl font-semibold mb-4">One-Line Integration</h3>
             <p className="text-gray-600">
-              Add your chatbot to any website with a single line of code.
+              Add your AI agent to any website with a single line of code.
               Copy, paste, and you're ready to go. It's that simple.
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function FeaturesSection() {
             <h3 className="text-xl font-semibold mb-4">Instant Access</h3>
             <p className="text-gray-600">
               Sign up with Google and start building immediately. Create and deploy
-              your first chatbot in minutes.
+              your first AI agent in minutes.
             </p>
           </div>
         </div>

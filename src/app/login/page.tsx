@@ -95,7 +95,7 @@ export default function LoginPage() {
               Sign in to your account
             </h1>
             <p className="text-gray-600">
-              Create powerful chatbots in minutes, no coding required
+              Create powerful AI Agents in minutes, no coding required
             </p>
           </div>
 
