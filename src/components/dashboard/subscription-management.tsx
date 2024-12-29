@@ -20,6 +20,7 @@ export function SubscriptionManagement() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null)
+  const [cancellationDate, setCancellationDate] = useState<string | null>(null)
 
   useEffect(() => {
     const checkTier = async () => {
@@ -31,12 +32,16 @@ export function SubscriptionManagement() {
         setSubscriptionAmount(amount)
         
         // If there's an active subscription, fetch its details
-        if (subscription?.id && subscription.status === 'active') {
+        if (subscription?.id) {
           try {
             const response = await fetch(`/api/subscription/details?subscriptionId=${subscription.id}`)
             if (response.ok) {
               const details = await response.json()
               setSubscriptionDetails(details)
+              // Set cancellation date if subscription is pending cancellation
+              if (subscription.status === 'pending_cancellation') {
+                setCancellationDate(details.next_billing_date)
+              }
             }
           } catch (error) {
             console.error('Error fetching subscription details:', error)
@@ -175,11 +180,24 @@ export function SubscriptionManagement() {
               </p>
               {subscriptionDetails?.next_billing_date && currentTier !== 'free' && (
                 <p className="text-sm text-gray-600 mt-2">
-                  Next billing date: {new Date(subscriptionDetails.next_billing_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {cancellationDate ? (
+                    <>
+                      <span className="text-amber-600">Subscription will end on: </span>
+                      {new Date(cancellationDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      Next billing date: {new Date(subscriptionDetails.next_billing_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </>
+                  )}
                 </p>
               )}
             </div>
@@ -209,7 +227,7 @@ export function SubscriptionManagement() {
               </Button>
             )}
           </div>
-          {currentTier && currentTier !== 'free' && currentTier !== 'enterprise' && (
+          {currentTier && currentTier !== 'free' && currentTier !== 'enterprise' && !cancellationDate && (
             <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
               <DialogTrigger asChild>
                 <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
@@ -224,15 +242,14 @@ export function SubscriptionManagement() {
                   </DialogTitle>
                 
                   <div className="text-[20px] leading-normal">
-                    Are you absolutely sure you want to cancel your subscription? This action:
+                    Are you sure you want to cancel your subscription? This action:
                   </div>
 
                   <ul className="list-disc pl-8 space-y-4 text-[20px] leading-normal break-words">
-                    <li className="pr-4">Will IMMEDIATELY downgrade your account to Free tier</li>
-                    <li className="pr-4">Will IMMEDIATELY remove access to all premium features</li>
-                    <li className="pr-4">Will IMMEDIATELY reduce your daily word and request limits</li>
-                    <li className="pr-4">Will IMMEDIATELY disrupt your active agents</li>
-                    <li className="pr-4">Cannot be reversed without starting a new subscription</li>
+                    <li className="pr-4">Will DISRUPT all active agents at the end of your billing period.</li>
+                    <li className="pr-4">Will automatically DOWNGRADE to Free tier at end billing period.</li>
+                    <li className="pr-4">Will REMOVE access to premium features after the downgrade.</li>
+                    <li className="pr-4">Can be reversed by reactivating your subscription before it expires.</li>
                   </ul>
                 </DialogHeader>
 
@@ -279,6 +296,13 @@ export function SubscriptionManagement() {
               </DialogContent>
             </Dialog>
           )}
+          
+          {cancellationDate && (
+            <div className="text-amber-600">
+              Subscription cancellation scheduled
+            </div>
+          )}
+
           {currentTier === 'enterprise' && (
             <p className="text-sm text-gray-500 mt-2">
               Enterprise subscriptions cannot be cancelled through the dashboard. Please contact support for assistance.

@@ -81,7 +81,6 @@ export async function POST(req: NextRequest) {
         const subscriptionId = payload.data.subscription_id
         const productId = payload.data.product_id
         const customerId = payload.data.customer.customer_id
-        const nextBillingDate = payload.data.next_billing_date
 
         if (!subscriptionId || !productId || !customerId) {
           console.log('Missing required data:', { subscriptionId, productId, customerId })
@@ -111,7 +110,7 @@ export async function POST(req: NextRequest) {
         if (existingTier?.dodo_subscription_id && 
             existingTier.dodo_subscription_id !== subscriptionId &&
             (existingTier.subscription_status === 'active' || existingTier.subscription_status === 'pending_payment') &&
-          (existingTier.pricing_tier !== 'free')) {
+            (existingTier.pricing_tier !== 'free')) {
           console.log('Found existing active subscription:', existingTier.dodo_subscription_id)
           
           try {
@@ -124,7 +123,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Prepare update with preserved workflow count
+        // Prepare update with preserved workflow count and clear cancellation_date
         const now = new Date().toISOString()
         const tierUpdate = {
           user_id: existingTier.user_id,
@@ -134,6 +133,7 @@ export async function POST(req: NextRequest) {
           subscription_amount: productDetails.amount,
           dodo_subscription_id: subscriptionId,
           workflow_count: existingTier?.workflow_count || 0,
+          cancellation_date: null,  // Clear any existing cancellation date
           updated_at: now,
           created_at: existingTier?.created_at || now
         }
@@ -175,16 +175,17 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      case 'subscription.cancelled':
-      case 'subscription.expired': {
-        console.log('Processing subscription cancellation/expiration event')
+      case 'subscription.cancelled': {
+        console.log('Processing subscription cancellation event')
         const subscriptionId = payload.data.subscription_id
+        const nextBillingDate = payload.data.next_billing_date
+
         if (!subscriptionId) {
           console.log('No subscription ID in subscription event')
           break
         }
 
-        // Check if subscription is already cancelled
+        // Get the current subscription details
         const { data: existingTier, error: fetchError } = await supabase
           .from('user_tiers')
           .select('subscription_status')
@@ -196,13 +197,38 @@ export async function POST(req: NextRequest) {
           break
         }
 
-        // Skip update if already cancelled (handled by cancel endpoint)
+        // If already cancelled (status is 'cancelled'), skip processing
         if (existingTier?.subscription_status === 'cancelled') {
-          console.log('Subscription already cancelled, skipping update')
+          console.log('Subscription already fully cancelled, skipping update')
           break
         }
 
-        // Update user tier to free only if not already cancelled
+        // Update the subscription status to pending_cancellation and store the cancellation date
+        const { error: updateError } = await supabase
+          .from('user_tiers')
+          .update({
+            subscription_status: 'pending_cancellation',
+            cancellation_date: nextBillingDate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('dodo_subscription_id', subscriptionId)
+
+        if (updateError) {
+          console.error('Error updating user tier:', updateError)
+        }
+        break
+      }
+
+      case 'subscription.expired': {
+        console.log('Processing subscription expiration event')
+        const subscriptionId = payload.data.subscription_id
+        
+        if (!subscriptionId) {
+          console.log('No subscription ID in subscription event')
+          break
+        }
+
+        // When the subscription actually expires, update to free tier
         const { error: updateError } = await supabase
           .from('user_tiers')
           .update({
@@ -210,6 +236,7 @@ export async function POST(req: NextRequest) {
             subscription_status: 'cancelled',
             subscription_interval: null,
             subscription_amount: null,
+            cancellation_date: null,
             updated_at: new Date().toISOString()
           })
           .eq('dodo_subscription_id', subscriptionId)

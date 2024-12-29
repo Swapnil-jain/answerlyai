@@ -24,8 +24,9 @@ export default function AuthCallbackPage() {
 
       // Then check subscription status
       const subscriptionData = await checkUserSubscription(supabase, session.user.id)
-      const hasSubscription = subscriptionData.subscription?.status === 'active' || 
-                            subscriptionData.tier !== 'free'
+      const hasSubscription = (subscriptionData.subscription?.status === 'active' || 
+        subscriptionData.subscription?.status === 'pending_cancellation') && 
+        subscriptionData.tier !== 'free'
 
       // Redirect based on subscription status
       if (hasSubscription) {

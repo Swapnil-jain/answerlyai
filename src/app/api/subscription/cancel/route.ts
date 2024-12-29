@@ -46,12 +46,11 @@ export async function POST(req: NextRequest) {
       // Cancel subscription with Dodo
       await cancelSubscription(userTier.dodo_subscription_id, 'user_requested')
 
-      // Update user tier status
+      // Update user tier status - now we only mark it as pending cancellation
       const { error: updateError } = await serverSupabase
         .from('user_tiers')
         .update({ 
-          pricing_tier: 'free',
-          subscription_status: 'cancelled',
+          subscription_status: 'pending_cancellation',
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id)
@@ -62,7 +61,7 @@ export async function POST(req: NextRequest) {
       }
 
       const response = NextResponse.json({ 
-        message: 'Subscription cancelled successfully',
+        message: 'Subscription cancelled successfully. Your current plan will remain active until the end of the billing period.',
         redirect: '/dashboard'
       }, { status: 200 })
       

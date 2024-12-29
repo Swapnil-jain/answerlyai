@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { Play, MessageSquare, Bot, Users, ArrowRight, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react'
+import { Play, ArrowRight, Pause, Volume2, VolumeX, Maximize2, Code2, BarChart3, Sparkles } from 'lucide-react'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 
@@ -44,7 +44,7 @@ export default function DemoSection() {
 
   return (
     <section id="demo" className="w-full py-20 bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-      <div className="container mx-auto px-6 2xl:max-w-[1600px]">
+      <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
             <Play className="w-4 h-4 text-blue-600" />
@@ -58,10 +58,10 @@ export default function DemoSection() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-[1.2fr,0.8fr] gap-12 items-center">
+        <div className="grid lg:grid-cols-[1.5fr,1fr] gap-12 items-center max-w-[1400px] mx-auto">
           {/* Demo Video/Preview */}
-          <div className="relative">
-            <div className="relative rounded-3xl shadow-xl overflow-hidden w-[90vw] h-[50.625vw] sm:w-[75vw] sm:h-[42.1875vw] md:w-[65vw] md:h-[36.5625vw] lg:w-[45vw] lg:h-[25.3125vw] xl:w-[45vw] xl:h-[25.3125vw] 2xl:w-[50vw] 2xl:h-[28.125vw] mx-auto">
+          <div className="relative w-full max-w-4xl mx-auto lg:mx-0">
+            <div className="relative rounded-3xl shadow-xl overflow-hidden aspect-video w-full">
               <video 
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -131,41 +131,44 @@ export default function DemoSection() {
           </div>
 
           {/* Features Highlight */}
-          <div className="space-y-8 max-w-lg mx-auto lg:mx-0">
+          <div className="w-full space-y-6">
             <div className="grid gap-6">
-              {/* Feature 1 */}
+              {/* No Code Required */}
               <div className="flex gap-4 items-start bg-white p-6 rounded-xl shadow-sm">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <Bot className="w-6 h-6 text-blue-600" />
+                <div className="bg-blue-50 p-3 rounded-lg shrink-0">
+                  <Code2 className="w-6 h-6 text-blue-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Smart Conversations</h3>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-lg">Zero Code Required</h3>
                   <p className="text-gray-600">
-                    Your customers won't believe they're talking to an AI. Experience human-like 
-                    conversations that build trust and loyalty.
+                    No technical knowledge needed. We handle all the complexities behind the scenes. Deploy in minutes.
                   </p>
                 </div>
               </div>
 
-              {/* Feature 2 */}
+              {/* Real-time Analytics */}
               <div className="flex gap-4 items-start bg-white p-6 rounded-xl shadow-sm">
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <MessageSquare className="w-6 h-6 text-purple-600" />
+                <div className="bg-purple-50 p-3 rounded-lg shrink-0">
+                  <BarChart3 className="w-6 h-6 text-purple-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Multiple Chat Styles</h3>
-                  <p className="text-gray-600">See different conversation flows in action - from simple FAQs to complex multi-step interactions.</p>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-lg">Real-Time Analytics</h3>
+                  <p className="text-gray-600">
+                    Track interactions and satisfaction rates instantly. Identify improvements in real-time.
+                  </p>
                 </div>
               </div>
 
-              {/* Feature 3 */}
+              {/* Simple UI */}
               <div className="flex gap-4 items-start bg-white p-6 rounded-xl shadow-sm">
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <Users className="w-6 h-6 text-green-600" />
+                <div className="bg-green-50 p-3 rounded-lg shrink-0">
+                  <Sparkles className="w-6 h-6 text-green-600" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Customer Satisfaction</h3>
-                  <p className="text-gray-600">Experience how our AI Agent handles customer queries efficiently, leading to higher satisfaction rates.</p>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-lg">Intuitive Interface</h3>
+                  <p className="text-gray-600">
+                    Clean and simple design. Everything you need, right where you expect it.
+                  </p>
                 </div>
               </div>
             </div>

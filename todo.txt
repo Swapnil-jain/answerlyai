@@ -1,12 +1,9 @@
 Order of doing things:
-1. Fix bugs if any.
+1. New DEMO and intro showing the entire functionality.
 3. Work on SEO optimisation.
   - Add subdomain for blog posts.
   - Add Backlinks
   - Fix all bugs reported by google console
-4. Rebrand to call yourself 'AI-Agent'.
-5. Update dodopayments images and description to match rebrand.
-6. New DEMO and intro showing the entire functionality.
 7. Take chatgpt's input for rebranding and try to add it to the website.
 
 In later version:
@@ -21,7 +18,6 @@ In later version:
   - Might need some sort of carryforward mechanism.
 11. Enforce that the respective tiers have different analytics and customisations.
 12. Prevent navigation from dashboard without saving email changes.
-
 
 Lot later version:
 22. A dark mode.
@@ -104,9 +100,28 @@ How to market the chatbot:
   - Fix all bugs reported by google console
   - Make the whole website SEO optimised.
   - Backlinks
+  - Read https://ahrefs.com/blog/seo-basics/
 6. Send cold DMs on LinkedIn/X/Reddit/bluesky/Facebook.
 7. Find the place where ecommerce guys/blog owners etc. hang around in facebook and send cold DMs to them.
 8. Send cold DMs to people in that 25,000 excel sheet which u have.
 9. Launch the product on product hunt, microlaun.ch and other similar platforms.
 10. Go to competition's websites and look at companies there.
 11. Ask DODO for shoutout.
+
+Some keywords I want to rank for:
+how to make a chatbot
+ask ai - chat with chatbot
+how to create a chatbot
+chatbot marketing
+chatbot marketing agency
+best ai chatbots for businesses 2024
+best ai chatbots for businesses 2025
+best chatbot for shopify
+ai chatbot for shopify
+customer support automation
+ai agents examples
+best ai agents
+chatbase
+chatbot design
+how can sentiment analysis be used to improve customer experience?
+how to improve ecommerce customer experience

@@ -7,7 +7,7 @@ export type UserTier = {
   created_at: string;
   updated_at: string;
   dodo_subscription_id: string | null;
-  subscription_status: 'active' | 'cancelled' | null;
+  subscription_status: 'active' | 'pending_payment' | 'pending_cancellation' | 'cancelled' | null;
   subscription_interval: 'month' | 'year' | null;
   subscription_amount: number | null;
   next_billing_date: string | null;

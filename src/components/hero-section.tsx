@@ -4,8 +4,8 @@ import Link from 'next/link'
 
 export default function HeroSection() {
   return (
-    <section className="w-full min-h-[80vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 sm:px-6 py-12 max-[391px]:px-1">
+    <section className="w-full min-h-[70vh] flex items-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <div className="container mx-auto px-4 sm:px-6 py-8 max-[391px]:px-1">
         <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center">
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
@@ -22,39 +22,18 @@ export default function HeroSection() {
               </div>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-center sm:text-left">
-              The Simplest AI Agent Maker{' '}
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight text-center sm:text-left">
+              The Simplest AI Agent Maker
+              <br className="sm:hidden" />{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-              On The Planet
+                On The Planet
               </span>
             </h1>
             
             <div className="space-y-2 max-[391px]:px-2">
               <p className="text-lg sm:text-xl text-gray-500 max-w-xl text-center sm:text-left">
-                95% of users never touch most features in typical tools.
+                Create a no-code AI agent to automate customer support, answer questions, engage users, schedule meetings and more.
               </p>
-              <p className="text-lg sm:text-xl text-gray-600 font-medium max-w-xl text-center sm:text-left">
-                We deliver simple, powerful & intuitive features you'll love.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 w-fit mx-auto sm:mx-0 max-[391px]:px-3">
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">Drag & Drop Builder</span>
-              </div>
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">One-Click Website Import</span>
-              </div>
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">No More Cluttered UIs</span>
-              </div>
-              <div className="w-fit inline-flex items-center justify-center sm:justify-start gap-1.5 bg-gray-50/80 px-2.5 py-1 rounded-md">
-                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full flex-shrink-0"></span>
-                <span className="text-md text-gray-600">No More Useless Features</span>
-              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 items-center max-[391px]:px-4">
@@ -80,21 +59,6 @@ export default function HeroSection() {
                 </span>
                 So simple you will fall in love.
               </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 sm:gap-6 pt-8 border-t max-[391px]:px-5">
-              <div>
-                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">24/7</h4>
-                <p className="text-xs sm:text-sm text-gray-600">Always Available</p>
-              </div>
-              <div>
-                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">90%</h4>
-                <p className="text-xs sm:text-sm text-gray-600">Query Resolution</p>
-              </div>
-              <div>
-                <h4 className="text-xl sm:text-2xl font-bold text-gray-900">Upto 98%</h4>
-                <p className="text-xs sm:text-sm text-gray-600">Cost Reduction</p>
-              </div>
             </div>
           </div>
 

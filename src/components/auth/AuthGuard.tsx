@@ -29,7 +29,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       console.log('Subscription check result:', subscriptionData)
       
       // Check if user has an active subscription
-      const hasActiveSubscription = subscriptionData.subscription?.status === 'active' && 
+      const hasActiveSubscription = (subscriptionData.subscription?.status === 'active' || 
+                                  subscriptionData.subscription?.status === 'pending_cancellation') && 
                                   subscriptionData.tier !== 'free'
       
       if (!hasActiveSubscription) {

@@ -8,14 +8,16 @@ import ContactSection from '@/components/contact-section'
 import Footer from '@/components/footer'
 import ChatWidget from '@/components/ChatWidget'
 import ScenariosSection from '@/components/scenarios-section'
+import HowItWorksSection from '@/components/how-it-works-section'
 
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between pt-16">
       <Header />
       <div className="w-full">
-        <HeroSection />
+        <HeroSection />  
         <WorkflowDemoSection />
+        <HowItWorksSection />
         <FeaturesSection />
         <DemoSection />
         <ScenariosSection />
