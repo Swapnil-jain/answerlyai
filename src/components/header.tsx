@@ -115,7 +115,13 @@ export default function Header({ className = "" }: HeaderProps) {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="AnswerlyAI Logo" width={40} height={40} />
+            <Image 
+              src="/logo.png" 
+              alt="AnswerlyAI Logo" 
+              width={40} 
+              height={40} 
+              style={{ width: 'auto', height: 'auto' }}
+            />
             <span className="font-bold text-xl text-blue-600 hover:text-blue-700">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
@@ -160,6 +166,9 @@ export default function Header({ className = "" }: HeaderProps) {
             >
               Contact
             </button>
+            <Link href="/blog" className="px-4 py-2 flex justify-center items-center">
+              Blog
+            </Link>
           </nav>
 
           {/* Desktop auth buttons */}
@@ -241,6 +250,9 @@ export default function Header({ className = "" }: HeaderProps) {
               >
                 Contact
               </button>
+              <Link href="/blog" className="px-4 py-2">
+                Blog
+              </Link>
               {session ? (
                 <>
                   <Link href="/mobile-notice" className="sm:hidden">

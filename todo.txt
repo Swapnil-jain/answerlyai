@@ -1,13 +1,16 @@
 Order of doing things:
 1. Fix bugs if any.
-2. Add welcome emails for new users.
 3. Work on SEO optimisation.
   - Add subdomain for blog posts.
   - Add Backlinks
   - Fix all bugs reported by google console
+4. Rebrand to call yourself 'AI-Agent'.
+5. Update dodopayments images and description to match rebrand.
+6. New DEMO and intro showing the entire functionality.
+7. Take chatgpt's input for rebranding and try to add it to the website.
 
 In later version:
-1. A new demo and intro video.
+1. Add welcome emails for new users.
 2. Referral system for companies.
 3. Integration with websites, messaging apps (WhatsApp, Facebook Messenger, Telegram).
 4. Add paypal as alternative payment method.
