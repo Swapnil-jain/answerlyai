@@ -1,5 +1,3 @@
-import { TierType } from '../utils/subscription'
-
 export const TIER_LIMITS = {
   free: 0,
   hobbyist: 1,
@@ -7,8 +5,6 @@ export const TIER_LIMITS = {
   startup: Infinity,
   enterprise: Infinity
 } as const;
-
-export type PricingTier = TierType;
 
 export const PRODUCT_DETAILS = {
   [process.env.NEXT_PUBLIC_DODO_HOBBYIST_MONTHLY!]: { tier: 'hobbyist', interval: 'month', amount: 29.90 },

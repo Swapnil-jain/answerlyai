@@ -1,12 +1,12 @@
-export interface BaseEmailData {
+interface BaseEmailData {
   subject: string;
   content: string;
 }
 
-export interface FeedbackEmailData extends BaseEmailData {}
-export interface SupportEmailData extends BaseEmailData {}
+interface FeedbackEmailData extends BaseEmailData {}
+interface SupportEmailData extends BaseEmailData {}
 
-export interface MeetingEmailData extends BaseEmailData {
+interface MeetingEmailData extends BaseEmailData {
   startTime: Date;
   endTime: Date;
   description: string;

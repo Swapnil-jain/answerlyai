@@ -5,8 +5,6 @@ import { Button } from "./button"
 
 const AlertDialog = AlertDialogPrimitive.Root
 
-const AlertDialogTrigger = AlertDialogPrimitive.Trigger
-
 const AlertDialogPortal = AlertDialogPrimitive.Portal
 
 const AlertDialogOverlay = React.forwardRef<
@@ -116,30 +114,12 @@ const AlertDialogAction = React.forwardRef<
 ))
 AlertDialogAction.displayName = "AlertDialogAction"
 
-const AlertDialogCancel = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<typeof Button>
->(({ className, ...props }, ref) => (
-  <Button
-    ref={ref}
-    variant="outline"
-    className={cn(
-      "mt-2 sm:mt-0",
-      className
-    )}
-    {...props}
-  />
-))
-AlertDialogCancel.displayName = "AlertDialogCancel"
-
 export {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-  AlertDialogCancel,
 } 

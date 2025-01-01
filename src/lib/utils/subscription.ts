@@ -1,36 +1,5 @@
 export type TierType = 'free' | 'hobbyist' | 'growth' | 'startup' | 'enterprise'
 
-export type UserTier = {
-  user_id: string;
-  pricing_tier: TierType;
-  workflow_count: number;
-  created_at: string;
-  updated_at: string;
-  dodo_subscription_id: string | null;
-  subscription_status: 'active' | 'pending_payment' | 'pending_cancellation' | 'cancelled' | null;
-  subscription_interval: 'month' | 'year' | null;
-  subscription_amount: number | null;
-  next_billing_date: string | null;
-}
-
-export async function upgradeTier(supabase: any, userId: string, newTier: TierType) {
-  try {
-    const { error } = await supabase
-      .from('user_tiers')
-      .update({ 
-        pricing_tier: newTier,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-
-    if (error) throw error
-    return { success: true }
-  } catch (error) {
-    console.error('Error upgrading tier:', error)
-    return { success: false, error }
-  }
-}
-
 export async function ensureUserTier(supabase: any, userId: string) {
   try {
     // Check if user already has a tier entry
