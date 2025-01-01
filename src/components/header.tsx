@@ -13,7 +13,6 @@ import {
   AlertDialogDescription, 
   AlertDialogFooter 
 } from "@/components/ui/alert-dialog";
-import { useSmoothScroll } from "@/hooks/use-smooth-scroll";
 import { useSupabase } from "@/lib/supabase/provider";
 import { LogOut, LogIn, LayoutDashboard, Menu, X, ArrowRight } from "lucide-react";
 
@@ -24,7 +23,6 @@ interface HeaderProps {
 export default function Header({ className = "" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { scrollToSection } = useSmoothScroll();
   const { supabase, session } = useSupabase();
   const router = useRouter();
   const pathname = usePathname();
@@ -90,7 +88,6 @@ export default function Header({ className = "" }: HeaderProps) {
 
   const mobileLink = "/mobile-notice";
   const dashboardLink = session ? "/dashboard" : "/login";
-  const loginLink = window.innerWidth < 640 ? mobileLink : "/login";
 
   const handleNavigation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -118,7 +115,13 @@ export default function Header({ className = "" }: HeaderProps) {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="AnswerlyAI Logo" width={40} height={40} />
+            <Image 
+              src="/logo.png" 
+              alt="AnswerlyAI Logo" 
+              width={40} 
+              height={40} 
+              style={{ width: 'auto', height: 'auto' }}
+            />
             <span className="font-bold text-xl text-blue-600 hover:text-blue-700">AnswerlyAI</span>
             <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-xs font-medium text-blue-600">Only.Relevant.Features.</span>
@@ -140,14 +143,8 @@ export default function Header({ className = "" }: HeaderProps) {
           {/* Desktop navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             <button
-                onClick={() => handleNavClick('demo')}
+                onClick={() => handleNavClick('features')}
                 className="text-gray-600 hover:text-gray-900"
-              >
-              Watch
-            </button>
-            <button
-              onClick={() => handleNavClick('features')}
-              className="text-gray-600 hover:text-gray-900"
             >
               Features
             </button>
@@ -163,6 +160,9 @@ export default function Header({ className = "" }: HeaderProps) {
             >
               Contact
             </button>
+            <Link href="/blog" className="px-4 py-2 flex justify-center items-center">
+              Blog
+            </Link>
           </nav>
 
           {/* Desktop auth buttons */}
@@ -206,7 +206,7 @@ export default function Header({ className = "" }: HeaderProps) {
                   onClick={handleNavigation} 
                   className="hidden sm:block"
                 >
-                  <Button className="gap-2">
+                  <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                     Get Started
                     {/* <ArrowRight className="w-4 h-4" /> */}
                   </Button>
@@ -220,12 +220,6 @@ export default function Header({ className = "" }: HeaderProps) {
         {isMenuOpen && (
           <div className="lg:hidden fixed inset-x-0 top-[73px] bg-white border-t shadow-lg">
             <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-              <button
-                onClick={() => handleNavClick('demo')}
-                className="text-gray-600 hover:text-gray-900 py-2"
-              >
-                Watch
-              </button>
               <button
                 onClick={() => handleNavClick('features')}
                 className="text-gray-600 hover:text-gray-900 py-2"
@@ -244,6 +238,9 @@ export default function Header({ className = "" }: HeaderProps) {
               >
                 Contact
               </button>
+              <Link href="/blog" className="text-gray-600 hover:text-gray-900 py-2 text-center">
+                Blog
+              </Link>
               {session ? (
                 <>
                   <Link href="/mobile-notice" className="sm:hidden">
@@ -270,7 +267,7 @@ export default function Header({ className = "" }: HeaderProps) {
                     </Button>
                   </Link>
                   <Link href="#" onClick={handleNavigation} className="sm:hidden w-full">
-                    <Button className="w-full gap-2 flex items-center justify-center">
+                    <Button className="w-full gap-2 bg-blue-600 text-white flex items-center justify-center">
                       Get Started
                       <ArrowRight className="w-4 h-4" />
                     </Button>

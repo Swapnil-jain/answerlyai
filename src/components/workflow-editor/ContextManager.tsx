@@ -16,9 +16,8 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { RateLimiter } from '@/lib/utils/rateLimiter'
-import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
+import { WarningMessage } from '../ui/warning-message'
 
 interface ContextManagerProps {
   workflowId: string
@@ -97,23 +96,6 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       if (!user) throw new Error('Not authenticated')
 
       const table = isAdmin(user.id) ? 'sample_workflows' : 'workflows'
-      // Only check rate limits for non-admin users
-      if (!isAdmin(user.id)) {
-        const rateLimitCheck = await RateLimiter.checkRateLimit(
-          user.id,
-          'training',
-          estimateTokens.text(context)
-        )
-
-        if (!rateLimitCheck.allowed) {
-          showAlert(
-            'Rate Limit Exceeded',
-            rateLimitCheck.reason || 'Rate limit exceeded',
-            'error'
-          )
-          return
-        }
-      }
 
       const { error } = await supabase
         .from(table)
@@ -138,7 +120,6 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
       }
 
       // Record token usage after successful save
-      await RateLimiter.recordTokenUsage(user.id, 'training', estimateTokens.text(context))
     } catch (error) {
       
       // Invalidate cache on error to ensure consistency
@@ -214,11 +195,11 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
   return (
     <div className="flex-1 max-w-6xl mx-auto p-8 pt-20">
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Header Section */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Chatbot Context Management</h2>
+            <h2 className="text-2xl font-bold">Agent Context Management</h2>
             <Button
               onClick={handleBack}
               className="flex items-center gap-2"
@@ -226,10 +207,32 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
               « Back to Workflow Editor
             </Button>
           </div>
-          <p className="text-gray-600 mb-4">
-            Add any additional context or instructions that your chatbot should know about.
+          <p className="text-gray-600">
+            Add any additional context or instructions that your agent should know about.
           </p>
         </div>
+
+        {/* Warning Message */}
+        <WarningMessage title="Optimize Context for Better Performance">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">
+              Optimize your context to minimise your daily word limit usage:
+            </p>
+            <div className="flex gap-6 text-sm">
+              <ul className="space-y-1 list-none">
+                <li>• Keep content focused and concise</li>
+                <li>• Remove redundant information</li>
+              </ul>
+              <ul className="space-y-1 list-none">
+                <li>• Include only essential policies</li>
+                <li>• Trim crawled content carefully</li>
+              </ul>
+            </div>
+            <p className="text-xs text-yellow-600 pt-1">
+              💡 Pro tip: Organize content into sections (shipping, returns, etc.) for better efficiency
+            </p>
+          </div>
+        </WarningMessage>
 
         {/* Context Editor Section */}
         <div className="bg-white rounded-lg shadow p-6">

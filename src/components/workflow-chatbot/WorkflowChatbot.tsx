@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Node, Edge } from "reactflow";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase/provider";
@@ -10,6 +9,7 @@ import { isAdmin } from '@/lib/utils/adminCheck'
 import { workflowCache } from "@/lib/cache/workflowCache";
 import ReactMarkdown from 'react-markdown';
 import Image from "next/image";
+import { WorkflowNode, WorkflowEdge } from "@/lib/utils/workflowManager";
 
 interface ChatMessage {
   type: "user" | "bot";
@@ -33,25 +33,14 @@ interface ChatSession {
   response_times: number[];
 }
 
-interface CachedWorkflow {
-  id: string;
-  nodes: Node[];
-  edges: Edge[];
-}
-
-interface PaginationOptions {
-  page: number;
-  limit: number;
-}
-
 export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const router = useRouter();
   const { supabase } = useSupabase();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentInput, setCurrentInput] = useState("");
   const [workflow, setWorkflow] = useState<{
-    nodes: Node[];
-    edges: Edge[];
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -66,6 +55,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const [faqPage, setFaqPage] = useState(1)
   const [hasMoreFaqs, setHasMoreFaqs] = useState(true)
   const FAQ_PAGE_SIZE = 20
+  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -258,6 +248,8 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
   const handleUserInput = async () => {
     if (!currentInput.trim()) return;
 
+    const userMessage = currentInput.trim();
+
     lastMessageTime.current = new Date();
     setIsLoading(true);
 
@@ -265,12 +257,10 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     setMessages((prev) => [
       ...prev,
       {
-        type: "user",
-        content: currentInput.trim(),
-      },
-    ]);
+      type: "user",
+      content: userMessage,
+    }]);
 
-    const userMessage = currentInput.trim();
     setCurrentInput("");
 
     try {
@@ -286,7 +276,8 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         body: JSON.stringify({
           message: userMessage,
           workflowId: workflowId,
-          history: messages.map(msg => ({
+          currentNodeId,
+          history: messages.slice(-5).map(msg => ({
             role: msg.type === "user" ? "user" : "assistant",
             content: msg.content,
           })),
@@ -322,6 +313,12 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         // Update stats after confirmed success
         await updateChatStats(responseTime / 1000, true);
       } else {
+        if (data.message?.includes('word limit')) {
+          showAlert(
+            'Word Limit Exceeded',
+            'You have exceeded your daily word limit (1,000,000 words). Please try again tomorrow.'
+          );
+        }
         throw new Error(data.message);
       }
     } catch (error) {

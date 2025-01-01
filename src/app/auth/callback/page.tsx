@@ -4,17 +4,35 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabase } from '@/lib/supabase/provider'
 import { Loader2 } from 'lucide-react'
+import { checkUserSubscription, ensureUserTier } from '@/lib/utils/subscription'
 
-//loading page.
 export default function AuthCallbackPage() {
   const { supabase } = useSupabase()
   const router = useRouter()
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession()
-      if (!error) {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (error || !session) {
+        router.push('/login')
+        return
+      }
+
+      // First ensure user has a tier entry (will be 'free' for new users).
+      await ensureUserTier(supabase, session.user.id)
+
+      // Then check subscription status
+      const subscriptionData = await checkUserSubscription(supabase, session.user.id)
+      const hasSubscription = (subscriptionData.subscription?.status === 'active' || 
+        subscriptionData.subscription?.status === 'pending_cancellation') && 
+        subscriptionData.tier !== 'free'
+
+      // Redirect based on subscription status
+      if (hasSubscription) {
         router.push('/builder')
+      } else {
+        router.push('/pricing')
       }
     }
 

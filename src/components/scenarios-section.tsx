@@ -2,13 +2,17 @@ import { Clock, DollarSign } from 'lucide-react'
 
 export default function ScenariosSection() {
   return (
-    <section className="w-full bg-gray-50">
+    <section className="w-full bg-white mt-10">
       <div className="container mx-auto px-6 py-16">
-        <h2 className="text-4xl font-bold text-center mb-3">Transform Your Customer Support Today</h2>
-        <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
-          Discover how businesses like yours are revolutionizing their customer support, cutting costs by up to 98%, 
-          and delivering exceptional service with AnswerlyAI's intelligent automation
-        </p>
+        <div>
+          <h2 className="text-4xl font-bold text-center mb-6">
+            Be the Company That Never Sleeps
+          </h2>
+          <p className="text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+            Tired of the old ways? Show your customers you're different. 
+            Join the AI revolution and make your competition wonder how you do it while cutting costs by upto 98%.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* E-commerce Support Scenario */}
@@ -42,7 +46,8 @@ export default function ScenariosSection() {
                 </div>
                 <div className="mt-6 p-4 bg-green-50 rounded-lg">
                   <p className="text-green-600 font-medium">
-                    Impact: 98% cost reduction, 120x faster responses, 35% increase in customer satisfaction
+                    Impact: Transform from just another business to the innovative company 
+                    everyone talks about. That's the AnswerlyAI difference.
                   </p>
                 </div>
               </div>

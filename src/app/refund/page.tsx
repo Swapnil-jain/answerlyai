@@ -8,7 +8,7 @@ export default function RefundPolicy() {
             <p className="text-gray-600 mb-6">
               At AnswerlyAI, we believe in transparency and fairness in our billing practices. 
               We maintain a no-refund policy on all purchases to ensure consistent service quality 
-              and resource allocation for all our customers.
+              and resource allocation for all our customers. 
             </p>
           </section>
 
@@ -19,7 +19,6 @@ export default function RefundPolicy() {
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2">
               <li>Cancel your subscription at any time</li>
-              <li>Continue using the service until the end of your current billing period</li>
               <li>Upgrade or downgrade your plan as your needs change</li>
             </ul>
           </section>
@@ -29,7 +28,8 @@ export default function RefundPolicy() {
             <p className="text-gray-600">
               While we don't provide refunds for service cancellations, we will address any billing 
               errors or duplicate charges that may occur. Please contact our support team if you 
-              notice any billing discrepancies.
+              notice any billing discrepancies. Please note that if a subscription is cancelled in the middle of a cycle,
+              you will retain access to your subscription until the end of the current billing cycle.
             </p>
           </section>
 
@@ -38,7 +38,7 @@ export default function RefundPolicy() {
             <p className="text-gray-600">
               We are committed to providing high-quality service and ensuring your success with our platform. 
               Our support team is available to help you make the most of your subscription and address 
-              any concerns you may have.
+              any concerns you may have. 
             </p>
           </section>
 

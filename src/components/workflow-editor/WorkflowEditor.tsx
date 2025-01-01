@@ -42,8 +42,6 @@ import { Button } from '@/components/ui/button'
 import { workflowCache } from '@/lib/cache/workflowCache'
 import { ensureUserTier } from '@/lib/utils/subscription'
 import { TIER_LIMITS } from '@/lib/constants/tiers'
-import { RateLimiter } from '@/lib/utils/rateLimiter'
-import { estimateTokens } from '@/lib/utils/tokenEstimator'
 import { isAdmin } from '@/lib/utils/adminCheck'
 import { eventEmitter } from '@/lib/utils/events'
 import { SAMPLE_WORKFLOW_ID } from '@/lib/utils/adminCheck'
@@ -159,12 +157,6 @@ interface AlertMessageType {
   description: string
   type: 'success' | 'navigation'
   onClose?: () => void
-}
-
-// Add this type definition near the top with other interfaces
-interface RateLimitResponse {
-  allowed: boolean
-  reason?: string
 }
 
 // Create a new component for the flow content
@@ -348,38 +340,6 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
       // Skip rate limits and tier checks for admin users
       if (!isAdmin(user.id)) {
-        // Keep all existing validation logic
-        const workflowTokens = estimateTokens.workflow(nodes, edges)
-        const rateLimitCheck = await RateLimiter.checkRateLimit(
-          user.id,
-          'training',
-          workflowTokens
-        ).catch(error => {
-          
-          return { allowed: true } as RateLimitResponse
-        })
-
-        if (!rateLimitCheck.allowed) {
-          throw new Error(
-            'reason' in rateLimitCheck 
-              ? rateLimitCheck.reason 
-              : 'Training limit exceeded'
-          )
-        }
-
-        // Keep existing duplicate name check
-        const { data: existingWorkflow } = await supabase
-          .from('workflows')
-          .select('id, name')
-          .eq('user_id', user.id)
-          .eq('name', workflowName)
-          .neq('id', currentWorkflowId || '')
-          .single()
-
-        if (existingWorkflow) {
-          throw new Error(`A workflow named "${workflowName}" already exists. Please choose a different name.`)
-        }
-
         // Keep existing tier checks
         await ensureUserTier(supabase, user.id)
         const { data: tierData, error: tierError } = await supabase
@@ -390,7 +350,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (tierError) throw tierError
 
-        const currentTier = tierData?.pricing_tier || 'hobbyist'
+        const currentTier = tierData?.pricing_tier || 'free'
         const currentCount = tierData?.workflow_count || 0
         const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
 
@@ -414,6 +374,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       }
 
        // Debug log
+       // Debug log
 
       // Save to appropriate table
       const { data, error, status } = await supabase
@@ -423,8 +384,10 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         .single()
 
        // Debug log
+       // Debug log
 
       if (error) {
+        
         
         throw new Error(error.message || 'Failed to save workflow')
       }
@@ -477,11 +440,6 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       if (error instanceof Error && error.message.includes('validation')) {
         throw error
       }
-      // console.error('Save error:', {
-      //   error,
-      //   message: error instanceof Error ? error.message : 'Unknown error',
-      //   stack: error instanceof Error ? error.stack : undefined
-      // })
       showAlert(
         'Error Saving Workflow',
         error instanceof Error ? error.message : 'Failed to save workflow. Please try again.'
@@ -523,6 +481,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) {
           
+          
           throw new Error(`Error loading workflow: ${error.message}`)
         }
 
@@ -554,6 +513,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         window.history.pushState({}, '', `/builder/${workflowId}`)
 
       } catch (error) {
+        
         
         // Reset everything in error case
         initialNodesRef.current = initialNodes
@@ -791,6 +751,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       window.history.pushState({}, '', '/builder')
     } catch (error) {
       
+      
       showAlert('Error', 'Failed to create new workflow')
     } finally {
       setIsCreating(false)
@@ -852,6 +813,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) {
           
+          
           throw new Error(`Error loading workflow: ${error.message}`)
         }
 
@@ -883,6 +845,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
 
       } catch (error) {
+        
         
         // Reset everything in error case
         initialNodesRef.current = initialNodes
@@ -917,6 +880,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     // Add a debug log to see the state
     
     
+    
     if (hasUnsavedChanges) {
       showAlert(
         'Unsaved Changes',
@@ -946,6 +910,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       }
     } catch (error) {
       
+      
       showAlert(
         'Error',
         error instanceof Error ? error.message : 'An error occurred'
@@ -973,6 +938,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       router.push('/')
     } catch (error) {
       
+      
       showAlert(
         'Error',
         'Failed to logout. Please try again.'
@@ -984,6 +950,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const handleChatbotClick = () => {
     if (!currentWorkflowId) {
       
+      
       return
     }
     handleNavigationWithCheck(`/chat/${currentWorkflowId}`)
@@ -991,6 +958,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
   const handleWidgetClick = () => {
     if (!currentWorkflowId) {
+      
       
       return
     }
@@ -1116,6 +1084,9 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       initialNodesRef.current = initialNodes
       initialEdgesRef.current = []
       initialNameRef.current = 'My Workflow'
+
+      // Clear any pending navigation
+      setPendingNavigation(null)
     }
   }, [workflowId, setNodes, setEdges])
 
@@ -1166,7 +1137,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
           .eq('user_id', user.id)
           .single()
 
-        const currentTier = userTier?.pricing_tier || 'hobbyist'
+        const currentTier = userTier?.pricing_tier || 'free'
           const tierLimit = TIER_LIMITS[currentTier as keyof typeof TIER_LIMITS]
 
           // Count user's existing workflows
@@ -1263,6 +1234,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
     } catch (error) {
       
+      
       if (error instanceof Error) {
         if (error.message.includes('You have reached the maximum number of workflows')) {
           showAlert('Error', error.message)
@@ -1278,6 +1250,40 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   }
 
   const [isVideoOpen, setIsVideoOpen] = useState(false)
+  const [shouldHighlightDemo, setShouldHighlightDemo] = useState(false)
+
+  // Check if it's user's first visit
+  useEffect(() => {
+    const hasSeenDemo = localStorage.getItem('hasSeenDemo')
+    if (!hasSeenDemo) {
+      setShouldHighlightDemo(true)
+      // Auto-remove highlight after 10 seconds
+      const timer = setTimeout(() => {
+        setShouldHighlightDemo(false)
+      }, 10000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  // Mark demo as seen when clicked
+  const handleDemoClick = () => {
+    setIsVideoOpen(true)
+    setShouldHighlightDemo(false)
+    localStorage.setItem('hasSeenDemo', 'true')
+  }
+
+  const fadeAnimation = `
+    @keyframes fade-in-up {
+      from { 
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  `
 
   return (
     <div className="flex flex-col h-screen">
@@ -1327,15 +1333,39 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     Sample Workflow
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsVideoOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  Demo
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDemoClick}
+                    className={`flex items-center gap-2 transition-all duration-500 ${
+                      shouldHighlightDemo 
+                        ? 'bg-blue-100 ring-2 ring-blue-400 ring-offset-2 animate-pulse' 
+                        : ''
+                    }`}
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    Demo
+                  </Button>
+                  {shouldHighlightDemo && (
+                    <>
+                      <style jsx>{fadeAnimation}</style>
+                      <div 
+                        className="absolute left-1/2 -translate-x-1/2 mt-2 px-4 py-2 bg-white rounded-lg shadow-lg border border-gray-200 w-max z-50"
+                        style={{ 
+                          animation: 'fade-in-up 0.3s ease-out',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                        }}
+                      >
+                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white transform rotate-45 border-l border-t border-gray-200"/>
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <span className="font-medium">New to AnswerlyAI?</span>
+                          Watch our quick demo to get started
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <Button
                   onClick={() => handleNavigationWithCheck('/dashboard')}
                   variant="ghost"
@@ -1428,7 +1458,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
                     className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    See Live Chatbot
+                    See Live Agent
                   </Button>
                     <Button
                       onClick={handleWidgetClick}

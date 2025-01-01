@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, MessageSquare } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSupabase } from '@/lib/supabase/provider'
 import { workflowCache } from '@/lib/cache/workflowCache'
+
 
 import { eventEmitter } from '@/lib/utils/events'
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -28,7 +29,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
   const [initialLoading, setInitialLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const router = useRouter()
-  const currentWorkflowId = useRef<string | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [workflowToDelete, setWorkflowToDelete] = useState<string | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
@@ -63,9 +63,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         }
       } catch (cacheError) {
         
+        
       }
 
       // Load from database
+      
       
       const query = supabase
         .from(table)
@@ -83,10 +85,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
 
       if (data) {
         
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
+      
       
       workflowCache.clearCache()
     } finally {
@@ -121,10 +125,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       
       if (isStale) {
         
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
+      
       
       workflowCache.clearCache()
     }
@@ -161,9 +167,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     
     const unsubscribe = eventEmitter.subscribe('workflowUpdated', (workflow) => {
       
+      
       if (workflow) {
         updateWorkflowInList(workflow)
       } else {
+        
         
         loadWorkflows()
       }
@@ -177,11 +185,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
   const handleWorkflowClick = (workflowId: string) => {
     // Call the parent handler
     onWorkflowSelect(workflowId)
-  }
-
-  const showAlert = (title: string, description: string, onClose?: () => void) => {
-    setAlertMessage({ title, description, onClose })
-    setAlertOpen(true)
   }
 
   const handleDeleteWorkflow = async (id: string) => {
@@ -198,15 +201,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         .eq('id', id)
 
       if (error) {
-        // console.error('Delete error:', {
-        //   error,
-        //   details: {
-        //     table,
-        //     workflowId: id,
-        //     userId: user.id,
-        //     isAdmin: isAdmin(user.id)
-        //   }
-        // })
         throw error
       }
 
@@ -235,6 +229,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       setAlertOpen(true)
 
     } catch (error) {
+      
       
       setAlertMessage({
         title: 'Error',
@@ -288,17 +283,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
             </span>
           </div>
           <div className="opacity-0 group-hover:opacity-100 flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/chat/${workflow.id}`)
-              }}
-              className="h-8 w-8 text-blue-600 hover:text-blue-800"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="sm"

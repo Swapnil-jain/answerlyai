@@ -1,83 +1,121 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { LIMITS, LimitType, TierType } from '@/lib/constants/limits'
+import { createServerSupabaseClient } from '@/lib/supabase/supabase-server'
+import { LIMITS, TierType } from '@/lib/constants/limits'
 
 export async function POST(request: Request) {
   try {
     const supabase = createServerSupabaseClient()
-    const { userId, type, tokenCount } = await request.json()
+    const { userId, tokenCount, recordOnly } = await request.json()
 
-    if (!userId) {
+    if (!userId || typeof tokenCount !== 'number') {
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        { error: 'Invalid request parameters' },
+        { status: 400 }
       )
     }
 
     const today = new Date().toISOString().split('T')[0]
-    const currentMinute = Math.floor(Date.now() / 60000)
 
     // Get user's tier
-    const { data: tierData } = await supabase
+    const { data: tierData, error: tierError } = await supabase
       .from('user_tiers')
       .select('pricing_tier')
       .eq('user_id', userId)
       .single()
 
-    const tier = (tierData?.pricing_tier || 'hobbyist') as TierType
-    const limits = LIMITS[type as LimitType][tier]
+    if (tierError) {
+      
+      return NextResponse.json(
+        { error: 'Error fetching user tier' },
+        { status: 500 }
+      )
+    }
+
+    const tier = tierData.pricing_tier as TierType
+    const limits = LIMITS[tier]
+
+    if (!limits) {
+      return NextResponse.json(
+        { error: 'Invalid tier' },
+        { status: 400 }
+      )
+    }
 
     // Get current usage
-    const { data: rateLimit } = await supabase
+    const { data: rateLimit, error: rateLimitError } = await supabase
       .from('rate_limits')
       .select('*')
       .eq('user_id', userId)
-      .eq('type', type)
       .eq('date', today)
       .maybeSingle()
 
+    if (rateLimitError && rateLimitError.code !== 'PGRST116') {
+      
+      return NextResponse.json(
+        { error: 'Error fetching rate limit' },
+        { status: 500 }
+      )
+    }
+
+    // If this is just recording usage, update and return
+    if (recordOnly) {
+      
+      
+      if (rateLimit) {
+        const { error: updateError } = await supabase
+          .from('rate_limits')
+          .update({
+            daily_tokens: rateLimit.daily_tokens + tokenCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', rateLimit.id)
+        
+        if (updateError) {
+          
+          return NextResponse.json({ error: 'Failed to update rate limit' }, { status: 500 });
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from('rate_limits')
+          .insert({
+            user_id: userId,
+            date: today,
+            daily_tokens: tokenCount,
+            updated_at: new Date().toISOString()
+          })
+        
+        if (insertError) {
+          
+          return NextResponse.json({ error: 'Failed to insert rate limit' }, { status: 500 });
+        }
+      }
+      
+      
+      return NextResponse.json({ success: true })
+    }
+
+    // Calculate remaining tokens
+    const currentTokens = rateLimit?.daily_tokens ?? 0
+    const remainingTokens = limits.tokensPerDay === Infinity ? Infinity : limits.tokensPerDay - currentTokens
+
     // Check daily token limit
-    if (rateLimit?.daily_tokens + tokenCount > limits.tokensPerDay) {
+    if (limits.tokensPerDay !== Infinity && currentTokens + tokenCount > limits.tokensPerDay) {
       return NextResponse.json({
         allowed: false,
-        reason: `Daily token limit (${limits.tokensPerDay.toLocaleString()}) exceeded`
+        reason: `Daily word limit (${Math.floor(limits.tokensPerDay / 1.33).toLocaleString()} words) exceeded`,
+        remainingTokens
       })
     }
 
-    // Check daily request limit
-    if (rateLimit?.daily_requests >= limits.requestsPerDay) {
-      return NextResponse.json({
-        allowed: false,
-        reason: `Daily request limit (${limits.requestsPerDay.toLocaleString()}) exceeded`
-      })
-    }
-
-    // Check per-minute token limit
-    if (rateLimit?.last_minute === currentMinute) {
-      if (rateLimit.minute_tokens + tokenCount > limits.tokensPerMinute) {
-        return NextResponse.json({
-          allowed: false,
-          reason: `Per-minute token limit (${limits.tokensPerMinute.toLocaleString()}) exceeded`
-        })
-      }
-    }
-
-    // Check per-minute request limit
-    if (rateLimit?.last_minute === currentMinute) {
-      if (rateLimit.minute_requests >= limits.requestsPerMinute) {
-        return NextResponse.json({
-          allowed: false,
-          reason: `Per-minute request limit (${limits.requestsPerMinute}) exceeded`
-        })
-      }
-    }
-
-    return NextResponse.json({ allowed: true })
+    return NextResponse.json({
+      allowed: true,
+      remainingTokens
+    })
   } catch (error) {
     
     return NextResponse.json(
-      { error: 'Failed to check rate limit' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
-} 
+}

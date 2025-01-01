@@ -1,5 +1,6 @@
 
 
+
 interface CachedWorkflow {
   id: string
   name: string
@@ -38,6 +39,7 @@ interface DashboardStats {
   responseRate: number
   pricingTier: string
   workflowLimit: number
+  wordsRemaining: number
   timestamp: number
 }
 
@@ -55,11 +57,11 @@ interface CacheOptions {
 const CACHE_PREFIX = 'workflow_'
 const LIST_CACHE_KEY = 'workflow_list'
 const METADATA_KEY = 'workflow_metadata_'
-const CACHE_DURATION = 1000 * 60 * 60 * 24 // 24 hours for workflows and FAQs
-const MAX_CACHE_SIZE = 10 * 1024 * 1024 // Increase to 10MB since modern browsers support larger localStorage
+const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 7 days for workflows
+const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB
 const FAQ_CACHE_PREFIX = 'faq_'
 const DASHBOARD_CACHE_KEY = 'dashboard_stats'
-const DASHBOARD_CACHE_DURATION = 1000 * 60 * 15 // 15 minutes for dashboard stats (needs to be fresher)
+const DASHBOARD_CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
 
 export const workflowCache = {
   // Check if cache is expired
@@ -105,6 +107,7 @@ export const workflowCache = {
       )
     } catch (error) {
       
+      
     }
   },
 
@@ -146,6 +149,7 @@ export const workflowCache = {
       return false // Couldn't free enough space
     } catch (error) {
       
+      
       return false
     }
   },
@@ -163,8 +167,10 @@ export const workflowCache = {
       if (!cached) return null
 
       
+      
       return JSON.parse(cached).data
     } catch (error) {
+      
       
       return null
     }
@@ -182,13 +188,14 @@ export const workflowCache = {
       
       if (!workflowCache.cleanupCache(size)) {
         
+        
         return
       }
 
       localStorage.setItem(`${CACHE_PREFIX}${workflow.id}`, data)
       workflowCache.setMetadata(workflow.id, size)
-      // logger.log('info', 'cache', `Cached workflow ${workflow.id} (${size} bytes)`)
     } catch (error) {
+      
       
     }
   },
@@ -206,8 +213,10 @@ export const workflowCache = {
       if (!cached) return null
 
       
+      
       return JSON.parse(cached).data
     } catch (error) {
+      
       
       return null
     }
@@ -226,12 +235,14 @@ export const workflowCache = {
       // Check if we need to clean up space
       if (!workflowCache.cleanupCache(size)) {
         
+        
         return
       }
 
       localStorage.setItem(LIST_CACHE_KEY, data)
       workflowCache.setMetadata('list', size)
     } catch (error) {
+      
       
     }
   },
@@ -249,6 +260,7 @@ export const workflowCache = {
         workflowCache.setWorkflowList(updatedList)
       }
     } catch (error) {
+      
       
     }
   },
@@ -269,6 +281,7 @@ export const workflowCache = {
       }
     } catch (error) {
       
+      
     }
   },
 
@@ -287,7 +300,9 @@ export const workflowCache = {
       localStorage.setItem(cacheKey, JSON.stringify(cacheData))
       this.setMetadata(`faq_${workflowId}`, JSON.stringify(cacheData).length)
       
+      
     } catch (error) {
+      
       
     }
   },
@@ -309,8 +324,10 @@ export const workflowCache = {
       if (!cached) return null
 
       
+      
       return JSON.parse(cached).data
     } catch (error) {
+      
       
       return null
     }
@@ -326,7 +343,9 @@ export const workflowCache = {
       localStorage.removeItem(cacheKey)
       localStorage.removeItem(`${METADATA_KEY}faq_${workflowId}`)
       
+      
     } catch (error) {
+      
       
     }
   },
@@ -344,8 +363,10 @@ export const workflowCache = {
       }
 
       
+      
       return stats
     } catch (error) {
+      
       
       return null
     }
@@ -363,13 +384,14 @@ export const workflowCache = {
       
       if (!workflowCache.cleanupCache(size)) {
         
+        
         return
       }
 
       localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data))
       workflowCache.setMetadata('dashboard', size)
-      // logger.log('info', 'cache', `Cached dashboard stats (${size} bytes)`)
     } catch (error) {
+      
       
     }
   },
@@ -380,6 +402,7 @@ export const workflowCache = {
       const workflow = workflowCache.getWorkflow(workflowId)
       return workflow?.context || null
     } catch (error) {
+      
       
       return null
     }
@@ -394,6 +417,7 @@ export const workflowCache = {
         workflowCache.setWorkflow(workflow)
       }
     } catch (error) {
+      
       
     }
   },
@@ -413,6 +437,7 @@ export const workflowCache = {
         total: cached.length
       }
     } catch (error) {
+      
       
       return null
     }
@@ -434,6 +459,7 @@ export const workflowCache = {
       }
     } catch (error) {
       
+      
       return null
     }
   },
@@ -453,7 +479,9 @@ export const workflowCache = {
 
       this.setWorkflowList(updated)
       
+      
     } catch (error) {
+      
       
     }
   },
@@ -473,7 +501,9 @@ export const workflowCache = {
 
       this.setFAQs(workflowId, updated, { batchKey: options?.batchKey })
       
+      
     } catch (error) {
+      
       
     }
   }
