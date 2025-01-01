@@ -62,7 +62,7 @@ export default function ChatWidget() {
     const userId = process.env.NEXT_PUBLIC_DEFAULT_USER_ID;
 
     if (!widgetId || !userId) {
-      console.error('Missing required environment variables for widget');
+      
       return;
     }
 
@@ -78,11 +78,11 @@ export default function ChatWidget() {
         src={`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/widget/${process.env.NEXT_PUBLIC_WIDGET_ID}`}
         strategy="afterInteractive"
         onError={(e) => {
-          console.error('Error loading widget script:', e);
+          
         }}
         onLoad={() => {
           window.addEventListener('AnswerlyAIWidgetReady', function initWidget() {
-            console.log('Widget ready event received');
+            
             if (window.AnswerlyAIWidget?.init) {
               window.AnswerlyAIWidget.init({
                 name: 'AnswerlyAI',

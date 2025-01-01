@@ -7,7 +7,7 @@ import { Plus, Save, Trash2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { workflowCache } from '@/lib/cache/workflowCache'
-import { logger } from '@/lib/utils/logger'
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -88,7 +88,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       }
 
       // Load from database if not in cache
-      logger.log('info', 'database', `Fetching FAQs for workflow ${workflowId}`)
+      
       const { data, error } = await supabase
         .from(table)
         .select('*')
@@ -99,12 +99,12 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       
       // Update state and cache
       if (data) {
-        logger.log('info', 'database', `Retrieved ${data.length} FAQs from database`)
+        
         setFaqs(data)
         workflowCache.setFAQs(workflowId, data)
       }
     } catch (error) {
-      logger.log('error', 'database', 'Failed to load FAQs: ' + error)
+      
       setAlertMessage({
         title: 'Error Loading FAQs',
         description: 'Failed to load FAQs. Please try again.'
@@ -159,7 +159,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
         updated_at: now
       }])
     } catch (error) {
-      console.error('Error adding new FAQ:', error)
+      
       setAlertMessage({
         title: 'Error',
         description: 'Failed to add new FAQ. Please try again.'
@@ -184,7 +184,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
 
       if (error) throw error
     } catch (error) {
-      console.error('Failed to delete FAQ:', error)
+      
       setAlertMessage({
         title: 'Error Deleting FAQ',
         description: 'Failed to delete FAQ. Please try again.'
@@ -251,7 +251,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
           .select()
 
         if (error) {
-          console.error('Supabase error:', error)
+          
           throw error
         }
 
@@ -273,7 +273,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
           .in('id', ids)
 
         if (error) {
-          console.error('Error deleting FAQs:', error)
+          
           throw error
         }
       }
@@ -297,7 +297,7 @@ export default function FAQUpload({ workflowId, onSaveWorkflow }: FAQUploadProps
       }
 
     } catch (error) {
-      console.error('Error saving FAQs:', error)
+      
       setAlertMessage({
         title: 'Error Saving FAQs',
         description: error instanceof Error ? error.message : 'Failed to save FAQs. Please try again.'

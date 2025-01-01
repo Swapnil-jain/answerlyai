@@ -26,7 +26,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       }
 
       const subscriptionData = await checkUserSubscription(supabase, session.user.id)
-      console.log('Subscription check result:', subscriptionData)
+      
       
       // Check if user has an active subscription
       const hasActiveSubscription = (subscriptionData.subscription?.status === 'active' || 
@@ -34,7 +34,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
                                   subscriptionData.tier !== 'free'
       
       if (!hasActiveSubscription) {
-        console.log('No active subscription found, redirecting to pricing')
+        
         router.push('/pricing')
         setIsAuthorized(false)
         return

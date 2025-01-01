@@ -44,7 +44,7 @@ class RateLimiterClass {
       const baseUrl = this.getBaseUrl();
       const url = `${baseUrl}/api/rate-limit`;
       
-      console.log('RateLimiter checkRateLimit:', { userId, tokenCount, url });
+      
 
       const response = await fetch(url, {
         method: 'POST',
@@ -59,11 +59,11 @@ class RateLimiterClass {
       });
 
       const data = await response.json();
-      console.log('RateLimiter response:', data);
+      
       
       if (!response.ok) {
         const errorMessage = data.error || 'Rate limit check failed';
-        console.error('RateLimiter: Server error:', { status: response.status, error: errorMessage });
+        
         return {
           allowed: false,
           reason: errorMessage,
@@ -73,7 +73,7 @@ class RateLimiterClass {
 
       return data;
     } catch (error) {
-      console.error('RateLimiter: Error checking rate limit:', error);
+      
       return {
         allowed: false,
         reason: 'Rate limit check failed. Please try again later.',
@@ -111,13 +111,13 @@ class RateLimiterClass {
 
       if (!response.ok) {
         const data = await response.json();
-        console.error('RateLimiter: Failed to record token usage:', data.error);
+        
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('RateLimiter: Error recording token usage:', error);
+      
       return false;
     }
   }

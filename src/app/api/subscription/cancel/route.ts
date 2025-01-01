@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     // Get auth token from header
     const authHeader = req.headers.get('authorization')
     if (!authHeader) {
-      console.error('No authorization header')
+      
       return NextResponse.json({ error: 'Authorization header missing' }, { status: 401 })
     }
 
@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
     const { data: { user }, error: authError } = await serverSupabase.auth.getUser(token)
     
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      
       return NextResponse.json({ error: 'Invalid token', details: authError }, { status: 401 })
     }
 
-    console.log('User authenticated:', user.id)
+    
 
     // Get user's subscription details
     const { data: userTier, error: tierError } = await serverSupabase
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (tierError) {
-      console.error('Error fetching user tier:', tierError)
+      
       return NextResponse.json({ error: 'Error fetching subscription details', details: tierError }, { status: 500 })
     }
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         .eq('user_id', user.id)
 
       if (updateError) {
-        console.error('Error updating user tier:', updateError)
+        
         return NextResponse.json({ error: 'Error updating subscription status', details: updateError }, { status: 500 })
       }
 
@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
       
       return response
     } catch (cancelError) {
-      console.error('Error cancelling subscription:', cancelError)
+      
       return NextResponse.json({ error: 'Error cancelling subscription with payment provider', details: cancelError }, { status: 500 })
     }
   } catch (error) {
-    console.error('Unexpected error:', error)
+    
     return NextResponse.json({ error: 'Internal server error', details: error }, { status: 500 })
   }
 }

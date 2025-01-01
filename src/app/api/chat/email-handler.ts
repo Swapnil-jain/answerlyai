@@ -82,7 +82,7 @@ function parseMeetingDetails(content: string) {
       description: `Meeting Purpose: ${details.Purpose}\n\nRequested by: ${details.Name}\nContact: ${details.Contact}\nDuration: ${duration} minutes`
     };
   } catch (error: unknown) {
-    console.error('Meeting details parsing error:', error);
+    
     throw new Error(`Invalid meeting request format: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -131,7 +131,7 @@ export async function handleEmailActions(userId: string, action: EmailData) {
         throw new Error('Invalid email action type');
     }
   } catch (error: unknown) {
-    console.error('Email action error:', error);
+    
     throw error instanceof Error ? error : new Error('Unknown email error');
   }
 }

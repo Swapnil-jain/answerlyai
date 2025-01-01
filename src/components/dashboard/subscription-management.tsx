@@ -44,7 +44,7 @@ export function SubscriptionManagement() {
               }
             }
           } catch (error) {
-            console.error('Error fetching subscription details:', error)
+            
           }
         }
       }
@@ -103,7 +103,7 @@ export function SubscriptionManagement() {
         router.refresh()
       }
     } catch (error: any) {
-      console.error('Error cancelling subscription:', error)
+      
       setError(error.message || 'Failed to cancel subscription')
     } finally {
       setIsLoading(false)

@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
 
       if (!completion.ok) {
         const error = await completion.text()
-        console.error('LLM API Error:', error)
+        
         return NextResponse.json(
           { success: false, message: 'Failed to generate response' },
           { status: 500 }
@@ -365,7 +365,7 @@ export async function POST(req: NextRequest) {
             await handleEmailActions(userId, emailAction);
           }
         } catch (emailError) {
-          console.error('Email action error:', emailError);
+          
           // Continue with the response even if email fails
         }
       }
@@ -396,7 +396,7 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeoutId);
     }
   } catch (error) {
-    console.error('Chat API Error:', error);
+    
     return new NextResponse(
       JSON.stringify({ 
         success: false, 

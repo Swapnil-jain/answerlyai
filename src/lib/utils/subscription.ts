@@ -30,14 +30,14 @@ export async function ensureUserTier(supabase: any, userId: string) {
 
     return { success: true }
   } catch (error) {
-    console.error('Error ensuring user tier:', error)
+    
     return { success: false, error }
   }
 }
 
 export async function checkUserSubscription(supabase: any, userId: string) {
   try {
-    console.log('Checking subscription for user:', userId)
+    
 
     // Get user tier
     const tierResult = await supabase
@@ -45,20 +45,8 @@ export async function checkUserSubscription(supabase: any, userId: string) {
       .select('*')
       .eq('user_id', userId)
       .single()
-    
-    console.log('Tier query result:', {
-      data: tierResult.data,
-      error: tierResult.error,
-      status: tierResult.status
-    })
 
     if (tierResult.error) {
-      console.error('Error fetching user tier:', {
-        code: tierResult.error.code,
-        message: tierResult.error.message,
-        details: tierResult.error.details,
-        hint: tierResult.error.hint
-      })
       // If no tier found, return free tier
       if (tierResult.error.code === 'PGRST116') {
         return {
@@ -72,7 +60,7 @@ export async function checkUserSubscription(supabase: any, userId: string) {
     }
 
     if (!tierResult.data) {
-      console.log('No tier data found, returning free tier')
+      
       return {
         tier: 'free',
         subscription: null,
@@ -94,17 +82,10 @@ export async function checkUserSubscription(supabase: any, userId: string) {
       interval: tierResult.data.subscription_interval,
       amount: tierResult.data.subscription_amount
     }
-    console.log('Returning subscription data:', result)
+    
     return result
 
   } catch (error: any) {
-    console.error('Error checking user subscription:', {
-      message: error?.message,
-      code: error?.code,
-      details: error?.details,
-      hint: error?.hint,
-      stack: error?.stack
-    })
     return {
       tier: 'free',
       subscription: null,

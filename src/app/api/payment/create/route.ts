@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Dodo API error:', errorText)
+      
       return NextResponse.json(
         { error: errorText },
         { status: 500 }
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
 
     if (updateError) {
-      console.error('Error updating user_tiers:', updateError)
+      
       return NextResponse.json(
         { error: 'Failed to update user data' },
         { status: 500 }
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       })
 
     if (logError) {
-      console.error('Error logging payment initiation:', logError)
+      
     }
 
     return NextResponse.json({
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       subscription_id: data.subscription_id
     })
   } catch (error) {
-    console.error('Error creating payment:', error)
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

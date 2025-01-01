@@ -39,7 +39,7 @@ export function EmailPreferencesForm() {
         .single()
 
       if (error) {
-        console.error('Error loading preferences:', error)
+        
         toast({
           title: "Error",
           description: "Failed to load email preferences.",
@@ -53,7 +53,7 @@ export function EmailPreferencesForm() {
         setPreferences(data.notification_preferences || preferences)
       }
     } catch (error) {
-      console.error('Error:', error)
+      
       toast({
         title: "Error",
         description: "Failed to load email preferences.",
@@ -87,7 +87,7 @@ export function EmailPreferencesForm() {
         description: "Your email preferences have been updated.",
       })
     } catch (error) {
-      console.error('Error updating preferences:', error)
+      
       toast({
         title: "Error",
         description: "Failed to update email preferences.",

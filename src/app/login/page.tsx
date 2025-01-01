@@ -55,7 +55,7 @@ export default function LoginPage() {
         }
       })
     } catch (error) {
-      console.error('Error logging in:', error)
+      
     } finally {
       setIsLoading(false)
     }

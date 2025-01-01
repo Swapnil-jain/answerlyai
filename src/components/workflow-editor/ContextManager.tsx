@@ -69,7 +69,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         .single()
 
       if (error) {
-        console.error('Database error:', error)
+        
         throw error
       }
 
@@ -78,7 +78,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         workflowCache.updateWorkflowContext(workflowId, data.context)
       }
     } catch (error) {
-      console.error('Error loading context:', error)
+      
       // Invalidate cache on error
       workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to load context', 'error')
@@ -106,7 +106,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         .eq('id', workflowId)
 
       if (error) {
-        console.error('Save error:', error)
+        
         throw error
       }
 
@@ -121,7 +121,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
 
       // Record token usage after successful save
     } catch (error) {
-      console.error('Error saving context:', error)
+      
       // Invalidate cache on error to ensure consistency
       workflowCache.removeWorkflow(workflowId)
       showAlert('Error', 'Failed to save context', 'error')
@@ -179,7 +179,7 @@ export default function ContextManager({ workflowId, onSaveWorkflow }: ContextMa
         workflowCache.updateWorkflowContext(workflowId, data.context || '')
       }
     } catch (error) {
-      console.error('Cache validation error:', error)
+      
       // On validation error, invalidate cache
       workflowCache.removeWorkflow(workflowId)
     }

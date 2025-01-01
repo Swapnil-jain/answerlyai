@@ -49,7 +49,7 @@ export async function GET(
 
     return NextResponse.json({ domains: domains.map(d => d.domain) });
   } catch (error) {
-    console.error('Error fetching domains:', error);
+    
     return NextResponse.json(
       { error: 'Failed to fetch domains' },
       { status: 500 }
@@ -132,7 +132,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error adding domain:', error);
+    
     return NextResponse.json(
       { error: 'Failed to add domain' },
       { status: 500 }
@@ -191,7 +191,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error removing domain:', error);
+    
     return NextResponse.json(
       { error: 'Failed to remove domain' },
       { status: 500 }

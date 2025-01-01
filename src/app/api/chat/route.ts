@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      
       throw new Error('Authentication required')
     }
 
@@ -246,7 +246,7 @@ export async function POST(req: Request) {
 
       if (!completion.ok) {
         const error = await completion.text()
-        console.error('LLM API Error:', error)
+        
         return NextResponse.json(
           { success: false, message: 'Failed to generate response' },
           { status: 500 }
@@ -359,7 +359,7 @@ export async function POST(req: Request) {
             await handleEmailActions(user.id, emailAction);
           }
         } catch (emailError) {
-          console.error('Email action error:', emailError);
+          
           // Continue with the response even if email fails
         }
       }
@@ -381,10 +381,6 @@ export async function POST(req: Request) {
       clearTimeout(timeoutId);
     }
   } catch (error) {
-    console.error('Chat API Error:', error instanceof Error ? {
-      message: error.message,
-      stack: error.stack
-    } : error)
     return NextResponse.json(
       { 
         success: false, 

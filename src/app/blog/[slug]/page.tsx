@@ -89,7 +89,7 @@ async function getPost(slug: string): Promise<Post | null> {
   try {
     return await client.fetch(query, { slug })
   } catch (error) {
-    console.error('Error fetching post:', error)
+    
     return null
   }
 }

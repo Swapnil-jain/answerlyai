@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json(subscription)
   } catch (error) {
-    console.error('Error fetching subscription details:', error)
+    
     return NextResponse.json({ error: 'Failed to fetch subscription details' }, { status: 500 })
   }
 }

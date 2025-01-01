@@ -71,7 +71,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (workflowError) {
-        console.error('Error fetching workflow:', workflowError)
+        
         throw new Error('Failed to fetch workflow data')
       }
 
@@ -118,7 +118,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
       setStep('select')
       setProgress('')
     } catch (error) {
-      console.error('Discovery error:', error)
+      
       setError(error instanceof Error ? error.message : 'Failed to discover pages')
     } finally {
       setIsDiscovering(false)
@@ -169,7 +169,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (workflowError) {
-        console.error('Workflow access check error:', workflowError)
+        
         throw new Error('Unable to access workflow')
       }
 
@@ -180,7 +180,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         .single()
 
       if (contextError) {
-        console.error('Context fetch error:', contextError)
+        
         throw contextError
       }
 
@@ -275,11 +275,11 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
         try {
           await onSaveWorkflow()
         } catch (error) {
-          console.error('Error saving workflow:', error)
+          
         }
       }
     } catch (error) {
-      console.error('Crawl error:', error)
+      
       setError(error instanceof Error ? error.message : 'Failed to crawl website')
       setIsCrawling(false)
       setProgress('')

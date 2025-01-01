@@ -59,7 +59,7 @@ export default function PaymentSuccessPage() {
           setError('Payment verification failed')
         }
       } catch (err) {
-        console.error('Payment success error:', err)
+        
         setError('Failed to verify payment')
       } finally {
         setLoading(false)

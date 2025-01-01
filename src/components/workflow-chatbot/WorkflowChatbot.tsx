@@ -146,7 +146,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         }])
       }
     } catch (error) {
-      console.error("Error loading:", error)
+      
       setMessages([{
         type: "bot",
         content: "Sorry, there was an error loading. Please try again later.",
@@ -192,7 +192,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           response_times: []
         });
       } catch (error) {
-        console.error('Error creating chat session:', error);
+        
       }
     };
 
@@ -241,7 +241,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         response_times: newResponseTimes
       } : null);
     } catch (error) {
-      console.error('Error updating chat stats:', error);
+      
     }
   };
 
@@ -322,7 +322,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         throw new Error(data.message);
       }
     } catch (error) {
-      console.error("Error processing input:", error);
+      
       
       // Update chat statistics with failed response
       if (lastMessageTime.current) {
@@ -359,7 +359,7 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
         })
         .eq('id', sessionId);
     } catch (error) {
-      console.error('Error ending chat session:', error);
+      
     }
   };
 

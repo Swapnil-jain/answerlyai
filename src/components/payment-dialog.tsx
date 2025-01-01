@@ -135,7 +135,7 @@ export default function PaymentDialog({
       if (isNaN(zipcode)) {
         throw new Error('Please enter a valid postal code (numbers only)')
       }
-      console.log(productId);
+      
       const response = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,7 +171,7 @@ export default function PaymentDialog({
       // Redirect to payment page
       window.location.href = payment_url
     } catch (error) {
-      console.error('Payment error:', error)
+      
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.',

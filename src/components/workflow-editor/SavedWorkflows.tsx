@@ -5,7 +5,7 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSupabase } from '@/lib/supabase/provider'
 import { workflowCache } from '@/lib/cache/workflowCache'
-import { logger } from '@/lib/utils/logger'
+
 import { eventEmitter } from '@/lib/utils/events'
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { AlertDialogAction } from '@/components/ui/alert-dialog'
@@ -61,11 +61,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
           return
         }
       } catch (cacheError) {
-        logger.log('warn', 'cache', 'Failed to read cache, falling back to database')
+        
       }
 
       // Load from database
-      logger.log('info', 'database', 'Fetching workflow list from database')
+      
       const query = supabase
         .from(table)
         .select('id, name, updated_at')
@@ -81,12 +81,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       if (error) throw error
 
       if (data) {
-        logger.log('info', 'database', `Retrieved ${data.length} workflows from database`)
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
-      logger.log('error', 'database', 'Failed to load workflows: ' + error)
+      
       workflowCache.clearCache()
     } finally {
       setInitialLoading(false)
@@ -119,12 +119,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       const isStale = JSON.stringify(data) !== JSON.stringify(cachedData)
       
       if (isStale) {
-        logger.log('info', 'cache', 'Cache is stale, updating from database')
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
-      logger.log('warn', 'cache', 'Cache validation failed: ' + error)
+      
       workflowCache.clearCache()
     }
   }
@@ -159,11 +159,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     loadWorkflows()
     
     const unsubscribe = eventEmitter.subscribe('workflowUpdated', (workflow) => {
-      console.log('Received workflow update:', workflow)
+      
       if (workflow) {
         updateWorkflowInList(workflow)
       } else {
-        console.log('No workflow data received, reloading list')
+        
         loadWorkflows()
       }
     })
@@ -192,15 +192,6 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         .eq('id', id)
 
       if (error) {
-        console.error('Delete error:', {
-          error,
-          details: {
-            table,
-            workflowId: id,
-            userId: user.id,
-            isAdmin: isAdmin(user.id)
-          }
-        })
         throw error
       }
 
@@ -229,7 +220,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       setAlertOpen(true)
 
     } catch (error) {
-      console.error('Failed to delete workflow:', error)
+      
       setAlertMessage({
         title: 'Error',
         description: 'Failed to delete workflow. Please try again.'

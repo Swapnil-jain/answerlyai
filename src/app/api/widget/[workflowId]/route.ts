@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
     // If there are allowed domains specified, validate the origin
     if (allowedDomains && allowedDomains.length > 0) {
       const origin = request.headers.get('origin');
-      console.log('Origin:', origin);
+      
       
       // Allow requests with no origin during development
       if (!origin) {
-        console.warn('No origin header - allowing request during development');
+        
       } else if (origin === 'answerlyai.cloud' || origin === 'https://answerlyai.cloud') {
-        console.log('Origin header is main domain');
+        
       }
       else {
         const hostname = new URL(origin).hostname;
@@ -46,28 +46,28 @@ export async function GET(request: NextRequest) {
         });
 
         if (!isAllowed) {
-          console.error('Unauthorized domain:', hostname);
+          
           throw new Error('Unauthorized domain');
         }
       }
     }
 
-    console.log('Serving widget for workflow:', workflowId);
+    
     
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
       `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}`;
 
     const widgetScript = `
-      console.log('Widget script loaded for workflow:', '${workflowId}');
+      
       (function() {
         // Add initial message when chat opens - moved into the ChatWidget component
         // to support dynamic name
 
-        console.log('Widget IIFE executing');
+        
 
         // Ensure we don't initialize multiple times
         if (window.AnswerlyAIWidget) {
-          console.log('Widget already initialized');
+          
           return;
         }
 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           return new Promise((resolve, reject) => {
             // Check if script is already loaded
             if (document.querySelector(\`script[src="\${src}"]\`)) {
-              console.log('Script already loaded:', src);
+              
               resolve();
               return;
             }
@@ -87,12 +87,12 @@ export async function GET(request: NextRequest) {
             script.crossOrigin = 'anonymous';
             
             script.onload = () => {
-              console.log('Script loaded successfully:', src);
+              
               resolve();
             };
             
             script.onerror = (error) => {
-              console.error('Error loading script:', src, error);
+              
               reject(error);
             };
             
@@ -103,17 +103,17 @@ export async function GET(request: NextRequest) {
         // Load React first
         loadScript('https://unpkg.com/react@18/umd/react.production.min.js')
           .then(() => {
-            console.log('React loaded, loading ReactDOM...');
+            
             // Only load ReactDOM after React is loaded
             return loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js');
           })
           .then(() => {
-            console.log('ReactDOM loaded, loading marked...');
+            
             // Load marked after React ecosystem is ready
             return loadScript('https://cdn.jsdelivr.net/npm/marked@11.1.0/lib/marked.umd.min.js');
           })
           .then(() => {
-            console.log('All dependencies loaded successfully');
+            
             
             // Verify React and ReactDOM are available
             if (!window.React || !window.ReactDOM || !window.ReactDOM.createRoot) {
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
             // Define the widget object
             window.AnswerlyAIWidget = {
               init: function(config) {
-                console.log('Initializing widget with config:', config);
+                
                 try {
                   // Clean up any existing instances
                   const existingContainer = document.getElementById('answerly-widget-root');
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
                   const root = window.ReactDOM.createRoot(container);
                   root.render(window.React.createElement(ChatWidget, config));
                 } catch (error) {
-                  console.error('Error initializing widget:', error);
+                  
                   throw error;
                 }
               },
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
                     container.remove();
                   }
                 } catch (error) {
-                  console.error('Error destroying widget:', error);
+                  
                 }
               }
             };
@@ -170,11 +170,11 @@ export async function GET(request: NextRequest) {
               const event = new Event('AnswerlyAIWidgetReady');
               window.dispatchEvent(event);
             } catch (error) {
-              console.error('Error in widget initialization:', error);
+              
             }
           })
           .catch(error => {
-            console.error('Fatal error loading dependencies:', error);
+            
           });
 
         function ChatWidget(config) {
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
                 const { tier } = await response.json();
                 setUserTier(tier);
               } catch (error) {
-                console.error('Error checking user tier:', error);
+                
                 setUserTier('hobbyist'); // Default to hobbyist on error
               }
             };
@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
                 throw new Error(data.message);
               }
             } catch (error) {
-              console.error('Chat error:', error);
+              
               setMessages(prev => [...prev, { 
                 type: 'bot', 
                 content: 'Sorry, I encountered an error. Please try again.' 
@@ -562,9 +562,9 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Widget script error:', error);
+    
     const response = new NextResponse(
-      'console.error("Failed to load widget script");',
+      '',
       { 
         status: 500,
         headers: {

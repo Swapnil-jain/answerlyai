@@ -79,7 +79,7 @@ async function extractContent(url: string) {
         content = document.body.textContent || ''
       }
     } catch (error) {
-      console.error('JSDOM parsing failed:', error)
+      
       content = response.data
     }
 
@@ -190,7 +190,7 @@ async function extractContent(url: string) {
       status: 'success'
     }
   } catch (error) {
-    console.error(`Error fetching ${url}:`, error)
+    
     return {
       url,
       title: '',
@@ -217,7 +217,7 @@ export async function POST(request: Request) {
         try {
           return await extractContent(url)
         } catch (error) {
-          console.error(`Error processing ${url}:`, error)
+          
           return {
             url,
             title: '',
@@ -234,7 +234,7 @@ export async function POST(request: Request) {
       success: true
     })
   } catch (error) {
-    console.error('Error in crawl route:', error)
+    
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Failed to crawl URLs',

@@ -67,7 +67,7 @@ function DashboardContent() {
       localStorage.setItem('lastChatSessionCleanup', Date.now().toString());
 
     } catch (error) {
-      console.error('Error cleaning up chat sessions:', error);
+      
     }
   };
 
@@ -174,7 +174,7 @@ function DashboardContent() {
       // Cache the new stats
       workflowCache.setDashboardStats(newStats)
     } catch (error) {
-      console.error('Dashboard stats error:', error)
+      
       setError('Failed to load dashboard data. Please try again later.')
     } finally {
       setIsLoading(false)

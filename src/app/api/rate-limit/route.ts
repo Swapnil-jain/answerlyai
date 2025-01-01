@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       .single()
 
     if (tierError) {
-      console.error('Error fetching user tier:', tierError)
+      
       return NextResponse.json(
         { error: 'Error fetching user tier' },
         { status: 500 }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (rateLimitError && rateLimitError.code !== 'PGRST116') {
-      console.error('Error fetching rate limit:', rateLimitError)
+      
       return NextResponse.json(
         { error: 'Error fetching rate limit' },
         { status: 500 }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     // If this is just recording usage, update and return
     if (recordOnly) {
-      console.log('Recording usage:', { rateLimit, tokenCount });
+      
       
       if (rateLimit) {
         const { error: updateError } = await supabase
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
           .eq('id', rateLimit.id)
         
         if (updateError) {
-          console.error('Error updating rate limit:', updateError);
+          
           return NextResponse.json({ error: 'Failed to update rate limit' }, { status: 500 });
         }
       } else {
@@ -85,12 +85,12 @@ export async function POST(request: Request) {
           })
         
         if (insertError) {
-          console.error('Error inserting rate limit:', insertError);
+          
           return NextResponse.json({ error: 'Failed to insert rate limit' }, { status: 500 });
         }
       }
       
-      console.log('Successfully recorded usage');
+      
       return NextResponse.json({ success: true })
     }
 
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       remainingTokens
     })
   } catch (error) {
-    console.error('Rate limit error:', error)
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

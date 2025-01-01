@@ -23,12 +23,12 @@ if (!process.listeners('exit').some(listener => listener.name === 'cleanup')) {
   
   // Handle unhandled rejections and exceptions
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+    
     cleanup()
   })
   
   process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error)
+    
     cleanup()
   })
 }
@@ -81,7 +81,7 @@ async function getUrlsWithPlaywright(url: string): Promise<string[]> {
       page.waitForSelector('.container', { timeout: 30000 }),
       page.waitForSelector('main', { timeout: 30000 }),
       page.waitForSelector('article', { timeout: 30000 })
-    ]).catch(() => console.log('Content selector wait timed out'))
+    ]).catch()
 
     const { links, content } = await page.evaluate(() => {
       // Helper function to extract text from elements
@@ -174,13 +174,13 @@ async function fetchUrlsFromPage(url: string): Promise<string[]> {
           urls.add(normalizedUrl)
         }
       } catch (e) {
-        console.warn('Invalid URL:', e)
+        
       }
     })
 
     // If we found very few links, try Playwright as a fallback
     if (urls.size < 3) {
-      console.log('Few links found with Cheerio, trying Playwright for:', normalized)
+      
       try {
         const playwrightLinks = await getUrlsWithPlaywright(normalized)
         
@@ -194,17 +194,17 @@ async function fetchUrlsFromPage(url: string): Promise<string[]> {
               urls.add(normalizedUrl)
             }
           } catch (e) {
-            console.warn('Invalid Playwright URL:', e)
+            
           }
         }
       } catch (playwrightError) {
-        console.error('Playwright fallback failed:', playwrightError)
+        
       }
     }
 
     return Array.from(urls)
   } catch (error) {
-    console.error('Error fetching URLs:', error)
+    
     return []
   }
 }
@@ -238,7 +238,7 @@ export async function POST(request: Request) {
       success: true
     })
   } catch (error) {
-    console.error('Error in discover-urls:', error)
+    
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Failed to discover URLs',
