@@ -10,14 +10,14 @@ export default function HeroSection() {
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full max-[391px]:px-0.5">
-                  <span className="text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
+                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full">
+                  <span className="text-xs sm:text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
                 </span>
               </div>
               <div className="inline-flex items-center justify-center">
                 <span className="inline-flex items-center gap-2 bg-[#e6f5ea] px-4 py-2 rounded-full">
                   <MousePointer2 className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600 whitespace-nowrap">No-Code Required</span>
+                  <span className="text-xs sm:text-sm font-medium text-green-600 whitespace-nowrap">No-Code Required</span>
                 </span>
               </div>
             </div>
@@ -32,7 +32,7 @@ export default function HeroSection() {
             
             <div className="space-y-2 max-[391px]:px-2">
               <p className="text-lg sm:text-xl text-gray-500 max-w-xl text-center sm:text-left">
-                Create a no-code AI agent to automate customer support, answer questions, engage users, schedule meetings and more.
+                Create a no-code AI Agent to automate customer support, answer questions, engage users, schedule meetings and more.
               </p>
             </div>
 
@@ -65,7 +65,7 @@ export default function HeroSection() {
           <div className="relative block mt-8 lg:mt-0">
             <div className="relative rounded-3xl shadow-xl overflow-hidden w-[90vw] h-[50.625vw] sm:w-[70vw] sm:h-[39.375vw] md:w-[60vw] md:h-[33.75vw] lg:w-[40vw] lg:h-[22.5vw] xl:w-[40vw] xl:h-[22.5vw] 2xl:w-[45vw] 2xl:h-[25.3125vw] mx-auto">
               <video 
-                className="w-full h-full object-cover"
+                className="w-full h-full aspect-video"
                 autoPlay
                 loop
                 playsInline

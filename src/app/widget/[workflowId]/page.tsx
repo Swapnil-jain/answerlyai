@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation';
 import { useSupabase } from '@/lib/supabase/provider';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CopyIcon, CheckIcon, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';

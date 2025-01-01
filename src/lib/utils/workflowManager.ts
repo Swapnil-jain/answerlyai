@@ -1,4 +1,4 @@
-interface WorkflowNode {
+export interface WorkflowNode {
   id: string;
   type: string;
   data: {
@@ -7,7 +7,7 @@ interface WorkflowNode {
   };
 }
 
-interface WorkflowEdge {
+export interface WorkflowEdge {
   source: string;
   target: string;
   sourceHandle?: string;
@@ -28,15 +28,19 @@ export class WorkflowManager {
     depth: number = 2,
     userMessage?: string // Add message parameter
   ) {
-    // Detect scenario from message if no current node
+    // Enhanced scenario detection
     if (!currentNodeId && userMessage) {
-      const scenarioNode = nodes.find(node => 
-        node.type === 'scenario' && 
-        Object.entries(this.SCENARIOS).some(([type, pattern]) =>
-          pattern.test(userMessage) && 
-          pattern.test(node.data.label)
-        )
-      );
+      const scenarioNode = nodes.find(node => {
+        if (node.type !== 'scenario') return false;
+        const label = node.data.label.toLowerCase();
+        const message = userMessage.toLowerCase();
+        
+        // Check if message contains key terms from scenario label
+        const terms = label.split(/\s+/);
+        return terms.some(term => 
+          term.length > 3 && message.includes(term.toLowerCase())
+        );
+      });
       
       if (scenarioNode) {
         currentNodeId = scenarioNode.id;

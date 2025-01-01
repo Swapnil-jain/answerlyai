@@ -149,12 +149,6 @@ export default function Header({ className = "" }: HeaderProps) {
               Features
             </button>
             <button
-                onClick={() => handleNavClick('demo')}
-                className="text-gray-600 hover:text-gray-900"
-              >
-              Watch
-            </button>
-            <button
               onClick={() => handleNavClick('pricing')}
               className="text-gray-600 hover:text-gray-900"
             >
@@ -233,12 +227,6 @@ export default function Header({ className = "" }: HeaderProps) {
                 Features
               </button>
               <button
-                onClick={() => handleNavClick('demo')}
-                className="text-gray-600 hover:text-gray-900 py-2"
-              >
-                Watch
-              </button>
-              <button
                 onClick={() => handleNavClick('pricing')}
                 className="text-gray-600 hover:text-gray-900 py-2"
               >
@@ -250,7 +238,7 @@ export default function Header({ className = "" }: HeaderProps) {
               >
                 Contact
               </button>
-              <Link href="/blog" className="px-4 py-2">
+              <Link href="/blog" className="text-gray-600 hover:text-gray-900 py-2 text-center">
                 Blog
               </Link>
               {session ? (

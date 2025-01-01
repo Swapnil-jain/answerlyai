@@ -1,3 +1,5 @@
+import { WorkflowNode, WorkflowEdge } from "@/lib/utils/workflowManager";
+
 export type PromptType = 'faq' | 'email' | 'workflow' | 'general' | 'privacy' | 'meeting';
 
 interface PromptSection {
@@ -185,11 +187,10 @@ export function determinePromptTypes(
 
 export function generateDynamicSystemPrompt(
   context: string | null,
-  decisionFlows: any[],
   faqData: any[],
-  message: string,
-  history: any[],
   promptTypes: PromptType[],
+  workflow?: any,
+  currentNodeId?: string,
   assistantName: string = 'Cora'
 ): string {
   // Add null checks and default values
@@ -207,21 +208,48 @@ export function generateDynamicSystemPrompt(
     prompt += `\n\nCustom Context:\n${context}`;
   }
   
-  // Add workflow data with null check
-  if (decisionFlows?.length > 0) {
-    prompt += `\n\nDecision Flows:\n${decisionFlows.map((flow) => `
-    Decision: "${flow.decision || ''}"
-    Related Scenarios: ${(flow.scenarios || []).map((s: string) => `"${s}"`).join(', ')}
-    Actions:
-      - If Yes: ${flow.actions?.yes || 'No action specified'}
-      - If No: ${flow.actions?.no || 'No action specified'}
-    `).join('\n')}`;
-  }
-  
   // Add FAQ data with null check
   if (faqData?.length > 0) {
     prompt += `\n\nRelevant FAQs:\n${faqData.map((faq) => 
       `Q: ${faq.question || ''}\nA: ${faq.answer || ''}`).join('\n\n')}`;
+  }
+  
+  // Add workflow structure if available
+  if (workflow?.nodes && workflow?.edges) {
+    prompt += `\n\nWorkflow Structure:
+    Current Position: ${currentNodeId || 'Start'}
+
+    Available Scenarios:
+    ${workflow.nodes
+      .filter((n: WorkflowNode) => n.type === 'scenario')
+      .map((n: WorkflowNode) => `- ${n.data?.label || ''}`)
+      .join('\n')}
+
+    Decision Points:
+    ${workflow.nodes
+      .filter((n: WorkflowNode) => n.type === 'decision')
+      .map((n: WorkflowNode) => `- Question: "${n.data?.label || ''}"
+        - If Yes: ${workflow.edges.find((e: WorkflowEdge) => e.source === n.id && e.sourceHandle === 'yes')?.target || ''}
+        - If No: ${workflow.edges.find((e: WorkflowEdge) => e.source === n.id && e.sourceHandle === 'no')?.target || ''}`)
+      .join('\n')}
+
+    Actions:
+    ${workflow.nodes
+      .filter((n: WorkflowNode) => n.type === 'action')
+      .map((n: WorkflowNode) => `- ${n.data?.label || ''}`)
+      .join('\n')}
+
+    Flow Rules:
+    1. First match user's message to a scenario
+    2. Follow connected decision nodes
+    3. Ask decision questions and wait for yes/no
+    4. Execute corresponding actions based on response
+    5. Stay within this workflow structure
+
+    Example Flow:
+    - When user mentions "refund", match to refund scenario
+    - Ask if product is within 30 days
+    - Based on yes/no, provide appropriate action`;
   }
   
   prompt += '\n\nRemember: Use minimal words, be concise, and save tokens while maintaining clarity.';

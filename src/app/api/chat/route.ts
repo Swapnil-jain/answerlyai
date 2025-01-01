@@ -161,20 +161,41 @@ export async function POST(req: Request) {
     );
 
     // Get relevant workflow section
-    const relevantWorkflow = WorkflowManager.getRelevantWorkflowSection(
-      workflowData.nodes,
-      workflowData.edges,
-      workflowState.currentNode
-    );
+    const workflowContext = workflowData ? {
+      currentNode: workflowState.currentNode,
+      structure: (() => {
+        // Get relevant section first
+        const relevantSection = WorkflowManager.getRelevantWorkflowSection(
+          workflowData.nodes,
+          workflowData.edges,
+          workflowState.currentNode,
+          2,  // depth
+          message // to match scenarios
+        );
+
+        // Then structure it
+        return {
+          nodes: relevantSection.nodes.map(n => ({
+            id: n.id,
+            type: n.type,
+            label: n.data.label
+          })),
+          edges: relevantSection.edges.map(e => ({
+            source: e.source,
+            target: e.target,
+            handle: e.sourceHandle
+          }))
+        };
+      })()
+    } : null;
 
     // Generate optimized prompt with the new context
     const systemPrompt = generateDynamicSystemPrompt(
       contextToUse,  // Using the section-based context
-      relevantWorkflow.nodes,
       faqData.filter(faq => newFAQs.includes(faq.id)),
-      message,
-      history,
-      newPromptTypes as PromptType[]
+      newPromptTypes as PromptType[],
+      workflowContext?.structure,
+      workflowContext?.currentNode
     );
 
     // Estimate token usage with detailed breakdown
@@ -183,7 +204,7 @@ export async function POST(req: Request) {
       history,
       systemPrompt.length,
       newFAQs.reduce((len, id) => len + (faqData.find(f => f.id === id)?.answer.length || 0), 0),
-      JSON.stringify(relevantWorkflow).length,
+      JSON.stringify(workflowContext).length,
       contextToUse.length
     );
 
@@ -348,13 +369,13 @@ export async function POST(req: Request) {
         ...tokenUsage,
         total: response.usage.total_tokens // Use actual tokens from API response
       });
-
+      
       return NextResponse.json({
         success: true,
         response: response.choices[0]?.message?.content || 'No response generated',
         source: 'llm',
         sessionId,
-        tokenUsage // Include token usage in response for monitoring
+        tokenUsage
       });
     } finally {
       clearTimeout(timeoutId);

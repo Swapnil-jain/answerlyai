@@ -2,7 +2,7 @@ import { Clock, DollarSign } from 'lucide-react'
 
 export default function ScenariosSection() {
   return (
-    <section className="w-full bg-white">
+    <section className="w-full bg-white mt-10">
       <div className="container mx-auto px-6 py-16">
         <div>
           <h2 className="text-4xl font-bold text-center mb-6">

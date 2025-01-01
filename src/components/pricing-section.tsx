@@ -227,7 +227,7 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
-                <span>Basic Intelligence bot</span>
+                <span>Basic Intelligence agent</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
@@ -294,11 +294,11 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
-                <span>Moderately intelligent bots</span>
+                <span>Moderately intelligent agents</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
-                <span>Embed on 3 websites</span>
+                <span>Embed on 9 websites</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full text-white text-sm">✓</span>
@@ -369,7 +369,7 @@ export default function PricingSection() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full text-blue-600 text-sm">✓</span>
-                <span>Extremely intelligent bots</span>
+                <span>Extremely intelligent agents</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full text-blue-600 text-sm">✓</span>

@@ -62,6 +62,7 @@ export class ContextCacheManager {
     tokens: number,
     embeddings?: number[]
   ): Promise<void> {
+    this.clearAllCaches(key);  // Clear old caches first
     const entrySize = content.length + (embeddings?.length || 0) * 4;
     if (entrySize > this.MAX_ENTRY_SIZE) {
       content = this.compressContent(content);
@@ -195,6 +196,18 @@ export class ContextCacheManager {
     const cacheKey = `${key}_${section}`;
     const extractedContent = this.extractSection(content, section);
     this.sectionCache[cacheKey] = this.compressContent(extractedContent, section);
+  }
+
+  static clearAllCaches(workflowId: string) {
+    // Clear main context cache
+    const cacheKey = this.generateCacheKey(workflowId);
+    delete this.cache[cacheKey];
+
+    // Clear section caches
+    Object.keys(this.CONTEXT_PATTERNS).forEach(section => {
+      const sectionKey = `${workflowId}_${section}`;
+      delete this.sectionCache[sectionKey];
+    });
   }
 
   // Call this in constructor or initialization

@@ -29,7 +29,7 @@ export default function RefundPolicy() {
               While we don't provide refunds for service cancellations, we will address any billing 
               errors or duplicate charges that may occur. Please contact our support team if you 
               notice any billing discrepancies. Please note that if a subscription is cancelled in the middle of a cycle,
-              you will LOSE your premium access IMMEDIATELY. No refunds shall be issued in such cases.
+              you will retain access to your subscription until the end of the current billing cycle.
             </p>
           </section>
 

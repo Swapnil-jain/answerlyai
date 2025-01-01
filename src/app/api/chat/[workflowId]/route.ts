@@ -158,11 +158,33 @@ export async function POST(req: NextRequest) {
     );
 
     // Get relevant workflow section
-    const relevantWorkflow = WorkflowManager.getRelevantWorkflowSection(
-      workflowData.nodes,
-      workflowData.edges,
-      workflowState.currentNode
-    );
+    const workflowContext = workflowData ? {
+      currentNode: workflowState.currentNode,
+      structure: (() => {
+        // Get relevant section first
+        const relevantSection = WorkflowManager.getRelevantWorkflowSection(
+          workflowData.nodes,
+          workflowData.edges,
+          workflowState.currentNode,
+          2,  // depth
+          message // to match scenarios
+        );
+
+        // Then structure it
+        return {
+          nodes: relevantSection.nodes.map(n => ({
+            id: n.id,
+            type: n.type,
+            label: n.data.label
+          })),
+          edges: relevantSection.edges.map(e => ({
+            source: e.source,
+            target: e.target,
+            handle: e.sourceHandle
+          }))
+        };
+      })()
+    } : null;
 
     // Get optimized context using the new method
     const contextToUse = await getRelevantContext(workflowData, message);
@@ -170,11 +192,10 @@ export async function POST(req: NextRequest) {
     // Generate optimized prompt
     const systemPrompt = generateDynamicSystemPrompt(
       contextToUse,
-      relevantWorkflow.nodes,
       faqData.filter(faq => newFAQs.includes(faq.id)),
-      message,
-      history,
       newPromptTypes as PromptType[],
+      workflowContext?.structure,
+      workflowContext?.currentNode,
       req.headers.get('X-Assistant-Name') || 'Cora'
     );
 
@@ -184,7 +205,7 @@ export async function POST(req: NextRequest) {
       history,
       systemPrompt.length,
       relevantFaqIds.reduce((len, id) => len + (faqData.find(f => f.id === id)?.answer.length || 0), 0),
-      JSON.stringify(relevantWorkflow.nodes).length,
+      JSON.stringify(workflowContext).length,
       contextToUse.length
     );
 

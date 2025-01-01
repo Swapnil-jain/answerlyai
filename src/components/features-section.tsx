@@ -3,7 +3,7 @@ import Script from 'next/script'
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="w-full py-20 bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <section id="features" className="w-full pb-24 pt-12 bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full mb-6">
@@ -30,7 +30,7 @@ export default function FeaturesSection() {
             </div>
             <h3 className="text-xl font-semibold mb-4">Smart Scheduling</h3>
             <p className="text-gray-600">
-              Automatically handle meeting and appointment scheduling. Your AI agent manages 
+              Automatically handle meeting and appointment scheduling. Your AI Agent manages 
               your calendar, sends confirmations, and handles rescheduling requests.
             </p>
           </div>

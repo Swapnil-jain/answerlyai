@@ -1,26 +1,31 @@
 Order of doing things:
-1. New DEMO and intro showing the entire functionality.
-3. Work on SEO optimisation.
+1. Multi-decision node structure (yes -> decision node) and also sturcutures with multiple decision nodes from start (like sample node) are not working as expected.
+2. Work on SEO optimisation.
   - Add subdomain for blog posts.
   - Add Backlinks
   - Fix all bugs reported by google console
-7. Take chatgpt's input for rebranding and try to add it to the website.
+3. Take chatgpt's input for rebranding and try to add it to the website.
+4. Might wanna increase the blog refresh duration limit to like an hour or something.
 
 In later version:
-1. Add welcome emails for new users.
-2. Referral system for companies.
-3. Integration with websites, messaging apps (WhatsApp, Facebook Messenger, Telegram).
-4. Add paypal as alternative payment method.
-6. Try to remove 'use client' directive wherever possible
-7. Implement appropriate RLS policies in supabase.
-8. Refresh work limit if someone upgrades to a higher tier.
-9. Handle the cases where word limit gets over. 1.90$ = 100,000 extra words?
+1. Make payments possible on mobile, but redirect to mobile notice page when trying to access workflow editor.
+2. Add welcome emails for new users.
+3. Referral system for companies.
+4. Integration with websites, messaging apps (WhatsApp, Facebook Messenger, Telegram).
+5. Add paypal as alternative payment method.
+6. Save and continue bug in workflow editor even when nothing is changed.
+7. Try to remove 'use client' directive wherever possible
+8. Implement appropriate RLS policies in supabase.
+9. Refresh work limit if someone upgrades to a higher tier.
+10. Handle the cases where word limit gets over. 1.90$ = 100,000 extra words?
   - Might need some sort of carryforward mechanism.
 11. Enforce that the respective tiers have different analytics and customisations.
 12. Prevent navigation from dashboard without saving email changes.
 
 Lot later version:
 22. A dark mode.
+1. Reduce the response time of the chatbot.
+  - Tried the warmup/connection pool thing but it didn't work so well.
 4. Change models if needed for highest tier.
 6. Make the chatbot/website multilingual. Ask what language the user wants to use in widget for the greeting.
 9. Pre-designed templates for common industries (e.g., e-commerce, SaaS, healthcare).
@@ -54,6 +59,7 @@ Things to do in prod:
 9. Remove the rupee dollar conversion thing in footer.
 10. Test if the domain restriction is working as expected.
 11. Demote all current hobbyist users to free tier.
+12. Remove shit blog posts from the website and add some new ones.
 
 
 Cost of running:

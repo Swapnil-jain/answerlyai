@@ -75,7 +75,7 @@ export default function VideoModal({ isOpen, onClose }: VideoModalProps) {
         <div className="relative rounded-lg overflow-hidden">
           <video
             ref={videoRef}
-            className="w-full aspect-video object-cover"
+            className="w-full h-full aspect-video"
             src="/tutorial.mp4"
             loop
             playsInline

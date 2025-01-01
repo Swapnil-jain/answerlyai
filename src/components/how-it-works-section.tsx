@@ -9,17 +9,17 @@ const steps = [
       {
         image: "/crawl.png",
         subtitle: "Website Crawling",
-        description: "Automatically extract content from your website pages. Our intelligent crawler processes your website content and prepares it for your AI agent, ensuring comprehensive knowledge of your business."
+        description: "Automatically extract content from your website pages. Our intelligent crawler processes your website content and prepares it for your agent, ensuring comprehensive knowledge of your business."
       },
       {
         image: "/FAQ.png",
         subtitle: "FAQ Import",
-        description: "Import your existing FAQs through CSV upload or manual entry. Easily manage your knowledge base with our intuitive interface, helping your AI provide accurate answers to common questions."
+        description: "Import your existing FAQs through CSV upload or manual entry. Easily manage your knowledge base with our intuitive interface, helping your agent provide accurate answers to common questions."
       },
       {
         image: "/context.png",
         subtitle: "Context Manager",
-        description: "Fine-tune your AI's knowledge base by adding custom context and instructions. Optimize content organization and ensure your agent understands your business policies and guidelines perfectly."
+        description: "Fine-tune your agent's knowledge base by adding custom context and instructions. Optimize content organization and ensure your agent understands your business policies and guidelines perfectly."
       },
       {
         image: "/workflow.png",
@@ -35,12 +35,12 @@ const steps = [
       {
         image: "/security.png",
         subtitle: "Domain Manager",
-        description: "Control which websites can use your AI agent widget with domain access management. Enhance security by restricting widget usage to your approved domains only."
+        description: "Control which websites can use your agent widget with domain access management. Enhance security by restricting widget usage to your approved domains only."
       },
       {
         image: "/emails.png",
         subtitle: "Email Notifications",
-        description: "Configure email preferences for important updates, support tickets, and meeting invites. Stay informed about your AI agent's interactions and performance."
+        description: "Configure email preferences for important updates, support tickets, and meeting invites. Stay informed about your agent's interactions and performance."
       },
       {
         image: "/livechat.png",
@@ -56,17 +56,17 @@ const steps = [
       {
         image: "/personalise.png",
         subtitle: "Agent Personalization",
-        description: "Customize your AI agent's appearance with themes, positions, and name options. Create a seamless integration with your website's design and branding."
+        description: "Customize your agent's appearance with themes, positions, and name options. Create a seamless integration with your website's design and branding."
       },
       {
         image: "/embed.png",
         subtitle: "Copy paste code - Widget",
-        description: "Implement your AI agent with a simple code snippet. Add the widget to your website in minutes with our secure, responsive, and easy-to-integrate solution."
+        description: "Implement your agent with a simple code snippet. Add the widget to your website in minutes with our secure, responsive, and easy-to-integrate solution."
       },
       {
         image: "/dashboard.png",
         subtitle: "Performance Monitoring",
-        description: "Track user interactions, monitor response quality, and optimize your AI's performance in real-time. Make data-driven improvements to enhance customer satisfaction."
+        description: "Track user interactions, monitor response quality, and optimize your agent's performance in real-time. Make data-driven improvements to enhance customer satisfaction."
       }
     ]
   }
@@ -128,7 +128,7 @@ export default function HowItWorksSection() {
               
               {activeStep === null && (
                 <p className="text-xs sm:text-sm text-gray-500 mt-2 font-normal px-2 text-center">
-                  {step.id === 1 ? 'Train your AI with your data' :
+                  {step.id === 1 ? 'Train your agent with your data' :
                    step.id === 2 ? 'Customize responses & security' :
                    'Deploy to your website'}
                 </p>
