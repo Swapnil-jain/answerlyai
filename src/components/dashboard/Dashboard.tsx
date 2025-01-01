@@ -175,6 +175,7 @@ function DashboardContent() {
       workflowCache.setDashboardStats(newStats)
     } catch (error) {
       
+      
       setError('Failed to load dashboard data. Please try again later.')
     } finally {
       setIsLoading(false)

@@ -31,6 +31,7 @@ export async function ensureUserTier(supabase: any, userId: string) {
     return { success: true }
   } catch (error) {
     
+    
     return { success: false, error }
   }
 }

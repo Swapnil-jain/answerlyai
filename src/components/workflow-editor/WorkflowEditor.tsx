@@ -374,6 +374,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       }
 
        // Debug log
+       // Debug log
 
       // Save to appropriate table
       const { data, error, status } = await supabase
@@ -383,8 +384,10 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         .single()
 
        // Debug log
+       // Debug log
 
       if (error) {
+        
         
         throw new Error(error.message || 'Failed to save workflow')
       }
@@ -478,6 +481,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) {
           
+          
           throw new Error(`Error loading workflow: ${error.message}`)
         }
 
@@ -509,6 +513,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         window.history.pushState({}, '', `/builder/${workflowId}`)
 
       } catch (error) {
+        
         
         // Reset everything in error case
         initialNodesRef.current = initialNodes
@@ -746,6 +751,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       window.history.pushState({}, '', '/builder')
     } catch (error) {
       
+      
       showAlert('Error', 'Failed to create new workflow')
     } finally {
       setIsCreating(false)
@@ -807,6 +813,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
         if (error) {
           
+          
           throw new Error(`Error loading workflow: ${error.message}`)
         }
 
@@ -838,6 +845,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
         window.history.pushState({}, '', `/builder/${selectedWorkflowId}`)
 
       } catch (error) {
+        
         
         // Reset everything in error case
         initialNodesRef.current = initialNodes
@@ -872,6 +880,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
     // Add a debug log to see the state
     
     
+    
     if (hasUnsavedChanges) {
       showAlert(
         'Unsaved Changes',
@@ -901,6 +910,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       }
     } catch (error) {
       
+      
       showAlert(
         'Error',
         error instanceof Error ? error.message : 'An error occurred'
@@ -928,6 +938,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       router.push('/')
     } catch (error) {
       
+      
       showAlert(
         'Error',
         'Failed to logout. Please try again.'
@@ -939,6 +950,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
   const handleChatbotClick = () => {
     if (!currentWorkflowId) {
       
+      
       return
     }
     handleNavigationWithCheck(`/chat/${currentWorkflowId}`)
@@ -946,6 +958,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
 
   const handleWidgetClick = () => {
     if (!currentWorkflowId) {
+      
       
       return
     }
@@ -1220,6 +1233,7 @@ function Flow({ workflowId }: WorkflowEditorProps) {
       )
 
     } catch (error) {
+      
       
       if (error instanceof Error) {
         if (error.message.includes('You have reached the maximum number of workflows')) {

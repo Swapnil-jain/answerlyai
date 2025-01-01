@@ -74,6 +74,7 @@ class RateLimiterClass {
       return data;
     } catch (error) {
       
+      
       return {
         allowed: false,
         reason: 'Rate limit check failed. Please try again later.',

@@ -59,14 +59,17 @@ export async function GET(request: NextRequest) {
 
     const widgetScript = `
       
+      
       (function() {
         // Add initial message when chat opens - moved into the ChatWidget component
         // to support dynamic name
 
         
+        
 
         // Ensure we don't initialize multiple times
         if (window.AnswerlyAIWidget) {
+          
           
           return;
         }
@@ -75,6 +78,7 @@ export async function GET(request: NextRequest) {
           return new Promise((resolve, reject) => {
             // Check if script is already loaded
             if (document.querySelector(\`script[src="\${src}"]\`)) {
+              
               
               resolve();
               return;
@@ -88,10 +92,12 @@ export async function GET(request: NextRequest) {
             
             script.onload = () => {
               
+              
               resolve();
             };
             
             script.onerror = (error) => {
+              
               
               reject(error);
             };
@@ -104,15 +110,18 @@ export async function GET(request: NextRequest) {
         loadScript('https://unpkg.com/react@18/umd/react.production.min.js')
           .then(() => {
             
+            
             // Only load ReactDOM after React is loaded
             return loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js');
           })
           .then(() => {
             
+            
             // Load marked after React ecosystem is ready
             return loadScript('https://cdn.jsdelivr.net/npm/marked@11.1.0/lib/marked.umd.min.js');
           })
           .then(() => {
+            
             
             
             // Verify React and ReactDOM are available
@@ -123,6 +132,7 @@ export async function GET(request: NextRequest) {
             // Define the widget object
             window.AnswerlyAIWidget = {
               init: function(config) {
+                
                 
                 try {
                   // Clean up any existing instances
@@ -139,6 +149,7 @@ export async function GET(request: NextRequest) {
                   root.render(window.React.createElement(ChatWidget, config));
                 } catch (error) {
                   
+                  
                   throw error;
                 }
               },
@@ -151,6 +162,7 @@ export async function GET(request: NextRequest) {
                     container.remove();
                   }
                 } catch (error) {
+                  
                   
                 }
               }
@@ -171,9 +183,11 @@ export async function GET(request: NextRequest) {
               window.dispatchEvent(event);
             } catch (error) {
               
+              
             }
           })
           .catch(error => {
+            
             
           });
 
@@ -215,6 +229,7 @@ export async function GET(request: NextRequest) {
                 const { tier } = await response.json();
                 setUserTier(tier);
               } catch (error) {
+                
                 
                 setUserTier('hobbyist'); // Default to hobbyist on error
               }
@@ -263,6 +278,7 @@ export async function GET(request: NextRequest) {
                 throw new Error(data.message);
               }
             } catch (error) {
+              
               
               setMessages(prev => [...prev, { 
                 type: 'bot', 

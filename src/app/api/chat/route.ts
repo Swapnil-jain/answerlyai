@@ -106,6 +106,7 @@ export async function POST(req: Request) {
     
     if (authError || !user) {
       
+      
       throw new Error('Authentication required')
     }
 

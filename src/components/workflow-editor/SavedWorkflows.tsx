@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useSupabase } from '@/lib/supabase/provider'
 import { workflowCache } from '@/lib/cache/workflowCache'
 
+
 import { eventEmitter } from '@/lib/utils/events'
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { AlertDialogAction } from '@/components/ui/alert-dialog'
@@ -62,9 +63,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
         }
       } catch (cacheError) {
         
+        
       }
 
       // Load from database
+      
       
       const query = supabase
         .from(table)
@@ -82,10 +85,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
 
       if (data) {
         
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
+      
       
       workflowCache.clearCache()
     } finally {
@@ -120,10 +125,12 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       
       if (isStale) {
         
+        
         setWorkflows(data)
         workflowCache.setWorkflowList(data)
       }
     } catch (error) {
+      
       
       workflowCache.clearCache()
     }
@@ -160,9 +167,11 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
     
     const unsubscribe = eventEmitter.subscribe('workflowUpdated', (workflow) => {
       
+      
       if (workflow) {
         updateWorkflowInList(workflow)
       } else {
+        
         
         loadWorkflows()
       }
@@ -220,6 +229,7 @@ const SavedWorkflows = React.memo(function SavedWorkflows({ onWorkflowSelect }: 
       setAlertOpen(true)
 
     } catch (error) {
+      
       
       setAlertMessage({
         title: 'Error',
