@@ -197,13 +197,6 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
     };
 
     initializeChatSession();
-
-    // Cleanup function to end the session
-    return () => {
-      if (currentSession?.id) {
-        endChatSession(currentSession.id).catch(console.error);
-      }
-    };
   }, [workflowId, supabase]);
 
   const updateChatStats = async (responseTime: number, wasSuccessful: boolean) => {
@@ -347,19 +340,6 @@ export default function WorkflowChatbot({ workflowId }: WorkflowChatbotProps) {
           source: "llm",
         },
       ]);
-    }
-  };
-
-  const endChatSession = async (sessionId: string) => {
-    try {
-      await supabase
-        .from('chat_sessions')
-        .update({
-          ended_at: new Date().toISOString()
-        })
-        .eq('id', sessionId);
-    } catch (error) {
-      
     }
   };
 

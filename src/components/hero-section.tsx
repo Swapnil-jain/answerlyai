@@ -63,7 +63,7 @@ export default function HeroSection() {
           </div>
 
           <div className="relative block mt-8 lg:mt-0">
-            <div className="relative rounded-3xl shadow-xl overflow-hidden w-[90vw] h-[50.625vw] sm:w-[70vw] sm:h-[39.375vw] md:w-[60vw] md:h-[33.75vw] lg:w-[40vw] lg:h-[22.5vw] xl:w-[40vw] xl:h-[22.5vw] 2xl:w-[45vw] 2xl:h-[25.3125vw] mx-auto">
+            <div className="relative rounded-xl shadow-xl overflow-hidden w-[90vw] h-[50.625vw] sm:w-[70vw] sm:h-[39.375vw] md:w-[60vw] md:h-[33.75vw] lg:w-[40vw] lg:h-[22.5vw] xl:w-[40vw] xl:h-[22.5vw] 2xl:w-[45vw] 2xl:h-[25.3125vw] mx-auto">
               <video 
                 className="w-full h-full aspect-video"
                 autoPlay

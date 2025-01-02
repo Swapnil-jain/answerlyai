@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Globe, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuth } from '@/hooks/useAuth'
 import { isAdmin } from '@/lib/utils/adminCheck'
-
 interface DiscoveredUrl {
   url: string
   selected: boolean
@@ -39,7 +38,7 @@ export default function WebsiteCrawler({ workflowId, disabled, title, onSaveWork
   const [discoveredUrls, setDiscoveredUrls] = useState<DiscoveredUrl[]>([])
   const [isDiscovering, setIsDiscovering] = useState(false)
   const [step, setStep] = useState<'input' | 'select' | 'crawling'>('input')
-  const MAX_URLS = 15
+  const MAX_URLS = 5
 
   const normalizeUrl = (inputUrl: string): string => {
     try {

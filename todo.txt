@@ -6,6 +6,7 @@ Order of doing things:
   - Fix all bugs reported by google console
 3. Take chatgpt's input for rebranding and try to add it to the website.
 4. Might wanna increase the blog refresh duration limit to like an hour or something.
+5. Test if the domain restriction is working as expected.
 
 In later version:
 1. Make payments possible on mobile, but redirect to mobile notice page when trying to access workflow editor.
@@ -48,19 +49,7 @@ Lot later version:
 
 
 Things to do in prod:
-1. Delete useless columns from supabase rate_limit/user_tier tables.
-2. Correct webhook link in dodopayments.
-3. Live dodopayments link enabled.
-4. Correct product IDs for live payments (different from .env.local)
-5. Correct URLs.
-6. npx playwright install MIGHT need to be run, check first if web crawler is working.
-7. Top up credits in deepinfra.
-8. Update the answerlyAI main chatbot with latest data.
-9. Remove the rupee dollar conversion thing in footer.
-10. Test if the domain restriction is working as expected.
-11. Demote all current hobbyist users to free tier.
-12. Remove shit blog posts from the website and add some new ones.
-
+'npx playwright install' MIGHT need to be run, check first if web crawler is working. (done)
 
 Cost of running:
 Per user:

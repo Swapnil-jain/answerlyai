@@ -55,7 +55,7 @@ export default function ScenariosSection() {
           </div>
 
           {/* Technical Support Scenario */}
-          <div className="bg-white rounded-xl p-8 shadow-lg">
+          <div className="bg-white rounded-xl p-8 shadow-lg hidden md:block">
             <div className="flex items-start gap-4 mb-6">
               <Clock className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
               <div>
