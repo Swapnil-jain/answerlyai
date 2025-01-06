@@ -14,3 +14,4 @@ Disallow: /studio/
 Disallow: /widget/
 Disallow: /*.svg$
 Disallow: /robots.txt
+Disallow: /_next/
