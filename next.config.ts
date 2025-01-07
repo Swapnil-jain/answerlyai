@@ -19,7 +19,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   experimental: {
-    optimizeCss: true,
     turbo: {
       rules: {
         // Add rules if needed
@@ -30,28 +29,39 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === "production",
   },
   webpack: (config, { dev, isServer }) => {
-    // Only enable splitting in production
     if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
-          minSize: 20000,
-          maxSize: 70000,
+          minSize: 10000,
+          maxSize: 40000,
           cacheGroups: {
             default: false,
             vendors: false,
-            commons: {
-              test: /[\\/]node_modules[\\/]/,
-              name(module: { context: string }) {
-                // Get the name of the package using a safe regex pattern
-                const packageName = module.context?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
-                return packageName ? `npm.${packageName.replace('@', '')}` : 'commons';
-              },
+            framework: {
+              name: 'framework',
+              test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+              priority: 40,
               chunks: 'all',
+            },
+            sanity: {
+              name: 'sanity',
+              test: /[\\/]node_modules[\\/](@sanity)[\\/]/,
+              priority: 30,
+              chunks: 'async',
+            },
+            commons: {
+              name: 'commons',
+              minChunks: 2,
+              priority: 20,
+              chunks: 'async',
+              reuseExistingChunk: true,
             },
           },
         },
+        minimize: true,
+        runtimeChunk: { name: 'runtime' },
       };
     }
     return config;
@@ -78,8 +88,22 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/api/widget/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+        ],
+      },
     ]
   },
+  compress: true,
 };
 
 export default nextConfig;

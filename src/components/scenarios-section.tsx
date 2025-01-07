@@ -1,4 +1,10 @@
-import { Clock, DollarSign } from 'lucide-react'
+import dynamic from 'next/dynamic';
+
+// Add dynamic imports for icons
+const Icons = {
+  Clock: dynamic(() => import('lucide-react').then(mod => mod.Clock)),
+  DollarSign: dynamic(() => import('lucide-react').then(mod => mod.DollarSign))
+};
 
 export default function ScenariosSection() {
   return (
@@ -18,7 +24,7 @@ export default function ScenariosSection() {
           {/* E-commerce Support Scenario */}
           <div className="bg-white rounded-xl p-8 shadow-lg">
             <div className="flex items-start gap-4 mb-6">
-              <Clock className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
+              <Icons.Clock className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-2xl font-semibold mb-3">Traditional E-commerce Support</h3>
                 <div className="space-y-3 text-gray-600">
@@ -28,14 +34,14 @@ export default function ScenariosSection() {
                   <p>• Support limited to business hours</p>
                 </div>
                 <div className="mt-6 p-4 bg-red-100 rounded-lg">
-                  <p className="text-red-700 font-medium">
+                  <p className="text-red-800 font-medium">
                     Impact: Lost sales, customer churn, and escalating support costs
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+              <Icons.DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-2xl font-semibold mb-3">With AnswerlyAI's Smart Solution</h3>
                 <div className="space-y-3 text-gray-600">
@@ -45,7 +51,7 @@ export default function ScenariosSection() {
                   <p>• Smart product recommendations increasing sales by 25%</p>
                 </div>
                 <div className="mt-6 p-4 bg-green-100 rounded-lg">
-                  <p className="text-green-700 font-medium">
+                  <p className="text-green-800 font-medium">
                     Impact: Transform from just another business to the innovative company 
                     everyone talks about. That's the AnswerlyAI difference.
                   </p>
@@ -57,7 +63,7 @@ export default function ScenariosSection() {
           {/* Technical Support Scenario */}
           <div className="bg-white rounded-xl p-8 shadow-lg hidden md:block">
             <div className="flex items-start gap-4 mb-6">
-              <Clock className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
+              <Icons.Clock className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-2xl font-semibold mb-3">Traditional Technical Support</h3>
                 <div className="space-y-3 text-gray-600">
@@ -74,7 +80,7 @@ export default function ScenariosSection() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+              <Icons.DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-2xl font-semibold mb-3">With AnswerlyAI's Intelligent Platform</h3>
                 <div className="space-y-3 text-gray-600">
@@ -84,7 +90,7 @@ export default function ScenariosSection() {
                   <p>• 24/7 global technical support coverage</p>
                 </div>
                 <div className="mt-6 p-4 bg-green-50 rounded-lg">
-                  <p className="text-green-600 font-medium">
+                  <p className="text-green-800 font-medium">
                     Impact: 75% cost savings, 95% faster resolution, 40% reduction in escalations
                   </p>
                 </div>

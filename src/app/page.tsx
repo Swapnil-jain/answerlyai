@@ -1,13 +1,20 @@
 import Header from '@/components/header'
 import HeroSection from '@/components/hero-section'
-import FeaturesSection from '@/components/features-section'
+import dynamic from 'next/dynamic'
+
+// Statically import critical above-the-fold components
 import DemoSection from '@/components/demo-section'
-import PricingSection from '@/components/pricing-section'
-import ContactSection from '@/components/contact-section'
-import Footer from '@/components/footer'
-import ChatWidget from '@/components/ChatWidget'
-import ScenariosSection from '@/components/scenarios-section'
-import HowItWorksSection from '@/components/how-it-works-section'
+
+// Lazy load below-the-fold components
+const HowItWorksSection = dynamic(() => import('@/components/how-it-works-section'), {
+  loading: () => <div className="h-[600px] animate-pulse bg-gray-50" />
+})
+const FeaturesSection = dynamic(() => import('@/components/features-section'))
+const ScenariosSection = dynamic(() => import('@/components/scenarios-section'))
+const PricingSection = dynamic(() => import('@/components/pricing-section'))
+const ContactSection = dynamic(() => import('@/components/contact-section'))
+const Footer = dynamic(() => import('@/components/footer'))
+const ChatWidget = dynamic(() => import('@/components/ChatWidget'))
 
 export default function Home() {
   return (

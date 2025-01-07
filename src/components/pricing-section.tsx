@@ -5,7 +5,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { checkUserSubscription } from '@/lib/utils/subscription'
-import PaymentDialog from './payment-dialog'
+import dynamic from 'next/dynamic'
+
+// Add dynamic imports for heavy components
+const PaymentDialog = dynamic(() => import('./payment-dialog'), {
+  loading: () => <div className="h-[600px]" />,
+  ssr: false
+});
 
 export default function PricingSection() {
   const { supabase, getUser } = useAuth()
@@ -174,11 +180,21 @@ export default function PricingSection() {
             <button
               onClick={() => setIsAnnual(!isAnnual)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isAnnual ? 'bg-black' : 'bg-gray-200'}`}
+              aria-label={`Switch to ${isAnnual ? 'monthly' : 'annual'} billing`}
+              role="switch"
+              aria-checked={isAnnual}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className="sr-only">
+                {isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
+              </span>
+              <span 
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                  isAnnual ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
             </button>
             <span className={`text-sm font-medium ${isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>Annually</span>
-            <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
+            <span className="ml-1.5 rounded-full bg-green-200 px-2 py-0.5 text-xs font-medium text-green-800">
               Save 33%
             </span>
           </div>
@@ -202,7 +218,7 @@ export default function PricingSection() {
                 {isAnnual && (
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${hobbyistPrice.yearly} yearly</span>
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
+                    <span className="inline-flex items-center rounded-full bg-green-200 px-2 py-0.5 text-xs font-medium text-green-800">
                       Save $120/y
                     </span>
                   </div>
@@ -269,8 +285,8 @@ export default function PricingSection() {
                 {isAnnual && (
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-gray-600">Billed ${growthPrice.yearly} yearly</span>
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-600">
-                    Save $240/y
+                    <span className="inline-flex items-center rounded-full bg-green-200 px-2 py-0.5 text-xs font-medium text-green-800">
+                      Save $240/y
                     </span>
                   </div>
                 )}
@@ -344,7 +360,7 @@ export default function PricingSection() {
                 {isAnnual && (
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs lg:text-sm text-blue-50">Billed ${startupPrice.yearly} yearly</span>
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                    <span className="inline-flex items-center rounded-full bg-green-200 px-2 py-0.5 text-xs font-medium text-green-800">
                       Save $360/y
                     </span>
                   </div>

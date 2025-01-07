@@ -24,8 +24,11 @@ export default function DemoSection() {
                   height={800}
                   className="w-full"
                   priority
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-                  quality={75}
+                  sizes="(max-width: 640px) 100vw, 
+                         (max-width: 768px) 80vw,
+                         (max-width: 1024px) 60vw,
+                         1000px"
+                  quality={85}
                 />
               </div>
             </div>
