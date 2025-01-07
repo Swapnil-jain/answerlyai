@@ -22,6 +22,7 @@ In later version:
   - Might need some sort of carryforward mechanism.
 11. Enforce that the respective tiers have different analytics and customisations.
 12. Prevent navigation from dashboard without saving email changes.
+13. Look into pinecone for RAG.
 
 Lot later version:
 22. A dark mode.

@@ -20,10 +20,12 @@ export default function DemoSection() {
                 <Image
                   src="/main.png"
                   alt="AnswerlyAI Workflow Builder Demo"
-                  width={1400}
-                  height={933}
+                  width={1200}
+                  height={800}
                   className="w-full"
                   priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                  quality={75}
                 />
               </div>
             </div>

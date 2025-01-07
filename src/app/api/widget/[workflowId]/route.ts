@@ -412,6 +412,7 @@ export async function GET(request: NextRequest) {
                 React.createElement('span', null, 'Chat Support'),
                 React.createElement('button', {
                   onClick: () => setIsOpen(false),
+                  'aria-label': config.labels?.closeButton || 'Close chat window',
                   style: {
                     border: 'none',
                     background: 'none',
@@ -528,6 +529,8 @@ export async function GET(request: NextRequest) {
             // Widget button
             React.createElement('button', {
               onClick: () => setIsOpen(!isOpen),
+              'aria-label': config.labels?.openButton || 'Open chat support',
+              'aria-expanded': isOpen,
               style: {
                 width: '64px',
                 height: '64px',
@@ -572,7 +575,8 @@ export async function GET(request: NextRequest) {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400', // 24 hours
+        'Access-Control-Max-Age': '86400',
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
       },
     });
 

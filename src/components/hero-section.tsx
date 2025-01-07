@@ -10,23 +10,41 @@ export default function HeroSection() {
           <div className="text-left sm:text-left space-y-6 lg:space-y-8">
             <div className="flex flex-row gap-3 justify-center sm:justify-start">
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-[#e6eeff] px-4 py-2 rounded-full">
-                  <span className="text-xs sm:text-sm font-medium text-blue-600 whitespace-nowrap">Only.Relevant.Features.</span>
+                <span className="inline-flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full">
+                  <span className="text-xs sm:text-sm font-medium text-blue-700 whitespace-nowrap">Only.Relevant.Features.</span>
                 </span>
               </div>
               <div className="inline-flex items-center justify-center">
-                <span className="inline-flex items-center gap-2 bg-[#e6f5ea] px-4 py-2 rounded-full">
-                  <MousePointer2 className="w-4 h-4 text-green-600" />
-                  <span className="text-xs sm:text-sm font-medium text-green-600 whitespace-nowrap">No-Code Required</span>
+                <span className="inline-flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
+                  <MousePointer2 className="w-4 h-4 text-green-700" />
+                  <span className="text-xs sm:text-sm font-medium text-green-700 whitespace-nowrap">No-Code Required</span>
                 </span>
               </div>
             </div>
             
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight text-center sm:text-left">
-              The Simplest AI Agent Maker
-              <br className="sm:hidden" />{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
-                On The Planet
+              <span className="inline sm:hidden">
+                <div>The Simplest AI Agent Maker</div>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
+                  On The Planet
+                </span>
+              </span>
+              
+              <span className="hidden sm:inline xl:hidden">
+                <div>The Simplest AI Agent</div>
+                <div>Maker{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
+                    On The Planet
+                  </span>
+                </div>
+              </span>
+              
+              <span className="hidden xl:inline">
+                <span>The Simplest AI Agent</span>{' '}
+                <span>Maker</span>{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">
+                  On The Planet
+                </span>
               </span>
             </h1>
             

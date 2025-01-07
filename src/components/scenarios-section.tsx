@@ -27,8 +27,8 @@ export default function ScenariosSection() {
                   <p>• $15,000 monthly in salaries, benefits, and training costs</p>
                   <p>• Support limited to business hours</p>
                 </div>
-                <div className="mt-6 p-4 bg-red-50 rounded-lg">
-                  <p className="text-red-600 font-medium">
+                <div className="mt-6 p-4 bg-red-100 rounded-lg">
+                  <p className="text-red-700 font-medium">
                     Impact: Lost sales, customer churn, and escalating support costs
                   </p>
                 </div>
@@ -44,8 +44,8 @@ export default function ScenariosSection() {
                   <p>• 1 support manager overseeing AI operations</p>
                   <p>• Smart product recommendations increasing sales by 25%</p>
                 </div>
-                <div className="mt-6 p-4 bg-green-50 rounded-lg">
-                  <p className="text-green-600 font-medium">
+                <div className="mt-6 p-4 bg-green-100 rounded-lg">
+                  <p className="text-green-700 font-medium">
                     Impact: Transform from just another business to the innovative company 
                     everyone talks about. That's the AnswerlyAI difference.
                   </p>

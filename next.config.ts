@@ -11,10 +11,76 @@ const nextConfig: NextConfig = {
       },
     ],
     domains: ['cdn.sanity.io'], // Fallback for older Next.js versions
+    deviceSizes: [400, 640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp', 'image/avif'],
   },
   typescript: {
     // Set this to false if you want production builds to abort if there's type errors
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
+  },
+  experimental: {
+    optimizeCss: true,
+    turbo: {
+      rules: {
+        // Add rules if needed
+      }
+    },
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production", // Remove console in production
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Only enable splitting in production
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          minSize: 20000,
+          maxSize: 70000,
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            commons: {
+              test: /[\\/]node_modules[\\/]/,
+              name: (module: any) => {
+                const match = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
+                return `npm.${match[1].replace('@', '')}`;
+              },
+              chunks: 'all',
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
+  productionBrowserSourceMaps: false, // Disable source maps in production
+  swcMinify: true, // Enable SWC minification
+  compress: true, // Enable compression
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|png)',
+        locale: false,
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, s-maxage=86400',
+          },
+        ],
+      },
+    ]
   },
 };
 

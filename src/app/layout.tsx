@@ -21,14 +21,19 @@ export default function RootLayout({
       <body>
         <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GTAG}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
+            async
+            defer
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${process.env.NEXT_PUBLIC_GTAG}');
+            gtag('config', '${process.env.NEXT_PUBLIC_GTAG}', {
+              page_path: window.location.pathname,
+              transport_type: 'beacon'
+            });
           `}
         </Script>
         <SupabaseProvider>
@@ -40,4 +45,3 @@ export default function RootLayout({
     </html>
   )
 }
-

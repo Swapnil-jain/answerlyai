@@ -1,7 +1,23 @@
+'use client'
+
 import { Calendar, MessageSquare, BarChart3, FileQuestion, Globe, RefreshCw, Zap } from 'lucide-react'
 import Script from 'next/script'
+import { useEffect } from 'react'
 
 export default function FeaturesSection() {
+  useEffect(() => {
+    const addPassiveListener = () => {
+      const options = {
+        passive: true
+      }
+      
+      document.addEventListener('touchstart', () => {}, options)
+      document.addEventListener('wheel', () => {}, options)
+    }
+
+    addPassiveListener()
+  }, [])
+
   return (
     <section id="features" className="w-full pb-24 pt-12 bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <div className="container mx-auto px-6">
@@ -118,6 +134,8 @@ export default function FeaturesSection() {
             />
             <Script
               async
+              defer
+              strategy="lazyOnload"
               type="text/javascript"
               src="https://static.senja.io/dist/platform.js"
             />

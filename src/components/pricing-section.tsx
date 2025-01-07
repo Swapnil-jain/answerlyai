@@ -320,7 +320,7 @@ export default function PricingSection() {
           </div>
 
           {/* Replace the Enterprise Plan with Startup Plan */}
-          <div className="relative bg-blue-600 p-8 rounded-lg shadow-lg border-2 border-blue-400 flex flex-col transform scale-105">
+          <div className="relative bg-blue-700 p-8 rounded-lg shadow-lg border-2 border-blue-400 flex flex-col">
             <div className="absolute -top-3 left-0 right-0 flex justify-center gap-2">
               <span className="px-4 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full font-medium flex items-center">
                 Most popular
@@ -343,8 +343,8 @@ export default function PricingSection() {
                 </div>
                 {isAnnual && (
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs lg:text-sm text-blue-100">Billed ${startupPrice.yearly} yearly</span>
-                    <span className="inline-flex items-center rounded-full bg-blue-200 px-2 py-0.5 text-xs font-medium text-blue-800">
+                    <span className="text-xs lg:text-sm text-blue-50">Billed ${startupPrice.yearly} yearly</span>
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                       Save $360/y
                     </span>
                   </div>
