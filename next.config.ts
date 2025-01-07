@@ -10,13 +10,12 @@ const nextConfig: NextConfig = {
         pathname: '/images/**',
       },
     ],
-    domains: ['cdn.sanity.io'], // Fallback for older Next.js versions
+    domains: ['cdn.sanity.io'],
     deviceSizes: [400, 640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
   },
   typescript: {
-    // Set this to false if you want production builds to abort if there's type errors
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   experimental: {
@@ -28,7 +27,7 @@ const nextConfig: NextConfig = {
     },
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production", // Remove console in production
+    removeConsole: process.env.NODE_ENV === "production",
   },
   webpack: (config, { dev, isServer }) => {
     // Only enable splitting in production
@@ -44,9 +43,10 @@ const nextConfig: NextConfig = {
             vendors: false,
             commons: {
               test: /[\\/]node_modules[\\/]/,
-              name: (module: any) => {
-                const match = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
-                return `npm.${match[1].replace('@', '')}`;
+              name(module: { context: string }) {
+                // Get the name of the package using a safe regex pattern
+                const packageName = module.context?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+                return packageName ? `npm.${packageName.replace('@', '')}` : 'commons';
               },
               chunks: 'all',
             },
@@ -56,9 +56,7 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  productionBrowserSourceMaps: false, // Disable source maps in production
-  swcMinify: true, // Enable SWC minification
-  compress: true, // Enable compression
+  productionBrowserSourceMaps: false,
   async headers() {
     return [
       {
